@@ -1,20 +1,53 @@
 #include "main.h"
 
-struct str
+typedef struct
 {
     const char *b;
-    const char *e;
-};
+    size_t s;
+} Str;
 
-inline size_t str_size(const struct str *s) { return s->e - s->b; }
+inline size_t str_size(const Str *s) { return s->s; }
 
-void str_print(const struct str *s)
+void str_print(const Str *s)
 {
     for (int i = 0; i < str_size(s); i++)
-        printf("%c", *(s->b + i));
+        putc(*(s->b + i), stdout);
 }
 
-bool lex(const char *s)
+int64_t str_parse_int64(const Str *s) {
+    int64_t result = 0;
+    for (int i = 0; i < str_size(s); i++) {
+        result *= 10;
+        result += *(s->b + i) - '0';
+    }
+    return result;
+}
+
+Str str_new(const char*b, const char*e) { return (Str){ b, e-b};}
+
+typedef struct {
+    enum { INT64 } tag;
+    union {
+        int64_t i64;
+    } data;
+} Val;
+
+typedef struct {
+    Val* bottom;
+    size_t top;
+    size_t size;
+} Stack;
+
+void stack_push(Stack* stack, Val val) {
+    assert(false);
+}
+
+void interpret_i64(Stack* stack, const Str str) {
+    int64_t i = str_parse_int64(&str);
+    stack_push(stack, (Val){INT64, .data.i64 = i});
+} 
+
+bool interpret(Stack* stack, const char *s)
 {
     const char *YYCURSOR = s;
 
@@ -29,10 +62,10 @@ bool lex(const char *s)
             eof = [\x00\n];
             spaces = [ \t]+;
 
-            number { str_print(&(struct str){yytext, YYCURSOR}); continue; }
-            eof { printf("eof\n"); return true; }
+            number { interpret_i64(stack, str_new(yytext, YYCURSOR)); continue; }
+            eof { return true; }
             spaces { continue; }
-            *      { printf("err\n"); return false; }
+            * { printf("err\n"); return false; }
         */
     }
 }
@@ -42,6 +75,8 @@ int main()
     char *input = NULL;
     size_t input_size = 0;
 
+    Stack stack = {.bottom=NULL, .size = 0, .top = 0};
+
     while (true)
     {
         printf(" > ");
@@ -50,7 +85,12 @@ int main()
         {
             break;
         }
-        printf("%b\n", lex(input));
+        if (interpret(&stack, input))
+        {
+            printf("OK\n");
+        } else {
+            printf("ERROR\n");
+        }
     }
 
     free(input);
