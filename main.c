@@ -39,7 +39,13 @@ typedef struct {
 } Stack;
 
 void stack_push(Stack* stack, Val val) {
-    assert(false);
+    if (stack->top == stack->size) {
+        size_t new_size = (stack->size + 1) * 2;
+        stack->bottom = realloc(stack->bottom, new_size * sizeof(Val));
+        stack->size = new_size;
+    }
+    *(stack->bottom + stack->top) = val;
+    stack->top++;
 }
 
 void interpret_i64(Stack* stack, const Str str) {
@@ -87,7 +93,7 @@ int main()
         }
         if (interpret(&stack, input))
         {
-            printf("OK\n");
+            printf("OK: %ld %ld\n", stack.top, stack.size);
         } else {
             printf("ERROR\n");
         }
