@@ -1,104 +1,101 @@
-#include "main.h"
+#include "farr.h"
 
-typedef struct
-{
-    const char *b;
-    size_t s;
-} Str;
-
-inline size_t str_size(const Str *s) { return s->s; }
-
-void str_print(const Str *s)
-{
-    for (int i = 0; i < str_size(s); i++)
-        putc(*(s->b + i), stdout);
+void str_print(const str_t* s) {
+  for (int i = 0; i < str_size(s); i++)
+    putc(*(s->b + i), stdout);
 }
 
-int64_t str_parse_int64(const Str *s) {
-    int64_t result = 0;
-    for (int i = 0; i < str_size(s); i++) {
-        result *= 10;
-        result += *(s->b + i) - '0';
+int64_t str_parse_int64(const str_t* s) {
+  int64_t result = 0;
+  for (int i = 0; i < str_size(s); i++) {
+    result *= 10;
+    result += *(s->b + i) - '0';
+  }
+  return result;
+}
+
+// value type, passed as value
+typedef struct {
+  enum { INT64 } tag;
+  union {
+    int64_t i64;
+  } data;
+} val_t;
+
+void val_print(val_t v) {
+  switch (v.tag) {
+    case INT64: {
+      printf("%ld", v.data.i64);
+      break;
     }
-    return result;
+  }
 }
-
-Str str_new(const char*b, const char*e) { return (Str){ b, e-b};}
 
 typedef struct {
-    enum { INT64 } tag;
-    union {
-        int64_t i64;
-    } data;
-} Val;
+  val_t* bottom;
+  size_t top;
+  size_t size;
+} stack_t;
 
-typedef struct {
-    Val* bottom;
-    size_t top;
-    size_t size;
-} Stack;
-
-void stack_push(Stack* stack, Val val) {
-    if (stack->top == stack->size) {
-        size_t new_size = (stack->size + 1) * 2;
-        stack->bottom = realloc(stack->bottom, new_size * sizeof(Val));
-        stack->size = new_size;
-    }
-    *(stack->bottom + stack->top) = val;
-    stack->top++;
+void stack_push(stack_t* stack, val_t val) {
+  if (stack->top == stack->size) {
+    size_t new_size = (stack->size + 1) * 2;
+    stack->bottom = reallocarray(stack->bottom, sizeof(val_t), new_size);
+    stack->size = new_size;
+  }
+  stack->bottom[stack->top] = val;
+  stack->top++;
 }
 
-void interpret_i64(Stack* stack, const Str str) {
-    int64_t i = str_parse_int64(&str);
-    stack_push(stack, (Val){INT64, .data.i64 = i});
-} 
-
-bool interpret(Stack* stack, const char *s)
-{
-    const char *YYCURSOR = s;
-
-    for (;;)
-    {
-        const char *yytext = YYCURSOR;
-        /*!re2c
-            re2c:yyfill:enable = 0;
-            re2c:define:YYCTYPE = char;
-
-            number = [1-9][0-9]*;
-            eof = [\x00\n];
-            spaces = [ \t]+;
-
-            number { interpret_i64(stack, str_new(yytext, YYCURSOR)); continue; }
-            eof { return true; }
-            spaces { continue; }
-            * { printf("err\n"); return false; }
-        */
-    }
+void stack_print(stack_t* stack) {
+  if (stack->top == 0)
+    return;
+  for (size_t i = 0; i < stack->top; i++) {
+    if (i > 0)
+      printf(" ");
+    val_print(stack->bottom[i]);
+  }
 }
 
-int main()
-{
-    char *input = NULL;
-    size_t input_size = 0;
+void interpret_i64(stack_t* stack, const str_t str) {
+  int64_t i = str_parse_int64(&str);
+  stack_push(stack, (val_t){INT64, .data.i64 = i});
+}
 
-    Stack stack = {.bottom=NULL, .size = 0, .top = 0};
-
-    while (true)
-    {
-        printf(" > ");
-        ssize_t read = getline(&input, &input_size, stdin);
-        if (read < 0)
-        {
-            break;
-        }
-        if (interpret(&stack, input))
-        {
-            printf("OK: %ld %ld\n", stack.top, stack.size);
-        } else {
-            printf("ERROR\n");
-        }
+void interpret(stack_t* stack, const char* s) {
+  for (;;) {
+    token_t t = next_token(&s);
+    switch (t.tok) {
+      case T_EOF:
+        return;
+      case T_ERROR: {
+        printf("ERROR: unexpected token\n");
+        break;
+      }
+      case T_INT64: {
+        interpret_i64(stack, t.text);
+        break;
+      }
     }
+  }
+}
 
-    free(input);
-    return 0;
+int main() {
+  char* input = NULL;
+  size_t input_size = 0;
+
+  stack_t stack = {.bottom = NULL, .size = 0, .top = 0};
+
+  while (true) {
+    stack_print(&stack);
+    printf(" > ");
+    ssize_t read = getline(&input, &input_size, stdin);
+    if (read < 0) {
+      break;
+    }
+    interpret(&stack, input);
+  }
+
+  free(input);
+  return 0;
 }

@@ -1,3 +1,7 @@
 {
-    "C_Cpp.default.compilerPath": "/etc/profiles/per-user/mike/bin/gcc"
+    "C_Cpp.default.compilerPath": "/etc/profiles/per-user/mike/bin/gcc",
+    "C_Cpp.clang_format_fallbackStyle": "Chromium",
+    "files.associations": {
+        "farr.h": "c"
+    }
 }

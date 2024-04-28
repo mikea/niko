@@ -1,12 +1,14 @@
 alias w := watch
 
+CFLAGS := "-std=gnu2x -Wall -Werror=switch -I . -g"
+
 watch +WATCH_TARGET='build':
     watchexec -rc -w . -- just {{WATCH_TARGET}}
 
 build:
     mkdir -p bin build
-    re2c main.c -o build/main.c -i --case-ranges
-    gcc -std=c2x -o bin/farr build/main.c -Wall -I .
+    re2c lexer.c -o build/lexer.c -i --case-ranges
+    gcc {{CFLAGS}} -o bin/farr main.c build/lexer.c
 
 run: build
     bin/farr
