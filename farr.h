@@ -23,7 +23,7 @@ inline size_t str_size(const str_t* s) {
 
 // token
 typedef struct {
-  enum { T_ERROR, T_EOF, T_INT64 } tok;
+  enum { T_ERROR, T_EOF, T_INT64, T_PLUS } tok;
   str_t text;
 } token_t;
 

@@ -22,6 +22,8 @@ typedef struct {
   } data;
 } val_t;
 
+inline val_t val_int64(int64_t i) { return (val_t){.tag = INT64, .data.i64 = i}; }
+
 void val_print(val_t v) {
   switch (v.tag) {
     case INT64: {
@@ -47,6 +49,12 @@ void stack_push(stack_t* stack, val_t val) {
   stack->top++;
 }
 
+val_t stack_pop(stack_t* stack) {
+  assert(stack->top > 0);
+  stack->top--;
+  return stack->bottom[stack->top];
+}
+
 void stack_print(stack_t* stack) {
   if (stack->top == 0)
     return;
@@ -57,9 +65,21 @@ void stack_print(stack_t* stack) {
   }
 }
 
+val_t plus(val_t a, val_t b) {
+  switch (a.tag) {
+    case INT64: {
+      switch (b.tag) {
+        case INT64: {
+          return val_int64(a.data.i64 + b.data.i64);
+        }
+      }
+    }
+  }
+}
+
 void interpret_i64(stack_t* stack, const str_t str) {
   int64_t i = str_parse_int64(&str);
-  stack_push(stack, (val_t){INT64, .data.i64 = i});
+  stack_push(stack, val_int64(i));
 }
 
 void interpret(stack_t* stack, const char* s) {
@@ -69,11 +89,19 @@ void interpret(stack_t* stack, const char* s) {
       case T_EOF:
         return;
       case T_ERROR: {
-        printf("ERROR: unexpected token\n");
+        printf("ERROR: unexpected token: ");
+        str_print(&t.text);
+        printf("\n");
         break;
       }
       case T_INT64: {
         interpret_i64(stack, t.text);
+        break;
+      }
+      case T_PLUS: {
+        val_t b = stack_pop(stack);
+        val_t a = stack_pop(stack);
+        stack_push(stack, plus(a, b));
         break;
       }
     }

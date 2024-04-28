@@ -22,6 +22,7 @@ token_t next_token(const char** s) {
         eof { TOK(T_EOF); }
         number { TOK(T_INT64); }
         spaces { continue; }
+        [\+] { TOK(T_PLUS); }
         * { TOK(T_ERROR); }
     */
   }
