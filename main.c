@@ -22,7 +22,9 @@ typedef struct {
   } data;
 } val_t;
 
-inline val_t val_int64(int64_t i) { return (val_t){.tag = INT64, .data.i64 = i}; }
+inline val_t val_int64(int64_t i) {
+  return (val_t){.tag = INT64, .data.i64 = i};
+}
 
 void val_print(val_t v) {
   switch (v.tag) {
@@ -77,11 +79,6 @@ val_t plus(val_t a, val_t b) {
   }
 }
 
-void interpret_i64(stack_t* stack, const str_t str) {
-  int64_t i = str_parse_int64(&str);
-  stack_push(stack, val_int64(i));
-}
-
 void interpret(stack_t* stack, const char* s) {
   for (;;) {
     token_t t = next_token(&s);
@@ -95,7 +92,7 @@ void interpret(stack_t* stack, const char* s) {
         break;
       }
       case T_INT64: {
-        interpret_i64(stack, t.text);
+        stack_push(stack, val_int64(str_parse_int64(&t.text)));
         break;
       }
       case T_PLUS: {
