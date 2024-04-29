@@ -4,7 +4,7 @@ void str_print(const str_t* s) {
   for (int i = 0; i < str_size(s); i++) putc(*(s->b + i), stdout);
 }
 
-int64_t str_parse_int64(const str_t* s) {
+int64_t str_parse_i64(const str_t* s) {
   int64_t result = 0;
   for (int i = 0; i < str_size(s); i++) {
     result *= 10;
@@ -13,44 +13,33 @@ int64_t str_parse_int64(const str_t* s) {
   return result;
 }
 
-// value type, passed as value
-typedef struct {
-  enum { INT64 } tag;
-  union {
-    int64_t i64;
-  } data;
-} val_t;
+void array_print(array_t* arr) {
+  assert(arr->d == 0);  // todo
+  assert(arr->n == 1);  // todo
 
-inline val_t val_int64(int64_t i) {
-  return (val_t){.tag = INT64, .data.i64 = i};
-}
-
-void val_print(val_t v) {
-  switch (v.tag) {
-    case INT64: {
-      printf("%ld", v.data.i64);
-      break;
-    }
+  switch (arr->t) {
+    case T_I64: printf("%ld", *array_data_i64(arr)); break;
+    case T_F64: printf("%lf", *array_data_f64(arr)); break;
   }
 }
 
 typedef struct {
-  val_t* bottom;
+  array_t** bottom;
   size_t top;
   size_t size;
 } stack_t;
 
-void stack_push(stack_t* stack, val_t val) {
+void stack_push(stack_t* stack, array_t* a) {
   if (stack->top == stack->size) {
     size_t new_size = (stack->size + 1) * 2;
-    stack->bottom = reallocarray(stack->bottom, sizeof(val_t), new_size);
+    stack->bottom = reallocarray(stack->bottom, sizeof(array_t*), new_size);
     stack->size = new_size;
   }
-  stack->bottom[stack->top] = val;
+  stack->bottom[stack->top] = a;
   stack->top++;
 }
 
-val_t stack_pop(stack_t* stack) {
+array_t* stack_pop(stack_t* stack) {
   assert(stack->top > 0);
   stack->top--;
   return stack->bottom[stack->top];
@@ -60,20 +49,12 @@ void stack_print(stack_t* stack) {
   if (stack->top == 0) return;
   for (size_t i = 0; i < stack->top; i++) {
     if (i > 0) printf(" ");
-    val_print(stack->bottom[i]);
+    array_print(stack->bottom[i]);
   }
 }
 
-val_t plus(val_t a, val_t b) {
-  switch (a.tag) {
-    case INT64: {
-      switch (b.tag) {
-        case INT64: {
-          return val_int64(a.data.i64 + b.data.i64);
-        }
-      }
-    }
-  }
+array_t* plus(array_t* a, array_t* b) {
+  assert(false);  // todo
 }
 
 void interpret(stack_t* stack, const char* s) {
@@ -88,12 +69,12 @@ void interpret(stack_t* stack, const char* s) {
         break;
       }
       case TOK_INT64: {
-        stack_push(stack, val_int64(str_parse_int64(&t.text)));
+        stack_push(stack, atom_i64(str_parse_i64(&t.text)));
         break;
       }
       case TOK_PLUS: {
-        val_t b = stack_pop(stack);
-        val_t a = stack_pop(stack);
+        array_t* b = stack_pop(stack);
+        array_t* a = stack_pop(stack);
         stack_push(stack, plus(a, b));
         break;
       }

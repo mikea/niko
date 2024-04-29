@@ -6,3 +6,4 @@ AllowShortLoopsOnASingleLine: True
 AllowShortBlocksOnASingleLine: Always
 AllowShortCaseLabelsOnASingleLine: True
 AllowShortEnumsOnASingleLine: True
+ColumnLimit: 120

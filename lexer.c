@@ -3,11 +3,9 @@
 token_t next_token(const char** s) {
   const char* YYCURSOR = *s;
 
-#define TOK(typ)                                    \
-  *s = YYCURSOR;                                    \
-  return (token_t) {                                \
-    .tok = (typ), .text = str_new(yytext, YYCURSOR) \
-  }
+#define TOK(typ) \
+  *s = YYCURSOR; \
+  return (token_t) { .tok = (typ), .text = str_new(yytext, YYCURSOR) }
 
   for (;;) {
     const char* yytext = YYCURSOR;
