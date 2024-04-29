@@ -1,8 +1,7 @@
 #include "farr.h"
 
 void str_print(const str_t* s) {
-  for (int i = 0; i < str_size(s); i++)
-    putc(*(s->b + i), stdout);
+  for (int i = 0; i < str_size(s); i++) putc(*(s->b + i), stdout);
 }
 
 int64_t str_parse_int64(const str_t* s) {
@@ -58,11 +57,9 @@ val_t stack_pop(stack_t* stack) {
 }
 
 void stack_print(stack_t* stack) {
-  if (stack->top == 0)
-    return;
+  if (stack->top == 0) return;
   for (size_t i = 0; i < stack->top; i++) {
-    if (i > 0)
-      printf(" ");
+    if (i > 0) printf(" ");
     val_print(stack->bottom[i]);
   }
 }
@@ -83,19 +80,18 @@ void interpret(stack_t* stack, const char* s) {
   for (;;) {
     token_t t = next_token(&s);
     switch (t.tok) {
-      case T_EOF:
-        return;
-      case T_ERROR: {
+      case TOK_EOF: return;
+      case TOK_ERROR: {
         printf("ERROR: unexpected token: ");
         str_print(&t.text);
         printf("\n");
         break;
       }
-      case T_INT64: {
+      case TOK_INT64: {
         stack_push(stack, val_int64(str_parse_int64(&t.text)));
         break;
       }
-      case T_PLUS: {
+      case TOK_PLUS: {
         val_t b = stack_pop(stack);
         val_t a = stack_pop(stack);
         stack_push(stack, plus(a, b));
@@ -115,9 +111,7 @@ int main() {
     stack_print(&stack);
     printf(" > ");
     ssize_t read = getline(&input, &input_size, stdin);
-    if (read < 0) {
-      break;
-    }
+    if (read < 0) { break; }
     interpret(&stack, input);
   }
 

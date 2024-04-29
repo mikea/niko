@@ -19,11 +19,11 @@ token_t next_token(const char** s) {
         eof = [\x00\n];
         spaces = [ \t]+;
 
-        eof { TOK(T_EOF); }
-        number { TOK(T_INT64); }
+        eof { TOK(TOK_EOF); }
+        number { TOK(TOK_INT64); }
         spaces { continue; }
-        [\+] { TOK(T_PLUS); }
-        * { TOK(T_ERROR); }
+        [\+] { TOK(TOK_PLUS); }
+        * { TOK(TOK_ERROR); }
     */
   }
 #undef TOK
