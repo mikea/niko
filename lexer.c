@@ -14,14 +14,15 @@ token_t next_token(const char** s) {
         re2c:define:YYCTYPE = char;
 
         number = [1-9][0-9]*;
-        eof = [\x00\n];
-        spaces = [ \t]+;
+        eof = [\x00];
+        spaces = [ \t\n]+;
+        word = [^ ^\t^\n^\x00^1-9][^ \t\n\x00]*;
 
         eof { TOK(TOK_EOF); }
-        number { TOK(TOK_INT64); }
         spaces { continue; }
-        [\+] { TOK(TOK_PLUS); }
-        * { TOK(TOK_ERROR); }
+        number { TOK(TOK_INT64); }
+        word { TOK(TOK_WORD); }
+        * { TOK(TOK_ERR); }
     */
   }
 #undef TOK

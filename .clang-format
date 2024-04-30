@@ -1,9 +1,9 @@
 ---
 BasedOnStyle: Chromium
-AllowShortIfStatementsOnASingleLine: AllIfsAndElse
-AllowShortFunctionsOnASingleLine: All
-AllowShortLoopsOnASingleLine: True
 AllowShortBlocksOnASingleLine: Always
 AllowShortCaseLabelsOnASingleLine: True
 AllowShortEnumsOnASingleLine: True
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: True
 ColumnLimit: 120

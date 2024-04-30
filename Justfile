@@ -8,7 +8,7 @@ watch +WATCH_TARGET='build':
 build:
     mkdir -p bin build
     re2c lexer.c -o build/lexer.c -i --case-ranges
-    gcc {{CFLAGS}} -o bin/farr main.c build/lexer.c
+    gcc {{CFLAGS}} -o bin/farr main.c build/lexer.c print.c
 
 run: build
     bin/farr
