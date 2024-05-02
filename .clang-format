@@ -7,3 +7,4 @@ AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: AllIfsAndElse
 AllowShortLoopsOnASingleLine: True
 ColumnLimit: 120
+RemoveBracesLLVM: True
