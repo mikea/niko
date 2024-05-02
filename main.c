@@ -25,15 +25,21 @@ STATUS_T w_binop(stack_t* stack,
   type_t t = type_table[a->t][b->t];
   if (a->n == b->n) {
     array_t* y = array_alloc(t, a->n, array_shape(a));
-    op_table[a->t][b->t](a->n, array_mut_data(y), array_data(a), array_data(b));
+    binop_t op = op_table[a->t][b->t];
+    if (op == NULL) return status_errf("unsupported types");
+    op(a->n, array_mut_data(y), array_data(a), array_data(b));
     stack_push(stack, y);
   } else if (is_atom(a)) {
     array_t* y = array_alloc(t, b->n, array_shape(b));
-    scalar_table[a->t][b->t](b->n, array_mut_data(y), array_data(b), array_data(a));
+    binop_t op = scalar_table[a->t][b->t];
+    if (op == NULL) return status_errf("unsupported types");
+    op(b->n, array_mut_data(y), array_data(b), array_data(a));
     stack_push(stack, y);
   } else if (is_atom(b)) {
     array_t* y = array_alloc(t, a->n, array_shape(a));
-    scalar_table[a->t][b->t](a->n, array_mut_data(y), array_data(a), array_data(b));
+    binop_t op = scalar_table[a->t][b->t];
+    if (op == NULL) return status_errf("unsupported types");
+    op(a->n, array_mut_data(y), array_data(a), array_data(b));
     stack_push(stack, y);
   } else {
     assert(false);  // todo: return error
@@ -50,21 +56,24 @@ STATUS_T w_binop(stack_t* stack,
     DO(i, n) y[i] = (expr);                                                                           \
   }
 
-#define GEN_BINOP(name, op)                                                                                   \
-  GEN_BINOP_LOOP(name##_ai64_ai64, i64, i64, i64, (a[i])op(b[i]))                                             \
-  GEN_BINOP_LOOP(name##_ai64_af64, f64, i64, f64, (a[i])op(b[i]))                                             \
-  GEN_BINOP_LOOP(name##_af64_ai64, f64, f64, i64, (a[i])op(b[i]))                                             \
-  GEN_BINOP_LOOP(name##_af64_af64, f64, f64, f64, (a[i])op(b[i]))                                             \
-  GEN_BINOP_LOOP(name##_ai64_i64, i64, i64, i64, (a[i])op(*b))                                                \
-  GEN_BINOP_LOOP(name##_ai64_f64, i64, i64, f64, (a[i])op(*b))                                                \
-  GEN_BINOP_LOOP(name##_af64_i64, i64, f64, i64, (a[i])op(*b))                                                \
-  GEN_BINOP_LOOP(name##_af64_f64, f64, f64, f64, (a[i])op(*b))                                                \
-  binop_t name##_table[T_MAX][T_MAX] = TYPE_ROW(/* i64 */ TYPE_ROW(name##_ai64_ai64, name##_ai64_af64),       \
-                                                /* f64 */ TYPE_ROW(name##_af64_ai64, name##_af64_af64));      \
-  binop_t name##_scalar_table[T_MAX][T_MAX] = TYPE_ROW(/* i64 */ TYPE_ROW(name##_ai64_i64, name##_ai64_f64),  \
-                                                       /* f64 */ TYPE_ROW(name##_af64_i64, name##_af64_f64)); \
-  type_t name##_type_table[T_MAX][T_MAX] =                                                                    \
-      TYPE_ROW(/* i64 */ TYPE_ROW(T_I64, T_F64), /* f64 */ TYPE_ROW(T_F64, T_F64));                           \
+#define GEN_BINOP(name, op)                                                                                            \
+  GEN_BINOP_LOOP(name##_ai64_ai64, i64, i64, i64, (a[i])op(b[i]))                                                      \
+  GEN_BINOP_LOOP(name##_ai64_af64, f64, i64, f64, (a[i])op(b[i]))                                                      \
+  GEN_BINOP_LOOP(name##_af64_ai64, f64, f64, i64, (a[i])op(b[i]))                                                      \
+  GEN_BINOP_LOOP(name##_af64_af64, f64, f64, f64, (a[i])op(b[i]))                                                      \
+  GEN_BINOP_LOOP(name##_ai64_i64, i64, i64, i64, (a[i])op(*b))                                                         \
+  GEN_BINOP_LOOP(name##_ai64_f64, i64, i64, f64, (a[i])op(*b))                                                         \
+  GEN_BINOP_LOOP(name##_af64_i64, i64, f64, i64, (a[i])op(*b))                                                         \
+  GEN_BINOP_LOOP(name##_af64_f64, f64, f64, f64, (a[i])op(*b))                                                         \
+  binop_t name##_table[T_MAX][T_MAX] = TYPE_ROW(                                                                       \
+      /* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL), /* i64 */ TYPE_ROW(NULL, name##_ai64_ai64, name##_ai64_af64, NULL),   \
+      /* f64 */ TYPE_ROW(NULL, name##_af64_ai64, name##_af64_af64, NULL), /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL)); \
+  binop_t name##_scalar_table[T_MAX][T_MAX] = TYPE_ROW(                                                                \
+      /* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL), /* i64 */ TYPE_ROW(NULL, name##_ai64_i64, name##_ai64_f64, NULL),     \
+      /* f64 */ TYPE_ROW(NULL, name##_af64_i64, name##_af64_f64, NULL), /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL));   \
+  type_t name##_type_table[T_MAX][T_MAX] =                                                                             \
+      TYPE_ROW(/* c8 */ TYPE_ROW(T_C8, T_C8, T_C8, T_C8), /* i64 */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR),               \
+               /* f64 */ TYPE_ROW(T_C8, T_F64, T_F64, T_ARR), /* arr */ TYPE_ROW(T_ARR, T_ARR, T_ARR, T_ARR));         \
   STATUS_T w_##name(stack_t* stack) { return w_binop(stack, name##_type_table, name##_table, name##_scalar_table); }
 
 GEN_BINOP(plus, +)
@@ -107,29 +116,34 @@ STATUS_T concatenate(stack_t* stack, size_t len) {
     stack_push(stack, array_alloc(T_I64, 0, shape_1d(&len)));
     return status_ok();
   }
-  bool all_common_shape = true;
+  bool all_common = true;
   const shape_t common_shape = array_shape(stack_peek(stack));
   const type_t t = stack_peek(stack)->t;
   DO(i, len) {
     array_t* e = stack_i(stack, i);
-    assert(e->t == t);  // not implemented
-    all_common_shape &= shape_eq(common_shape, array_shape(e));
+    all_common &= e->t == t;
+    all_common &= shape_eq(common_shape, array_shape(e));
   }
-  assert(all_common_shape);  // not implemented
-  own(shape_t) new_shape = shape_extend(common_shape, len);
-  array_t* a = array_alloc(t, shape_len(*new_shape), *new_shape);
-  size_t stride = type_sizeof(t, shape_len(common_shape));
-  assert(array_data_sizeof(a) == stride * len);
-  DO(i, len) {
-    array_t* e = stack_i(stack, len - i - 1);
-    assert(array_data_sizeof(e) == stride);
-    memcpy(array_mut_data(a) + i * stride, array_data(e), stride);
+
+  array_t* a;
+  if (!all_common) {
+    a = array_alloc(T_ARR, len, shape_1d(&len));
+    DO(i, len) { ((array_t**)array_mut_data(a))[i] = array_inc_ref(stack_i(stack, len - i - 1)); }
+  } else {
+    own(shape_t) new_shape = shape_extend(common_shape, len);
+    a = array_alloc(t, shape_len(*new_shape), *new_shape);
+    size_t stride = type_sizeof(t, shape_len(common_shape));
+    assert(array_data_sizeof(a) == stride * len);
+    DO(i, len) {
+      array_t* e = stack_i(stack, len - i - 1);
+      assert(array_data_sizeof(e) == stride);
+      memcpy(array_mut_data(a) + i * stride, array_data(e), stride);
+    }
   }
   DO(i, len) stack_drop(stack);
   stack_push(stack, a);
   return status_ok();
 }
-
 
 // interpreter
 
@@ -215,9 +229,9 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
       return status_ok();
     }
     case TOK_ARR_CLOSE: {
-      assert(inter->arr_level); // todo: report error
+      assert(inter->arr_level);  // todo: report error
       size_t mark = inter->arr_marks[--inter->arr_level];
-      assert(inter->stack->l >= mark); // todo: report error
+      assert(inter->stack->l >= mark);  // todo: report error
       return concatenate(inter->stack, inter->stack->l - mark);
     }
     case TOK_WORD: return interpreter_word(inter, t.text);
@@ -227,6 +241,11 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
     }
     case TOK_F64: {
       stack_push(inter->stack, atom_f64(str_parse_f64(t.text)));
+      return status_ok();
+    }
+    case TOK_STR: {
+      size_t l = t.text.l - 2;
+      stack_push(inter->stack, array_new(T_C8, l, shape_1d(&l), t.text.p + 1));
       return status_ok();
     }
   }
@@ -301,9 +320,9 @@ STATUS_T test(const char* fname, bool v) {
       fclose(fout);
 
       if (status_is_err(result)) {
+        free(out);
         str_t msg = status_msg(result);
-        fprintf(stderr, "ERROR %s:%ld : '%pS'\n", fname, line_no, &msg);
-        continue;
+        out_size = asprintf(&out, "ERROR: %pS\n", &msg);
       }
       rest_out = out;
       continue;

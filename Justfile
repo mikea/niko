@@ -1,7 +1,7 @@
 alias w := watch
 
 COMMON_CFLAGS := "-std=gnu2x -Wall -Werror=implicit-fallthrough -Werror=switch -I . "
-DEBUG_CFLAGS := COMMON_CFLAGS + "-g -fno-inline-small-functions"
+DEBUG_CFLAGS := COMMON_CFLAGS + "-g -fno-inline-small-functions -Og"
 RELEASE_CFLAGS := COMMON_CFLAGS + "-O3"
 
 watch +WATCH_TARGET='build':

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 typedef int64_t i64;
 typedef double f64;
@@ -136,6 +137,7 @@ typedef struct {
     TOK_WORD,
     TOK_ARR_OPEN,
     TOK_ARR_CLOSE,
+    TOK_STR,
   } tok;
   str_t text;
 } token_t;
@@ -143,11 +145,11 @@ typedef struct {
 token_t next_token(const char** s);
 
 // type
-typedef enum { T_I64, T_F64 } type_t;
-#define T_MAX (T_F64 + 1)
-#define TYPE_ROW(v_i64, v_f64) \
-  { v_i64, v_f64 }
-static size_t type_sizeof_table[T_MAX] = TYPE_ROW(sizeof(i64), sizeof(f64));
+typedef enum { T_C8, T_I64, T_F64, T_ARR } type_t;
+#define T_MAX (T_ARR + 1)
+#define TYPE_ROW(v_c8, v_i64, v_f64, v_arr) \
+  { v_c8, v_i64, v_f64, v_arr }
+static size_t type_sizeof_table[T_MAX] = TYPE_ROW(sizeof(uint8_t), sizeof(i64), sizeof(f64), sizeof(void*));
 INLINE size_t type_sizeof(type_t t, size_t n) { return n * type_sizeof_table[t]; }
 
 // shape

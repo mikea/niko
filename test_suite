@@ -28,6 +28,16 @@
 1e+30
 > 1e-30 .
 1e-30
+# strings
+> "" .
+""
+> "abc" .
+"abc"
+> "this is test" .
+"this is test"
+> "abc" shape . "this is test" shape .
+[ 3 ]
+[ 12 ]
 ## arrays
 > [ ] .
 [ ]
@@ -41,9 +51,15 @@
 [ 1. 2. ]
 > [ [ 1. 2. 3. ] [ 4. 5. 6. ] ] shape .
 [ 2 3 ]
-# todo:
-# > [ [ 1. 2. 3. ] [ 4 5 6 ] ] shape .
-# [ 2 3 ]
+> [ "abc" "def" ] dup . shape .
+[ "abc" "def" ]
+[ 2 3 ]
+> [ "" "1" "12" "123" ] dup . shape .
+[ "" "1" "12" "123" ]
+[ 4 ]
+> [ [ 1. 2. 3. ] [ 4 5 6 ] ] dup . shape .
+[ [ 1. 2. 3. ] [ 4 5 6 ] ]
+[ 2 ]
 ## stack manipulation
 # dup
 > 1 dup . .
@@ -113,6 +129,8 @@
 3.
 > 1. 2 + .
 3.
+> "abc" 2 +
+ERROR: unsupported types
 # *
 > 312 45 * .
 14040

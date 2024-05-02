@@ -19,13 +19,23 @@ size_t print_ptr(FILE* f, type_t t, const void* ptr) {
       if (strchr(s, '.') || strchr(s, 'e')) return fprintf(f, "%s", s);
       else return fprintf(f, "%s.", s);
     }
+    case T_C8: UNREACHABLE;
+    case T_ARR: return fprintf(f, "%pA", *(array_t**)ptr);
   }
   UNREACHABLE;
 }
 
 size_t print_array_impl(FILE* f, type_t t, shape_t s, const void* x) {
   if (s.r == 0) return print_ptr(f, t, x);
-  size_t c = fprintf(f, "[ ");
+  size_t c = 0;
+  if (s.r == 1 && t == T_C8) {
+    c += fprintf(f, "\"");
+    DO(i, *s.d) putc(((const char*)x)[i], f);
+    c += *s.d;
+    c += fprintf(f, "\"");
+    return c;
+  }
+  c += fprintf(f, "[ ");
   shape_t sub_shape = (shape_t){s.r - 1, s.d + 1};
   size_t stride = type_sizeof(t, shape_len(sub_shape));
   DO(i, *s.d) {
