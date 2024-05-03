@@ -11,7 +11,38 @@ double str_parse_f64(const str_t s) {
   return strtod(c, NULL);
 }
 
+// dictionary
+typedef STATUS_T(word_t)(stack_t* s);
+
+typedef struct {
+  string_t n;
+  word_t* w;
+} dict_entry_t;
+
+GEN_VECTOR(entry_vector, dict_entry_t);
+
+entry_vector_t global_dict;
+
 // builtins
+
+#define DEF_WORD(w, n)                                                                                            \
+  STATUS_T w_##n(stack_t* stack);                                                                                 \
+  CONSTRUCTOR void w_##n##_register() { entry_vector_add(&global_dict, (dict_entry_t){string_newf(#w), w_##n}); } \
+  STATUS_T w_##n(stack_t* stack)
+
+#define DEF_WORD1(w, n)                   \
+  RESULT_T n##_impl(const array_t* x);    \
+  DEF_WORD(w, n) {                        \
+    own(array_t) x = stack_pop(stack);    \
+    result_t result = n##_impl(x);        \
+    if (result.ok) {                      \
+      stack_push(stack, result.either.a); \
+      return status_ok();                 \
+    } else {                              \
+      return status_err(result.either.e); \
+    }                                     \
+  }                                       \
+  RESULT_T n##_impl(const array_t* x)
 
 typedef void (*binop_t)(size_t n, void* restrict y, const void* restrict a, const void* restrict b);
 
@@ -23,28 +54,29 @@ STATUS_T w_binop(stack_t* stack,
   own(array_t) a = stack_pop(stack);
 
   type_t t = type_table[a->t][b->t];
+
+  array_t* y;
+
   if (a->n == b->n) {
-    array_t* y = array_alloc(t, a->n, array_shape(a));
+    y = array_alloc(t, a->n, array_shape(a));
     binop_t op = op_table[a->t][b->t];
     if (op == NULL) return status_errf("unsupported types");
     op(a->n, array_mut_data(y), array_data(a), array_data(b));
-    stack_push(stack, y);
   } else if (is_atom(a)) {
-    array_t* y = array_alloc(t, b->n, array_shape(b));
-    binop_t op = scalar_table[a->t][b->t];
+    y = array_alloc(t, b->n, array_shape(b));
+    binop_t op = scalar_table[b->t][a->t];
     if (op == NULL) return status_errf("unsupported types");
     op(b->n, array_mut_data(y), array_data(b), array_data(a));
-    stack_push(stack, y);
   } else if (is_atom(b)) {
-    array_t* y = array_alloc(t, a->n, array_shape(a));
+    y = array_alloc(t, a->n, array_shape(a));
     binop_t op = scalar_table[a->t][b->t];
     if (op == NULL) return status_errf("unsupported types");
     op(a->n, array_mut_data(y), array_data(a), array_data(b));
-    stack_push(stack, y);
   } else {
     assert(false);  // todo: return error
   }
 
+  stack_push(stack, y);
   return status_ok();
 }
 
@@ -56,32 +88,35 @@ STATUS_T w_binop(stack_t* stack,
     DO(i, n) y[i] = (expr);                                                                           \
   }
 
-#define GEN_BINOP(name, op)                                                                                            \
-  GEN_BINOP_LOOP(name##_ai64_ai64, i64, i64, i64, (a[i])op(b[i]))                                                      \
-  GEN_BINOP_LOOP(name##_ai64_af64, f64, i64, f64, (a[i])op(b[i]))                                                      \
-  GEN_BINOP_LOOP(name##_af64_ai64, f64, f64, i64, (a[i])op(b[i]))                                                      \
-  GEN_BINOP_LOOP(name##_af64_af64, f64, f64, f64, (a[i])op(b[i]))                                                      \
-  GEN_BINOP_LOOP(name##_ai64_i64, i64, i64, i64, (a[i])op(*b))                                                         \
-  GEN_BINOP_LOOP(name##_ai64_f64, i64, i64, f64, (a[i])op(*b))                                                         \
-  GEN_BINOP_LOOP(name##_af64_i64, i64, f64, i64, (a[i])op(*b))                                                         \
-  GEN_BINOP_LOOP(name##_af64_f64, f64, f64, f64, (a[i])op(*b))                                                         \
-  binop_t name##_table[T_MAX][T_MAX] = TYPE_ROW(                                                                       \
-      /* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL), /* i64 */ TYPE_ROW(NULL, name##_ai64_ai64, name##_ai64_af64, NULL),   \
-      /* f64 */ TYPE_ROW(NULL, name##_af64_ai64, name##_af64_af64, NULL), /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL)); \
-  binop_t name##_scalar_table[T_MAX][T_MAX] = TYPE_ROW(                                                                \
-      /* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL), /* i64 */ TYPE_ROW(NULL, name##_ai64_i64, name##_ai64_f64, NULL),     \
-      /* f64 */ TYPE_ROW(NULL, name##_af64_i64, name##_af64_f64, NULL), /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL));   \
-  type_t name##_type_table[T_MAX][T_MAX] =                                                                             \
-      TYPE_ROW(/* c8 */ TYPE_ROW(T_C8, T_C8, T_C8, T_C8), /* i64 */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR),               \
-               /* f64 */ TYPE_ROW(T_C8, T_F64, T_F64, T_ARR), /* arr */ TYPE_ROW(T_ARR, T_ARR, T_ARR, T_ARR));         \
-  STATUS_T w_##name(stack_t* stack) { return w_binop(stack, name##_type_table, name##_table, name##_scalar_table); }
+#define GEN_BINOP(word, name, op)                                                                                  \
+  GEN_BINOP_LOOP(name##_i64_i64, i64, i64, i64, (a[i])op(b[i]))                                                    \
+  GEN_BINOP_LOOP(name##_i64_f64, f64, i64, f64, (a[i])op(b[i]))                                                    \
+  GEN_BINOP_LOOP(name##_f64_i64, f64, f64, i64, (a[i])op(b[i]))                                                    \
+  GEN_BINOP_LOOP(name##_f64_f64, f64, f64, f64, (a[i])op(b[i]))                                                    \
+  GEN_BINOP_LOOP(name##_scalar_i64_i64, i64, i64, i64, (a[i])op(b[0]))                                             \
+  GEN_BINOP_LOOP(name##_scalar_i64_f64, f64, i64, f64, (a[i])op(b[0]))                                             \
+  GEN_BINOP_LOOP(name##_scalar_f64_i64, f64, f64, i64, (a[i])op(b[0]))                                             \
+  GEN_BINOP_LOOP(name##_scalar_f64_f64, f64, f64, f64, (a[i])op(b[0]))                                             \
+  binop_t name##_table[T_MAX][T_MAX] = TYPE_ROW(                                                                   \
+      /* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL), /* i64 */ TYPE_ROW(NULL, name##_i64_i64, name##_i64_f64, NULL),   \
+      /* f64 */ TYPE_ROW(NULL, name##_f64_i64, name##_f64_f64, NULL), /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL)); \
+  binop_t name##_scalar_table[T_MAX][T_MAX] =                                                                      \
+      TYPE_ROW(/* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL),                                                          \
+               /* i64 */ TYPE_ROW(NULL, name##_scalar_i64_i64, name##_scalar_i64_f64, NULL),                       \
+               /* f64 */ TYPE_ROW(NULL, name##_scalar_f64_i64, name##_scalar_f64_f64, NULL),                       \
+               /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL));                                                        \
+  type_t name##_type_table[T_MAX][T_MAX] =                                                                         \
+      TYPE_ROW(/* c8 */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR), /* i64 */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR),        \
+               /* f64 */ TYPE_ROW(T_C8, T_F64, T_F64, T_ARR), /* arr */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR));      \
+  DEF_WORD(word, name) { return w_binop(stack, name##_type_table, name##_table, name##_scalar_table); }
 
-GEN_BINOP(plus, +)
-GEN_BINOP(mul, *)
+GEN_BINOP(+, plus, +)
+GEN_BINOP(*, mul, *)
+GEN_BINOP(-, minus, -)
+GEN_BINOP(/, div, /)
 
-RESULT_T w_shape(const array_t* x) { return result_ok(array_new(T_I64, x->r, shape_1d(&x->r), array_dims(x))); }
-
-RESULT_T w_len(const array_t* x) { return result_ok(atom_i64(x->n)); }
+DEF_WORD1(shape, shape) { return result_ok(array_new(T_I64, x->r, shape_1d(&x->r), array_dims(x))); }
+DEF_WORD1(len, len) { return result_ok(atom_i64(x->n)); }
 
 shape_t create_shape(const array_t* x) {
   assert(x->r <= 1);      // todo: report error
@@ -90,21 +125,21 @@ shape_t create_shape(const array_t* x) {
   return shape_create(x->n, array_data(x));
 }
 
-RESULT_T w_zeros(array_t* x) {
+DEF_WORD1(zeros, zeros) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
   DO(i, y->n) array_mut_data_i64(y)[i] = 0;
   return result_ok(y);
 }
 
-RESULT_T w_ones(array_t* x) {
+DEF_WORD1(ones, ones){
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
   DO(i, y->n) array_mut_data_i64(y)[i] = 1;
   return result_ok(y);
 }
 
-RESULT_T w_index(array_t* x) {
+DEF_WORD1(index, index) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
   DO(i, y->n) array_mut_data_i64(y)[i] = i;
@@ -148,6 +183,7 @@ STATUS_T concatenate(stack_t* stack, size_t len) {
 // interpreter
 
 typedef struct {
+  entry_vector_t dict;
   stack_t* stack;
   size_t arr_level;
   size_t arr_marks[256];
@@ -155,10 +191,11 @@ typedef struct {
 } interpreter_t;
 
 interpreter_t* interpreter_new() {
-  interpreter_t* i = calloc(1, sizeof(interpreter_t));
-  i->stack = stack_new();
-  i->out = stdout;
-  return i;
+  interpreter_t* inter = calloc(1, sizeof(interpreter_t));
+  inter->stack = stack_new();
+  inter->out = stdout;
+  DO(i, global_dict.l) entry_vector_add(&inter->dict, global_dict.d[i]);
+  return inter;
 }
 void interpreter_free(interpreter_t* i) {
   stack_free(i->stack);
@@ -166,35 +203,13 @@ void interpreter_free(interpreter_t* i) {
 }
 DEF_CLEANUP(interpreter_t, interpreter_free);
 
-#define CALL1(fn)                         \
-  {                                       \
-    own(array_t) x = stack_pop(stack);    \
-    result_t result = fn(x);              \
-    if (result.ok) {                      \
-      stack_push(stack, result.either.a); \
-      return status_ok();                 \
-    } else {                              \
-      return status_err(result.either.e); \
-    }                                     \
-  }
-
 STATUS_T interpreter_word(interpreter_t* inter, const str_t w) {
   stack_t* stack = inter->stack;
 
-  if (str_eqc(w, "+")) {
-    return w_plus(stack);
-  } else if (str_eqc(w, "*")) {
+  DO(i, inter->dict.l) if (str_eq(w, string_as_str(inter->dict.d[i].n))) { return inter->dict.d[i].w(stack); }
+
+  if (str_eqc(w, "*")) {
     return w_mul(stack);
-  } else if (str_eqc(w, "shape")) {
-    CALL1(w_shape);
-  } else if (str_eqc(w, "len")) {
-    CALL1(w_len);
-  } else if (str_eqc(w, "index")) {
-    CALL1(w_index);
-  } else if (str_eqc(w, "zeros")) {
-    CALL1(w_zeros);
-  } else if (str_eqc(w, "ones")) {
-    CALL1(w_ones);
   } else if (str_eqc(w, "dup")) {
     stack_push(stack, array_inc_ref(stack_peek(stack)));
   } else if (str_eqc(w, "drop")) {
@@ -308,11 +323,13 @@ STATUS_T test(const char* fname, bool v) {
   while ((read = getline(&line, &len, file)) != -1) {
     line_no++;
     if (read == 0 || *line == '#') continue;
+
     if (*line == '>') {
       if (v) fprintf(stderr, "%s", line);
       if (rest_out && *rest_out) fprintf(stderr, "ERROR %s:%ld : umatched output: '%s'\n", fname, in_line_no, rest_out);
       if (out) free(out);
       in_line_no = line_no;
+      stack_clear(inter->stack);
       FILE* fout = open_memstream(&out, &out_size);
       inter->out = fout;
       status_t result = interpreter_line(inter, line + 1);

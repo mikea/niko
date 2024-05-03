@@ -9,50 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
-typedef int64_t i64;
-typedef double f64;
-static_assert(sizeof(f64) == sizeof(i64));
-
-#define INLINE static inline
-#define ATTR(attr) __attribute__((attr))
-#define CLEANUP(func) ATTR(cleanup(func))
-#define WARN_UNUSED ATTR(warn_unused_result)
-#define CONSTRUCTOR ATTR(constructor)
-#define PRINTF(i, j) ATTR(format(printf, i, j))
-
-#define UNREACHABLE __builtin_unreachable()
-#define NOT_IMPLEMENTED \
-  assert(false);        \
-  abort();
-#define DO(v, l) for (size_t v = 0; v < l; v++)
-#define DBG(...)                                 \
-  fprintf(stderr, "%s:%d ", __FILE__, __LINE__); \
-  fprintf(stderr, __VA_ARGS__);                  \
-  fprintf(stderr, "\n");
-
-#define VA_ARGS_FWD(last, call)   \
-  ({                              \
-    va_list args;                 \
-    va_start(args, last);         \
-    typeof(call) __result = call; \
-    va_end(args);                 \
-    __result;                     \
-  })
-
-// memory management
-
-#define DEF_CLEANUP(t, free_fn)    \
-  INLINE void t##_cleanup(t** p) { \
-    free_fn(*p);                   \
-    *p = NULL;                     \
-  }
-
-DEF_CLEANUP(char, free);
-DEF_CLEANUP(FILE, fclose);
-
-#define own(t) CLEANUP(t##_cleanup) t*
+#include "common.h"
 
 // unowned string
 typedef struct {
@@ -258,8 +216,12 @@ typedef struct {
 } stack_t;
 
 INLINE stack_t* stack_new() { return calloc(1, sizeof(stack_t)); }
-INLINE void stack_free(stack_t* s) {
+INLINE void stack_clear(stack_t* s) {
   DO(i, s->l) array_dec_ref(s->bottom[i]);
+  s->l = 0;
+}
+INLINE void stack_free(stack_t* s) {
+  stack_clear(s);
   free(s->bottom);
   free(s);
 }
