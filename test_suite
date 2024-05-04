@@ -103,7 +103,10 @@
 # len
 > 10 zeros len .
 10
-## arithmetics
+## unary words
+> 1 neg .
+-1
+## binary words
 # +
 > 1 2 + .
 3

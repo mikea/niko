@@ -5,7 +5,7 @@
 entry_vector_t global_dict;
 
 DESTRUCTOR void global_dict_free() {
-  DO(i, global_dict.l) string_free(global_dict.d[i].n);
+  DO(i, global_dict.l) string_free(global_dict.d[i].k);
   free(global_dict.d);
 }
 
@@ -61,9 +61,20 @@ void interpreter_free(interpreter_t* inter) {
 }
 DEF_CLEANUP(interpreter_t, interpreter_free);
 
+STATUS_T interpter_word_impl(interpreter_t* inter, array_t* a) {
+  switch (a->t) {
+    case T_FFI: {
+      assert(a->r == 0);  // not implemented
+      t_ffi f = *(t_ffi*)array_data(a);
+      return f(inter, inter->stack);
+    }
+    default: R_ERRF("unexpected type: %d", a->t);
+  }
+}
+
 STATUS_T interpreter_word(interpreter_t* inter, const str_t w) {
-  DO(i, inter->dict.l) if (str_eq(w, string_as_str(inter->dict.d[i].n))) {
-    return inter->dict.d[i].w(inter, inter->stack);
+  DO(i, inter->dict.l) if (str_eq(w, string_as_str(inter->dict.d[i].k))) {
+    return interpter_word_impl(inter, inter->dict.d[i].v);
   }
   return status_errf("unknown word '%pS'", &w);
 }
@@ -85,11 +96,11 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
     }
     case TOK_WORD: return interpreter_word(inter, t.text);
     case TOK_I64: {
-      stack_push(inter->stack, atom_i64(t.val.i));
+      stack_push(inter->stack, atom_t_i64(t.val.i));
       R_OK;
     }
     case TOK_F64: {
-      stack_push(inter->stack, atom_f64(t.val.d));
+      stack_push(inter->stack, atom_t_f64(t.val.d));
       R_OK;
     }
     case TOK_STR: {
@@ -105,7 +116,7 @@ STATUS_T interpreter_line(interpreter_t* inter, const char* s) {
   for (;;) {
     token_t t = next_token(&s);
     if (t.tok == TOK_EOF) R_OK;
-    R_ERR(interpreter_token(inter, t));
+    R_IF_ERR(interpreter_token(inter, t));
   }
   R_OK;
 }

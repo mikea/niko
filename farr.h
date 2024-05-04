@@ -83,8 +83,9 @@ INLINE void status_print_error(status_t s) {
 }
 
 #define R_OK return status_ok()
+#define R_ERRF(...) return status_errf(__VA_ARGS__)
 
-#define R_ERR(expr)                                   \
+#define R_IF_ERR(expr)                                   \
   do {                                                \
     status_t __status__ = (expr);                     \
     if (status_is_err(__status__)) return __status__; \
@@ -113,9 +114,8 @@ typedef struct {
 token_t next_token(const char** s);
 
 // type
-struct array_t;
-typedef enum { T_C8, T_I64, T_F64, T_ARR } type_t;
-#define T_MAX (T_ARR + 1)
+typedef enum { T_C8, T_I64, T_F64, T_ARR, T_FFI } type_t;
+#define T_MAX (T_FFI + 1)
 
 typedef char t_c8;
 #define t_c8_enum T_C8
@@ -126,17 +126,27 @@ typedef int64_t t_i64;
 typedef double t_f64;
 #define t_f64_enum T_F64
 
+struct array_t;
 typedef struct array_t* t_arr;
 #define t_arr_enum T_ARR
 
+struct interpreter_t;
+struct stack_t;
+typedef STATUS_T (*t_ffi)(struct interpreter_t* inter, struct stack_t* s);
+#define t_ffi_enum T_FFI
+
 #define TYPE_ENUM(t) t##_enum
 
-#define TYPE_ROW(v_c8, v_i64, v_f64, v_arr) \
-  { v_c8, v_i64, v_f64, v_arr }
+#define TYPE_FOREACH(f) f(t_c8) f(t_i64) f(t_f64) f(t_arr) f(t_ffi)
 
-#define TYPE_EACH(f) TYPE_ROW(f(t_c8), f(t_i64), f(t_f64), f(t_arr))
+#define TYPE_ROW(v_c8, v_i64, v_f64, v_arr, v_ffi) \
+  { v_c8, v_i64, v_f64, v_arr, v_ffi }
 
-static size_t type_sizeof_table[T_MAX] = TYPE_EACH(sizeof);
+#define TYPE_ROW_FOREACH(f) TYPE_ROW(f(t_c8), f(t_i64), f(t_f64), f(t_arr), f(t_ffi))
+
+#define TYPE_ROW_ID TYPE_ROW(T_C8, T_I64, T_F64, T_ARR, T_FFI)
+
+static size_t type_sizeof_table[T_MAX] = TYPE_ROW_FOREACH(sizeof);
 INLINE size_t type_sizeof(type_t t, size_t n) { return n * type_sizeof_table[t]; }
 
 // shape
@@ -222,8 +232,10 @@ INLINE array_t* array_new(type_t t, size_t n, shape_t s, const void* x) {
   return a;
 }
 INLINE bool is_atom(const array_t* a) { return a->r == 0 && a->n == 1; }
-INLINE array_t* atom_i64(i64 i) { return array_new(T_I64, 1, shape_atom(), &i); }
-INLINE array_t* atom_f64(f64 f) { return array_new(T_F64, 1, shape_atom(), &f); }
+
+#define __DEF_ATOM(t) \
+  INLINE array_t* atom_##t(t v) { return array_new(TYPE_ENUM(t), 1, shape_atom(), &v); }
+TYPE_FOREACH(__DEF_ATOM)
 
 // result
 typedef struct {
@@ -238,11 +250,12 @@ INLINE result_t result_ok(array_t* a) { return (result_t){.ok = true, .either.a 
 
 // stack
 
-typedef struct {
+typedef struct stack_t stack_t;
+struct stack_t {
   array_t** bottom;
   size_t l;
   size_t size;
-} stack_t;
+};
 
 INLINE stack_t* stack_new() { return calloc(1, sizeof(stack_t)); }
 INLINE void stack_clear(stack_t* s) {
@@ -284,12 +297,9 @@ INLINE void stack_print(stack_t* stack) {
 
 // dictionary
 
-struct interpreter_t;
-typedef STATUS_T(word_t)(struct interpreter_t* inter, stack_t* s);
-
 typedef struct {
-  string_t n;
-  word_t* w;
+  string_t k;
+  array_t* v;
 } dict_entry_t;
 
 GEN_VECTOR(entry_vector, dict_entry_t);
@@ -308,9 +318,11 @@ typedef struct interpreter_t interpreter_t;
 
 // words
 
-#define DEF_WORD(w, n)                                                                                           \
-  STATUS_T w_##n(interpreter_t* inter, stack_t* stack);                                                          \
-  CONSTRUCTOR void w_##n##_register() { entry_vector_add(&global_dict, (dict_entry_t){string_newf(w), w_##n}); } \
+#define DEF_WORD(w, n)                                                                 \
+  STATUS_T w_##n(interpreter_t* inter, stack_t* stack);                                \
+  CONSTRUCTOR void w_##n##_register() {                                                \
+    entry_vector_add(&global_dict, (dict_entry_t){string_newf(w), atom_t_ffi(w_##n)}); \
+  }                                                                                    \
   STATUS_T w_##n(interpreter_t* inter, stack_t* stack)
 
 #define DEF_WORD1(w, n)                   \

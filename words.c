@@ -1,39 +1,43 @@
 #include "farr.h"
 
-typedef void (*binop_t)(size_t n, const void* restrict a, const void* restrict b, void* restrict y);
+RESULT_T w_unop(const array_t* a) { assert(false); }
+
+DEF_WORD1("neg", neg) { return w_unop(x); }
+
+typedef void (*binop_t)(size_t n, const void* restrict x, const void* restrict y, void* restrict out);
 
 STATUS_T w_binop(stack_t* stack,
                  type_t type_table[T_MAX][T_MAX],
                  binop_t op_table[T_MAX][T_MAX],
-                 binop_t a_scalar_table[T_MAX][T_MAX],
-                 binop_t b_scalar_table[T_MAX][T_MAX]) {
-  own(array_t) b = stack_pop(stack);
-  own(array_t) a = stack_pop(stack);
+                 binop_t x_scalar_table[T_MAX][T_MAX],
+                 binop_t y_scalar_table[T_MAX][T_MAX]) {
+  own(array_t) y = stack_pop(stack);
+  own(array_t) x = stack_pop(stack);
 
   binop_t op;
   shape_t s;
   size_t n;
 
-  if (is_atom(a)) {
-    op = a_scalar_table[a->t][b->t];
-    n = b->n;
-    s = array_shape(b);
-  } else if (is_atom(b)) {
-    op = b_scalar_table[a->t][b->t];
-    n = a->n;
-    s = array_shape(a);
-  } else if (a->n == b->n) {
-    op = op_table[a->t][b->t];
-    n = a->n;
-    s = array_shape(a);
+  if (is_atom(x)) {
+    op = x_scalar_table[x->t][y->t];
+    n = y->n;
+    s = array_shape(y);
+  } else if (is_atom(y)) {
+    op = y_scalar_table[x->t][y->t];
+    n = x->n;
+    s = array_shape(x);
+  } else if (x->n == y->n) {
+    op = op_table[x->t][y->t];
+    n = x->n;
+    s = array_shape(x);
   } else {
     return status_errf("array shape doesn't match");
   }
 
   if (op == NULL) return status_errf("unsupported types");
-  array_t* y = array_alloc(type_table[a->t][b->t], n, s);
-  op(y->n, array_data(a), array_data(b), array_mut_data(y));
-  stack_push(stack, y);
+  array_t* out = array_alloc(type_table[x->t][y->t], n, s);
+  op(out->n, array_data(x), array_data(y), array_mut_data(out));
+  stack_push(stack, out);
   R_OK;
 }
 
@@ -50,37 +54,38 @@ STATUS_T w_binop(stack_t* stack,
   GEN_BINOP_SPECIALIZATION(name##_scalar_##a_t##_##b_t, a_t, b_t, y_t, op((a[0]), (b[i]))) \
   GEN_BINOP_SPECIALIZATION(name##_##a_t##_scalar_##b_t, a_t, b_t, y_t, op((a[i]), (b[0])))
 
-#define GEN_BINOP(word, name, op)                                                                             \
-  GEN_BINOP_SPECIALIZATIONS(name, t_i64, t_i64, t_i64, op)                                                    \
-  GEN_BINOP_SPECIALIZATIONS(name, t_i64, t_f64, t_f64, op)                                                    \
-  GEN_BINOP_SPECIALIZATIONS(name, t_f64, t_i64, t_f64, op)                                                    \
-  GEN_BINOP_SPECIALIZATIONS(name, t_f64, t_f64, t_f64, op)                                                    \
-  binop_t name##_table[T_MAX][T_MAX] =                                                                        \
-      TYPE_ROW(/* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL),                                                     \
-               /* i64 */ TYPE_ROW(NULL, name##_t_i64_t_i64, name##_t_i64_t_f64, NULL),                        \
-               /* f64 */ TYPE_ROW(NULL, name##_t_f64_t_i64, name##_t_f64_t_f64, NULL),                        \
-               /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL));                                                   \
-  binop_t name##_a_scalar_table[T_MAX][T_MAX] =                                                               \
-      TYPE_ROW(/* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL),                                                     \
-               /* i64 */ TYPE_ROW(NULL, name##_scalar_t_i64_t_i64, name##_scalar_t_i64_t_f64, NULL),          \
-               /* f64 */ TYPE_ROW(NULL, name##_scalar_t_f64_t_i64, name##_scalar_t_f64_t_f64, NULL),          \
-               /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL));                                                   \
-  binop_t name##_b_scalar_table[T_MAX][T_MAX] =                                                               \
-      TYPE_ROW(/* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL),                                                     \
-               /* i64 */ TYPE_ROW(NULL, name##_t_i64_scalar_t_i64, name##_t_i64_scalar_t_f64, NULL),          \
-               /* f64 */ TYPE_ROW(NULL, name##_t_f64_scalar_t_i64, name##_t_f64_scalar_t_f64, NULL),          \
-               /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL));                                                   \
-  type_t name##_type_table[T_MAX][T_MAX] =                                                                    \
-      TYPE_ROW(/* c8 */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR), /* i64 */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR),   \
-               /* f64 */ TYPE_ROW(T_C8, T_F64, T_F64, T_ARR), /* arr */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR)); \
-  DEF_WORD(word, name) {                                                                                      \
-    return w_binop(stack, name##_type_table, name##_table, name##_a_scalar_table, name##_b_scalar_table);     \
+#define GEN_BINOP(word, name, op)                                                                                   \
+  GEN_BINOP_SPECIALIZATIONS(name, t_i64, t_i64, t_i64, op)                                                          \
+  GEN_BINOP_SPECIALIZATIONS(name, t_i64, t_f64, t_f64, op)                                                          \
+  GEN_BINOP_SPECIALIZATIONS(name, t_f64, t_i64, t_f64, op)                                                          \
+  GEN_BINOP_SPECIALIZATIONS(name, t_f64, t_f64, t_f64, op)                                                          \
+  binop_t name##_table[T_MAX][T_MAX] =                                                                              \
+      TYPE_ROW(/* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL),                                                     \
+               /* i64 */ TYPE_ROW(NULL, name##_t_i64_t_i64, name##_t_i64_t_f64, NULL, NULL),                        \
+               /* f64 */ TYPE_ROW(NULL, name##_t_f64_t_i64, name##_t_f64_t_f64, NULL, NULL),                        \
+               /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL), /* ffi */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL)); \
+  binop_t name##_a_scalar_table[T_MAX][T_MAX] =                                                                     \
+      TYPE_ROW(/* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL),                                                     \
+               /* i64 */ TYPE_ROW(NULL, name##_scalar_t_i64_t_i64, name##_scalar_t_i64_t_f64, NULL, NULL),          \
+               /* f64 */ TYPE_ROW(NULL, name##_scalar_t_f64_t_i64, name##_scalar_t_f64_t_f64, NULL, NULL),          \
+               /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL), /* ffi */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL)); \
+  binop_t name##_b_scalar_table[T_MAX][T_MAX] =                                                                     \
+      TYPE_ROW(/* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL),                                                     \
+               /* i64 */ TYPE_ROW(NULL, name##_t_i64_scalar_t_i64, name##_t_i64_scalar_t_f64, NULL, NULL),          \
+               /* f64 */ TYPE_ROW(NULL, name##_t_f64_scalar_t_i64, name##_t_f64_scalar_t_f64, NULL, NULL),          \
+               /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL), /* ffi */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL)); \
+  type_t name##_type_table[T_MAX][T_MAX] =                                                                          \
+      TYPE_ROW(/* c8 */ TYPE_ROW_ID, /* i64 */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR, T_FFI),                          \
+               /* f64 */ TYPE_ROW(T_C8, T_F64, T_F64, T_ARR, T_FFI),                                                \
+               /* arr */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR, T_FFI), /* ffi */ TYPE_ROW_ID);                        \
+  DEF_WORD(word, name) {                                                                                            \
+    return w_binop(stack, name##_type_table, name##_table, name##_a_scalar_table, name##_b_scalar_table);           \
   }
 
-#define PLUS_OP(a, b) a + b
-#define MUL_OP(a, b) a* b
-#define MINUS_OP(a, b) a - b
-#define DIV_OP(a, b) a / b
+#define PLUS_OP(a, b) (a) + (b)
+#define MUL_OP(a, b) (a) * (b)
+#define MINUS_OP(a, b) (a) - (b)
+#define DIV_OP(a, b) (a) / (b)
 
 GEN_BINOP("+", plus, PLUS_OP)
 GEN_BINOP("*", mul, MUL_OP)
@@ -88,7 +93,7 @@ GEN_BINOP("-", minus, MINUS_OP)
 GEN_BINOP("/", div, DIV_OP)
 
 DEF_WORD1("shape", shape) { return result_ok(array_new(T_I64, x->r, shape_1d(&x->r), array_dims(x))); }
-DEF_WORD1("len", len) { return result_ok(atom_i64(x->n)); }
+DEF_WORD1("len", len) { return result_ok(atom_t_i64(x->n)); }
 
 shape_t create_shape(const array_t* x) {
   assert(x->r <= 1);      // todo: report error

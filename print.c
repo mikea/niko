@@ -21,6 +21,7 @@ size_t print_ptr(FILE* f, type_t t, const void* ptr) {
     }
     case T_C8: UNREACHABLE;
     case T_ARR: return fprintf(f, "%pA", *(array_t**)ptr);
+    case T_FFI: return fprintf(f, "<native_function>");
   }
   UNREACHABLE;
 }
