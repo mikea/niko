@@ -103,11 +103,30 @@ typedef struct {
 token_t next_token(const char** s);
 
 // type
+struct array_t;
 typedef enum { T_C8, T_I64, T_F64, T_ARR } type_t;
 #define T_MAX (T_ARR + 1)
+
+typedef char t_c8;
+#define t_c8_enum T_C8
+
+typedef int64_t t_i64;
+#define t_i64_enum T_I64
+
+typedef double t_f64;
+#define t_f64_enum T_F64
+
+typedef struct array_t* t_arr;
+#define t_arr_enum T_ARR
+
+#define TYPE_ENUM(t) t##_enum
+
 #define TYPE_ROW(v_c8, v_i64, v_f64, v_arr) \
   { v_c8, v_i64, v_f64, v_arr }
-static size_t type_sizeof_table[T_MAX] = TYPE_ROW(sizeof(uint8_t), sizeof(i64), sizeof(f64), sizeof(void*));
+
+#define TYPE_EACH(f) TYPE_ROW(f(t_c8), f(t_i64), f(t_f64), f(t_arr))
+
+static size_t type_sizeof_table[T_MAX] = TYPE_EACH(sizeof);
 INLINE size_t type_sizeof(type_t t, size_t n) { return n * type_sizeof_table[t]; }
 
 // shape
@@ -252,3 +271,37 @@ INLINE void stack_print(stack_t* stack) {
     printf("%pA", stack->bottom[i]);
   }
 }
+
+// dictionary
+
+typedef STATUS_T(word_t)(stack_t* s);
+
+typedef struct {
+  string_t n;
+  word_t* w;
+} dict_entry_t;
+
+GEN_VECTOR(entry_vector, dict_entry_t);
+
+extern entry_vector_t global_dict;
+
+// words
+
+#define DEF_WORD(w, n)                                                                                            \
+  STATUS_T w_##n(stack_t* stack);                                                                                 \
+  CONSTRUCTOR void w_##n##_register() { entry_vector_add(&global_dict, (dict_entry_t){string_newf(#w), w_##n}); } \
+  STATUS_T w_##n(stack_t* stack)
+
+#define DEF_WORD1(w, n)                   \
+  RESULT_T n##_impl(const array_t* x);    \
+  DEF_WORD(w, n) {                        \
+    own(array_t) x = stack_pop(stack);    \
+    result_t result = n##_impl(x);        \
+    if (result.ok) {                      \
+      stack_push(stack, result.either.a); \
+      return status_ok();                 \
+    } else {                              \
+      return status_err(result.either.e); \
+    }                                     \
+  }                                       \
+  RESULT_T n##_impl(const array_t* x)

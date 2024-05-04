@@ -11,140 +11,7 @@ double str_parse_f64(const str_t s) {
   return strtod(c, NULL);
 }
 
-// dictionary
-typedef STATUS_T(word_t)(stack_t* s);
-
-typedef struct {
-  string_t n;
-  word_t* w;
-} dict_entry_t;
-
-GEN_VECTOR(entry_vector, dict_entry_t);
-
 entry_vector_t global_dict;
-
-// builtins
-
-#define DEF_WORD(w, n)                                                                                            \
-  STATUS_T w_##n(stack_t* stack);                                                                                 \
-  CONSTRUCTOR void w_##n##_register() { entry_vector_add(&global_dict, (dict_entry_t){string_newf(#w), w_##n}); } \
-  STATUS_T w_##n(stack_t* stack)
-
-#define DEF_WORD1(w, n)                   \
-  RESULT_T n##_impl(const array_t* x);    \
-  DEF_WORD(w, n) {                        \
-    own(array_t) x = stack_pop(stack);    \
-    result_t result = n##_impl(x);        \
-    if (result.ok) {                      \
-      stack_push(stack, result.either.a); \
-      return status_ok();                 \
-    } else {                              \
-      return status_err(result.either.e); \
-    }                                     \
-  }                                       \
-  RESULT_T n##_impl(const array_t* x)
-
-typedef void (*binop_t)(size_t n, void* restrict y, const void* restrict a, const void* restrict b);
-
-STATUS_T w_binop(stack_t* stack,
-                 type_t type_table[T_MAX][T_MAX],
-                 binop_t op_table[T_MAX][T_MAX],
-                 binop_t scalar_table[T_MAX][T_MAX]) {
-  own(array_t) b = stack_pop(stack);
-  own(array_t) a = stack_pop(stack);
-
-  type_t t = type_table[a->t][b->t];
-
-  array_t* y;
-
-  if (a->n == b->n) {
-    y = array_alloc(t, a->n, array_shape(a));
-    binop_t op = op_table[a->t][b->t];
-    if (op == NULL) return status_errf("unsupported types");
-    op(a->n, array_mut_data(y), array_data(a), array_data(b));
-  } else if (is_atom(a)) {
-    y = array_alloc(t, b->n, array_shape(b));
-    binop_t op = scalar_table[b->t][a->t];
-    if (op == NULL) return status_errf("unsupported types");
-    op(b->n, array_mut_data(y), array_data(b), array_data(a));
-  } else if (is_atom(b)) {
-    y = array_alloc(t, a->n, array_shape(a));
-    binop_t op = scalar_table[a->t][b->t];
-    if (op == NULL) return status_errf("unsupported types");
-    op(a->n, array_mut_data(y), array_data(a), array_data(b));
-  } else {
-    assert(false);  // todo: return error
-  }
-
-  stack_push(stack, y);
-  return status_ok();
-}
-
-#define GEN_BINOP_LOOP(name, y_t, a_t, b_t, expr)                                                     \
-  void name(size_t n, void* restrict y_ptr, const void* restrict a_ptr, const void* restrict b_ptr) { \
-    y_t* restrict y = y_ptr;                                                                          \
-    const a_t* restrict a = a_ptr;                                                                    \
-    const b_t* restrict b = b_ptr;                                                                    \
-    DO(i, n) y[i] = (expr);                                                                           \
-  }
-
-#define GEN_BINOP(word, name, op)                                                                                  \
-  GEN_BINOP_LOOP(name##_i64_i64, i64, i64, i64, (a[i])op(b[i]))                                                    \
-  GEN_BINOP_LOOP(name##_i64_f64, f64, i64, f64, (a[i])op(b[i]))                                                    \
-  GEN_BINOP_LOOP(name##_f64_i64, f64, f64, i64, (a[i])op(b[i]))                                                    \
-  GEN_BINOP_LOOP(name##_f64_f64, f64, f64, f64, (a[i])op(b[i]))                                                    \
-  GEN_BINOP_LOOP(name##_scalar_i64_i64, i64, i64, i64, (a[i])op(b[0]))                                             \
-  GEN_BINOP_LOOP(name##_scalar_i64_f64, f64, i64, f64, (a[i])op(b[0]))                                             \
-  GEN_BINOP_LOOP(name##_scalar_f64_i64, f64, f64, i64, (a[i])op(b[0]))                                             \
-  GEN_BINOP_LOOP(name##_scalar_f64_f64, f64, f64, f64, (a[i])op(b[0]))                                             \
-  binop_t name##_table[T_MAX][T_MAX] = TYPE_ROW(                                                                   \
-      /* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL), /* i64 */ TYPE_ROW(NULL, name##_i64_i64, name##_i64_f64, NULL),   \
-      /* f64 */ TYPE_ROW(NULL, name##_f64_i64, name##_f64_f64, NULL), /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL)); \
-  binop_t name##_scalar_table[T_MAX][T_MAX] =                                                                      \
-      TYPE_ROW(/* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL),                                                          \
-               /* i64 */ TYPE_ROW(NULL, name##_scalar_i64_i64, name##_scalar_i64_f64, NULL),                       \
-               /* f64 */ TYPE_ROW(NULL, name##_scalar_f64_i64, name##_scalar_f64_f64, NULL),                       \
-               /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL));                                                        \
-  type_t name##_type_table[T_MAX][T_MAX] =                                                                         \
-      TYPE_ROW(/* c8 */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR), /* i64 */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR),        \
-               /* f64 */ TYPE_ROW(T_C8, T_F64, T_F64, T_ARR), /* arr */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR));      \
-  DEF_WORD(word, name) { return w_binop(stack, name##_type_table, name##_table, name##_scalar_table); }
-
-GEN_BINOP(+, plus, +)
-GEN_BINOP(*, mul, *)
-GEN_BINOP(-, minus, -)
-GEN_BINOP(/, div, /)
-
-DEF_WORD1(shape, shape) { return result_ok(array_new(T_I64, x->r, shape_1d(&x->r), array_dims(x))); }
-DEF_WORD1(len, len) { return result_ok(atom_i64(x->n)); }
-
-shape_t create_shape(const array_t* x) {
-  assert(x->r <= 1);      // todo: report error
-  assert(x->t == T_I64);  // todo: report error
-  if (is_atom(x)) return shape_1d(array_data(x));
-  return shape_create(x->n, array_data(x));
-}
-
-DEF_WORD1(zeros, zeros) {
-  shape_t s = create_shape(x);
-  array_t* y = array_alloc(T_I64, shape_len(s), s);
-  DO(i, y->n) array_mut_data_i64(y)[i] = 0;
-  return result_ok(y);
-}
-
-DEF_WORD1(ones, ones){
-  shape_t s = create_shape(x);
-  array_t* y = array_alloc(T_I64, shape_len(s), s);
-  DO(i, y->n) array_mut_data_i64(y)[i] = 1;
-  return result_ok(y);
-}
-
-DEF_WORD1(index, index) {
-  shape_t s = create_shape(x);
-  array_t* y = array_alloc(T_I64, shape_len(s), s);
-  DO(i, y->n) array_mut_data_i64(y)[i] = i;
-  return result_ok(y);
-}
 
 STATUS_T concatenate(stack_t* stack, size_t len) {
   if (!len) {
@@ -208,20 +75,9 @@ STATUS_T interpreter_word(interpreter_t* inter, const str_t w) {
 
   DO(i, inter->dict.l) if (str_eq(w, string_as_str(inter->dict.d[i].n))) { return inter->dict.d[i].w(stack); }
 
-  if (str_eqc(w, "*")) {
-    return w_mul(stack);
-  } else if (str_eqc(w, "dup")) {
-    stack_push(stack, array_inc_ref(stack_peek(stack)));
-  } else if (str_eqc(w, "drop")) {
-    stack_drop(stack);
-  } else if (str_eqc(w, ".")) {
+  if (str_eqc(w, ".")) {
     own(array_t) x = stack_pop(stack);
     fprintf(inter->out, "%pA\n", x);
-  } else if (str_eqc(w, "swap")) {
-    array_t* a = stack_pop(stack);
-    array_t* b = stack_pop(stack);
-    stack_push(stack, a);
-    stack_push(stack, b);
   } else if (str_eqc(w, "exit")) {
     fprintf(inter->out, "bye\n");
     exit(0);
@@ -231,8 +87,6 @@ STATUS_T interpreter_word(interpreter_t* inter, const str_t w) {
 
   return status_ok();
 }
-
-#undef CALL1
 
 STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
   switch (t.tok) {
