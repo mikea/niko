@@ -2,21 +2,17 @@
 
 #include <getopt.h>
 
-int64_t str_parse_i64(const str_t s) {
-  own(char) c = str_toc(s);
-  return strtol(c, NULL, 10);
-}
-double str_parse_f64(const str_t s) {
-  own(char) c = str_toc(s);
-  return strtod(c, NULL);
-}
-
 entry_vector_t global_dict;
+
+DESTRUCTOR void global_dict_free() {
+  DO(i, global_dict.l) string_free(global_dict.d[i].n);
+  free(global_dict.d);
+}
 
 STATUS_T concatenate(stack_t* stack, size_t len) {
   if (!len) {
     stack_push(stack, array_alloc(T_I64, 0, shape_1d(&len)));
-    return status_ok();
+    R_OK;
   }
   bool all_common = true;
   const shape_t common_shape = array_shape(stack_peek(stack));
@@ -44,18 +40,10 @@ STATUS_T concatenate(stack_t* stack, size_t len) {
   }
   DO(i, len) stack_drop(stack);
   stack_push(stack, a);
-  return status_ok();
+  R_OK;
 }
 
 // interpreter
-
-typedef struct {
-  entry_vector_t dict;
-  stack_t* stack;
-  size_t arr_level;
-  size_t arr_marks[256];
-  FILE* out;
-} interpreter_t;
 
 interpreter_t* interpreter_new() {
   interpreter_t* inter = calloc(1, sizeof(interpreter_t));
@@ -64,38 +52,30 @@ interpreter_t* interpreter_new() {
   DO(i, global_dict.l) entry_vector_add(&inter->dict, global_dict.d[i]);
   return inter;
 }
-void interpreter_free(interpreter_t* i) {
-  stack_free(i->stack);
-  free(i);
+void interpreter_free(interpreter_t* inter) {
+  stack_free(inter->stack);
+  // todo: we didn't copy the stirng in _new, which we should
+  // DO(i, inter->dict.l) string_free(inter->dict.d[i].n);
+  free(inter->dict.d);
+  free(inter);
 }
 DEF_CLEANUP(interpreter_t, interpreter_free);
 
 STATUS_T interpreter_word(interpreter_t* inter, const str_t w) {
-  stack_t* stack = inter->stack;
-
-  DO(i, inter->dict.l) if (str_eq(w, string_as_str(inter->dict.d[i].n))) { return inter->dict.d[i].w(stack); }
-
-  if (str_eqc(w, ".")) {
-    own(array_t) x = stack_pop(stack);
-    fprintf(inter->out, "%pA\n", x);
-  } else if (str_eqc(w, "exit")) {
-    fprintf(inter->out, "bye\n");
-    exit(0);
-  } else {
-    return status_errf("unknown word '%pS'", &w);
+  DO(i, inter->dict.l) if (str_eq(w, string_as_str(inter->dict.d[i].n))) {
+    return inter->dict.d[i].w(inter, inter->stack);
   }
-
-  return status_ok();
+  return status_errf("unknown word '%pS'", &w);
 }
 
 STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
   switch (t.tok) {
-    case TOK_EOF: return status_ok();
+    case TOK_EOF: R_OK;
     case TOK_ERR: return status_errf("unexpected token: '%pS'", &t.text);
     case TOK_ARR_OPEN: {
       assert(inter->arr_level < sizeof(inter->arr_marks) / sizeof(inter->arr_marks[0]));
       inter->arr_marks[inter->arr_level++] = inter->stack->l;
-      return status_ok();
+      R_OK;
     }
     case TOK_ARR_CLOSE: {
       assert(inter->arr_level);  // todo: report error
@@ -105,17 +85,17 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
     }
     case TOK_WORD: return interpreter_word(inter, t.text);
     case TOK_I64: {
-      stack_push(inter->stack, atom_i64(str_parse_i64(t.text)));
-      return status_ok();
+      stack_push(inter->stack, atom_i64(t.val.i));
+      R_OK;
     }
     case TOK_F64: {
-      stack_push(inter->stack, atom_f64(str_parse_f64(t.text)));
-      return status_ok();
+      stack_push(inter->stack, atom_f64(t.val.d));
+      R_OK;
     }
     case TOK_STR: {
-      size_t l = t.text.l - 2;
-      stack_push(inter->stack, array_new(T_C8, l, shape_1d(&l), t.text.p + 1));
-      return status_ok();
+      size_t l = t.val.s.l;
+      stack_push(inter->stack, array_new(T_C8, l, shape_1d(&l), t.val.s.p));
+      R_OK;
     }
   }
   UNREACHABLE;
@@ -124,10 +104,10 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
 STATUS_T interpreter_line(interpreter_t* inter, const char* s) {
   for (;;) {
     token_t t = next_token(&s);
-    if (t.tok == TOK_EOF) return status_ok();
+    if (t.tok == TOK_EOF) R_OK;
     R_ERR(interpreter_token(inter, t));
   }
-  return status_ok();
+  R_OK;
 }
 
 // repl
@@ -146,11 +126,12 @@ STATUS_T repl() {
       printf(" > ");
     }
 
-    if (getline(&input, &input_size, stdin) <= 0) return status_ok();
+    if (getline(&input, &input_size, stdin) <= 0) R_OK;
     status_t result = interpreter_line(inter, input);
     if (status_is_err(result)) {
       str_t msg = status_msg(result);
       fprintf(stderr, "ERROR: %pS\n", &msg);
+      status_free(result);
     }
   }
 }
@@ -183,17 +164,18 @@ STATUS_T test(const char* fname, bool v) {
       if (rest_out && *rest_out) fprintf(stderr, "ERROR %s:%ld : umatched output: '%s'\n", fname, in_line_no, rest_out);
       if (out) free(out);
       in_line_no = line_no;
-      stack_clear(inter->stack);
       FILE* fout = open_memstream(&out, &out_size);
       inter->out = fout;
       status_t result = interpreter_line(inter, line + 1);
       inter->out = stdout;
       fclose(fout);
+      stack_clear(inter->stack);
 
       if (status_is_err(result)) {
         free(out);
         str_t msg = status_msg(result);
         out_size = asprintf(&out, "ERROR: %pS\n", &msg);
+        status_free(result);
       }
       rest_out = out;
       continue;
@@ -208,7 +190,7 @@ STATUS_T test(const char* fname, bool v) {
 
   if (rest_out && *rest_out) fprintf(stderr, "ERROR %s:%ld : umatched output: '%s'\n", fname, in_line_no, rest_out);
 
-  return status_ok();
+  R_OK;
 }
 
 STATUS_T eval(const char* stmt) {

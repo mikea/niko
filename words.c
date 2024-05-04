@@ -34,7 +34,7 @@ STATUS_T w_binop(stack_t* stack,
   array_t* y = array_alloc(type_table[a->t][b->t], n, s);
   op(y->n, array_data(a), array_data(b), array_mut_data(y));
   stack_push(stack, y);
-  return status_ok();
+  R_OK;
 }
 
 #define GEN_BINOP_SPECIALIZATION(name, a_t, b_t, y_t, expr)                                           \
@@ -82,13 +82,13 @@ STATUS_T w_binop(stack_t* stack,
 #define MINUS_OP(a, b) a - b
 #define DIV_OP(a, b) a / b
 
-GEN_BINOP(+, plus, PLUS_OP)
-GEN_BINOP(*, mul, MUL_OP)
-GEN_BINOP(-, minus, MINUS_OP)
-GEN_BINOP(/, div, DIV_OP)
+GEN_BINOP("+", plus, PLUS_OP)
+GEN_BINOP("*", mul, MUL_OP)
+GEN_BINOP("-", minus, MINUS_OP)
+GEN_BINOP("/", div, DIV_OP)
 
-DEF_WORD1(shape, shape) { return result_ok(array_new(T_I64, x->r, shape_1d(&x->r), array_dims(x))); }
-DEF_WORD1(len, len) { return result_ok(atom_i64(x->n)); }
+DEF_WORD1("shape", shape) { return result_ok(array_new(T_I64, x->r, shape_1d(&x->r), array_dims(x))); }
+DEF_WORD1("len", len) { return result_ok(atom_i64(x->n)); }
 
 shape_t create_shape(const array_t* x) {
   assert(x->r <= 1);      // todo: report error
@@ -97,41 +97,52 @@ shape_t create_shape(const array_t* x) {
   return shape_create(x->n, array_data(x));
 }
 
-DEF_WORD1(zeros, zeros) {
+DEF_WORD1("zeros", zeros) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
   DO(i, y->n) array_mut_data_i64(y)[i] = 0;
   return result_ok(y);
 }
 
-DEF_WORD1(ones, ones) {
+DEF_WORD1("ones", ones) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
   DO(i, y->n) array_mut_data_i64(y)[i] = 1;
   return result_ok(y);
 }
 
-DEF_WORD1(index, index) {
+DEF_WORD1("index", index) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
   DO(i, y->n) array_mut_data_i64(y)[i] = i;
   return result_ok(y);
 }
 
-DEF_WORD(dup, dup) {
+DEF_WORD("dup", dup) {
   stack_push(stack, array_inc_ref(stack_peek(stack)));
-  return status_ok();
+  R_OK;
 }
 
-DEF_WORD(swap, swap) {
+DEF_WORD("swap", swap) {
   array_t* a = stack_pop(stack);
   array_t* b = stack_pop(stack);
   stack_push(stack, a);
   stack_push(stack, b);
-  return status_ok();
+  R_OK;
 }
 
-DEF_WORD(drop, drop) {
+DEF_WORD("drop", drop) {
   stack_drop(stack);
-  return status_ok();
+  R_OK;
+}
+
+DEF_WORD(".", dot) {
+  own(array_t) x = stack_pop(stack);
+  fprintf(inter->out, "%pA\n", x);
+  R_OK;
+}
+
+DEF_WORD("exit", exit) {
+  fprintf(inter->out, "bye\n");
+  exit(0);
 }

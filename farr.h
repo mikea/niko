@@ -62,6 +62,9 @@ typedef struct {
   } u;
 } status_t;
 #define STATUS_T WARN_UNUSED status_t
+INLINE void status_free(status_t s) {
+  if (!s.ok) string_free(s.u.s);
+}
 INLINE status_t status_ok() { return (status_t){true}; }
 INLINE status_t status_err(string_t msg) { return (status_t){.ok = false, .u.s = msg}; }
 INLINE PRINTF(1, 2) status_t status_errf(const char* format, ...) {
@@ -78,6 +81,8 @@ INLINE void status_print_error(status_t s) {
   str_t msg = status_msg(s);
   fprintf(stderr, "ERROR: %pS\n", &msg);
 }
+
+#define R_OK return status_ok()
 
 #define R_ERR(expr)                                   \
   do {                                                \
@@ -98,6 +103,11 @@ typedef struct {
     TOK_STR,
   } tok;
   str_t text;
+  union {
+    int64_t i;
+    double d;
+    str_t s;
+  } val;
 } token_t;
 
 token_t next_token(const char** s);
@@ -274,7 +284,8 @@ INLINE void stack_print(stack_t* stack) {
 
 // dictionary
 
-typedef STATUS_T(word_t)(stack_t* s);
+struct interpreter_t;
+typedef STATUS_T(word_t)(struct interpreter_t* inter, stack_t* s);
 
 typedef struct {
   string_t n;
@@ -285,12 +296,22 @@ GEN_VECTOR(entry_vector, dict_entry_t);
 
 extern entry_vector_t global_dict;
 
+// interpreter
+struct interpreter_t {
+  entry_vector_t dict;
+  stack_t* stack;
+  size_t arr_level;
+  size_t arr_marks[256];
+  FILE* out;
+};
+typedef struct interpreter_t interpreter_t;
+
 // words
 
-#define DEF_WORD(w, n)                                                                                            \
-  STATUS_T w_##n(stack_t* stack);                                                                                 \
-  CONSTRUCTOR void w_##n##_register() { entry_vector_add(&global_dict, (dict_entry_t){string_newf(#w), w_##n}); } \
-  STATUS_T w_##n(stack_t* stack)
+#define DEF_WORD(w, n)                                                                                           \
+  STATUS_T w_##n(interpreter_t* inter, stack_t* stack);                                                          \
+  CONSTRUCTOR void w_##n##_register() { entry_vector_add(&global_dict, (dict_entry_t){string_newf(w), w_##n}); } \
+  STATUS_T w_##n(interpreter_t* inter, stack_t* stack)
 
 #define DEF_WORD1(w, n)                   \
   RESULT_T n##_impl(const array_t* x);    \

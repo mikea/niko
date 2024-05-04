@@ -11,6 +11,7 @@ static_assert(sizeof(f64) == sizeof(i64));
 #define CLEANUP(func) ATTR(cleanup(func))
 #define WARN_UNUSED ATTR(warn_unused_result)
 #define CONSTRUCTOR ATTR(constructor)
+#define DESTRUCTOR ATTR(destructor)
 #define PRINTF(i, j) ATTR(format(printf, i, j))
 
 #define UNREACHABLE __builtin_unreachable()
