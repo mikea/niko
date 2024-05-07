@@ -74,8 +74,33 @@ CONSTRUCTOR(1000) void reg_##name() { \
   entry_vector_add(&global_dict, (dict_entry_t){string_newf(#name), a}); \
 } 
 
-GEN_FLOAT(sqrt, sqrt)
+GEN_FLOAT(acos, acos)
+GEN_FLOAT(acosh, acosh)
+GEN_FLOAT(asin, asin)
+GEN_FLOAT(asinh, asinh)
+GEN_FLOAT(atan, atan)
+GEN_FLOAT(atanh, atanh)
+GEN_FLOAT(cbrt, cbrt)
+GEN_FLOAT(ceil, ceil)
+GEN_FLOAT(cos, cos)
+GEN_FLOAT(cosh, cosh)
+GEN_FLOAT(erf, erf)
+GEN_FLOAT(exp, exp)
+GEN_FLOAT(floor, floor)
+GEN_FLOAT(bessel1_0, j0)
+GEN_FLOAT(bessel1_1, j1)
+GEN_FLOAT(bessel2_0, y0)
+GEN_FLOAT(bessel2_1, y1)
+GEN_FLOAT(lgamma, lgamma)
+GEN_FLOAT(log, log)
+GEN_FLOAT(log10, log10)
+GEN_FLOAT(log1p, log1p)
+GEN_FLOAT(log2, log2)
 GEN_FLOAT(sin, sin)
+GEN_FLOAT(sinh, sinh)
+GEN_FLOAT(sqrt, sqrt)
+GEN_FLOAT(tan, tan)
+GEN_FLOAT(tanh, tanh)
 
 // binops
 

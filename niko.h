@@ -109,16 +109,17 @@ INLINE shape_t* shape_extend(shape_t s, size_t sz) {
 
 // array: (header, dims, data)
 typedef struct {
-  type_t t;   // type
-  size_t rc;  // ref count
-  size_t n;   // number of elements
-  size_t r;   // rank
+  type_t t;     // type
+  size_t rc;    // ref count
+  size_t n;     // number of elements
+  size_t r;     // rank
+  size_t d[0];  // dims
 } array_t;
 
 INLINE size_t array_sizeof(type_t t, size_t n, size_t r) {
   return sizeof(array_t) + dims_sizeof(r) + type_sizeof(t, n);
 }
-INLINE const size_t* array_dims(const array_t* a) { return (size_t*)(a + 1); }
+INLINE const size_t* array_dims(const array_t* a) { return a->d; }
 INLINE shape_t array_shape(const array_t* a) { return (shape_t){a->r, array_dims(a)}; }
 
 INLINE const void* array_data(const array_t* arr) { return (void*)(arr + 1) + dims_sizeof(arr->r); }
@@ -249,7 +250,7 @@ typedef struct interpreter_t interpreter_t;
 
 #define DEF_WORD(w, n)                                                                 \
   STATUS_T w_##n(interpreter_t* inter, stack_t* stack);                                \
-  CONSTRUCTOR(1000) void w_##n##_register() {                                             \
+  CONSTRUCTOR(1000) void w_##n##_register() {                                          \
     entry_vector_add(&global_dict, (dict_entry_t){string_newf(w), atom_t_ffi(w_##n)}); \
   }                                                                                    \
   DEF_WORD_HANDLER(w_##n)
