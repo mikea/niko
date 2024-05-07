@@ -1,8 +1,7 @@
 {
     "C_Cpp.default.compilerPath": "/etc/profiles/per-user/mike/bin/gcc",
     "files.associations": {
-        "farr.h": "c",
-        "compare": "cpp"
+        "*.h": "c",
     },
     "C_Cpp.default.cStandard": "gnu23"
 }

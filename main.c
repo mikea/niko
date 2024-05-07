@@ -1,4 +1,4 @@
-#include "farr.h"
+#include "niko.h"
 
 #include <getopt.h>
 
@@ -61,12 +61,26 @@ void interpreter_free(interpreter_t* inter) {
 }
 DEF_CLEANUP(interpreter_t, interpreter_free);
 
-STATUS_T interpter_word_impl(interpreter_t* inter, array_t* a) {
+STATUS_T interpter_word_impl(interpreter_t* inter, array_t* a, const str_t w) {
   switch (a->t) {
     case T_FFI: {
-      assert(a->r == 0);  // not implemented
-      t_ffi f = *(t_ffi*)array_data(a);
-      return f(inter, inter->stack);
+      t_ffi f;
+
+      switch (a->r) {
+        case 0: {
+          f = *(t_ffi*)array_data(a);
+          R_CHECK(f, "`%pS` is not implemented", &w);
+          return f(inter, inter->stack);
+        }
+        case 1: {
+          array_t* x = stack_peek(inter->stack);
+          f = ((t_ffi*)array_data(a))[x->t];
+          R_CHECK(f, "%pT is not supported by `%pS`", &x->t, &w);
+          return f(inter, inter->stack);
+        }
+        case 2: NOT_IMPLEMENTED
+        default: R_ERRF("unexpected ffi rank: %ld", a->r);
+      }
     }
     default: R_ERRF("unexpected type: %d", a->t);
   }
@@ -74,7 +88,7 @@ STATUS_T interpter_word_impl(interpreter_t* inter, array_t* a) {
 
 STATUS_T interpreter_word(interpreter_t* inter, const str_t w) {
   DO(i, inter->dict.l) if (str_eq(w, string_as_str(inter->dict.d[i].k))) {
-    return interpter_word_impl(inter, inter->dict.d[i].v);
+    return interpter_word_impl(inter, inter->dict.d[i].v, w);
   }
   return status_errf("unknown word '%pS'", &w);
 }

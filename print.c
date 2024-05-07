@@ -1,11 +1,13 @@
-#include "farr.h"
+#include "niko.h"
 
 #include <printf.h>
 
 // %pp - void*
 // %pA - array_t*
 // %pS - str_t*/string_t*
-// %pH - shape*
+// %pH - shape_t*
+// %pT - type_t*
+
 
 int p_modifier = -1;
 
@@ -72,14 +74,22 @@ int printf_shape(FILE* f, const struct printf_info* info, const void* const* arg
   return c;
 }
 
+int printf_type(FILE* f, const struct printf_info* info, const void* const* args) {
+  assert(info->user == p_modifier);  // p modifier expected
+  const type_t* t = *((const type_t**)(args[0]));
+  return fprintf(f, "%s", type_name(*t));
+}
+
+
 int single_pointer_arginfo(const struct printf_info* __info, size_t n, int* argtypes, int* __size) {
   if (n) argtypes[0] = PA_POINTER;
   return 1;
 }
 
-CONSTRUCTOR void register_printf_extensions() {
+CONSTRUCTOR(1000) void register_printf_extensions() {
   register_printf_specifier('A', printf_array, single_pointer_arginfo);
   register_printf_specifier('S', printf_str, single_pointer_arginfo);
   register_printf_specifier('H', printf_shape, single_pointer_arginfo);
+  register_printf_specifier('T', printf_type, single_pointer_arginfo);
   p_modifier = register_printf_modifier(L"p");
 }

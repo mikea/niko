@@ -1,0 +1,20 @@
+> 1000000 ones 1000000 ones +
+Benchmark 1: bin/niko -e "1000000 ones 1000000 ones +"
+  Time (mean ± σ):      11.6 ms ±   0.2 ms    [User: 4.1 ms, System: 7.5 ms]
+  Range (min … max):    11.4 ms …  12.4 ms    202 runs
+ 
+> 1000000 ones dup +
+Benchmark 1: bin/niko -e "1000000 ones dup +"
+  Time (mean ± σ):       7.9 ms ±   0.2 ms    [User: 2.7 ms, System: 5.2 ms]
+  Range (min … max):     7.5 ms …   9.7 ms    271 runs
+ 
+> 1000000 ones 1 +
+Benchmark 1: bin/niko -e "1000000 ones 1 +"
+  Time (mean ± σ):       7.9 ms ±   0.3 ms    [User: 2.5 ms, System: 5.4 ms]
+  Range (min … max):     7.5 ms …   9.9 ms    273 runs
+ 
+> 1000000 ones 1. +
+Benchmark 1: bin/niko -e "1000000 ones 1. +"
+  Time (mean ± σ):       8.7 ms ±   5.6 ms    [User: 3.1 ms, System: 5.5 ms]
+  Range (min … max):     7.4 ms …  75.5 ms    263 runs
+ 

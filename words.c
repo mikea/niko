@@ -1,8 +1,83 @@
-#include "farr.h"
+#include <math.h>
 
-RESULT_T w_unop(const array_t* a) { assert(false); }
+#include "niko.h"
 
-DEF_WORD1("neg", neg) { return w_unop(x); }
+#define GEN_REGISTER_SPEC(name, t) \
+  CONSTRUCTOR(500) void register_##name##_##t() { name##_table[TYPE_ENUM(t)] = name##_##t; }
+
+INLINE STATUS_T thread1(interpreter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_table[T_MAX]) {
+  assert(x->t == T_ARR);
+  array_t* out = array_alloc_as(x);
+  DO(i, x->n) {
+    stack_push(stack, ((const array_t**)array_data(x))[i]);
+    t_ffi ffi = ffi_table[stack_peek(stack)->t];
+    assert(ffi);
+    R_IF_ERR(ffi(inter, stack));
+    ((array_t**)array_mut_data(out))[i] = stack_pop(stack);
+  }
+  stack_push(stack, out);
+  return status_ok();
+}
+
+#define GEN_THREAD1(name, ffi)            \
+  DEF_WORD_HANDLER(name##_t_arr) {        \
+    own(array_t) x = stack_pop(stack);    \
+    return thread1(inter, stack, x, ffi); \
+  }                                       \
+  GEN_REGISTER_SPEC(name, t_arr)
+
+// neg
+
+t_ffi neg_table[T_MAX];
+
+#define GEN_NEG(t)                                                           \
+  DEF_WORD_HANDLER(neg_##t) {                                                \
+    own(array_t) x = stack_pop(stack);                                       \
+    array_t* out = array_alloc_as(x);                                        \
+    DO(i, x->n)((t*)array_mut_data(out))[i] = -((const t*)array_data(x))[i]; \
+    stack_push(stack, out);                                                  \
+    R_OK;                                                                    \
+  }                                                                          \
+  GEN_REGISTER_SPEC(neg, t)
+
+GEN_NEG(t_i64);
+GEN_NEG(t_f64);
+
+GEN_THREAD1(neg, neg_table)
+
+#define UPDATE_NEG_TABLE(t) neg_table[TYPE_ENUM(t)] = neg_##t;
+
+CONSTRUCTOR(1000) void reg_neg() {
+  array_t* a = array_new_1d(T_FFI, T_MAX, neg_table);
+  entry_vector_add(&global_dict, (dict_entry_t){string_newf("neg"), a});
+}
+
+// sqrt, sin, et. al.
+
+#define GEN_FLOAT1_SPEC(name, t, op)                                                \
+  DEF_WORD_HANDLER(name##_##t) {                                                    \
+    own(array_t) x = stack_pop(stack);                                              \
+    array_t* out = array_alloc(T_F64, x->n, array_shape(x));                        \
+    DO(i, x->n)((t_f64*)array_mut_data(out))[i] = op(((const t*)array_data(x))[i]); \
+    stack_push(stack, out);                                                         \
+    R_OK;                                                                           \
+  }                                                                                 \
+  CONSTRUCTOR(500) void register_##name##_##t() { name##_table[TYPE_ENUM(t)] = name##_##t; }
+
+#define GEN_FLOAT(name, op) \
+t_ffi name##_table[T_MAX]; \
+GEN_FLOAT1_SPEC(name, t_f64, op) \
+GEN_FLOAT1_SPEC(name, t_i64, op) \
+GEN_THREAD1(name, name##_table) \
+CONSTRUCTOR(1000) void reg_##name() { \
+  array_t* a = array_new_1d(T_FFI, T_MAX, name##_table); \
+  entry_vector_add(&global_dict, (dict_entry_t){string_newf(#name), a}); \
+} 
+
+GEN_FLOAT(sqrt, sqrt)
+GEN_FLOAT(sin, sin)
+
+// binops
 
 typedef void (*binop_t)(size_t n, const void* restrict x, const void* restrict y, void* restrict out);
 
