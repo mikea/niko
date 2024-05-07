@@ -2,7 +2,8 @@ alias w := watch
 
 COMMON_CFLAGS := "-std=gnu2x -Wall -Werror=implicit-fallthrough -Werror=switch -I . -lm -g -msse2 -fno-math-errno -fno-trapping-math "
 DEBUG_CFLAGS := COMMON_CFLAGS + "-fno-inline-small-functions -Og"
-RELEASE_CFLAGS := COMMON_CFLAGS + "-O3"
+# useful flags: -Winline 
+RELEASE_CFLAGS := COMMON_CFLAGS + "-O3 -DNDEBUG -fno-omit-frame-pointer -march=native"
 
 watch +WATCH_TARGET='build':
     watchexec -rc -w . -- just {{WATCH_TARGET}}
@@ -21,6 +22,11 @@ valgrind:
 
 benchmarks: release
     just _benchmarks > benchmarks.results
+
+opt-report:
+    cpp -I . -P words.c > build/words.c
+    clang-format -i build/words.c
+    gcc {{RELEASE_CFLAGS}} -fopt-info-vec-missed -S -o build/words.o build/words.c
 
 [private]
 _test:

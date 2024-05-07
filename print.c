@@ -16,8 +16,7 @@ size_t print_ptr(FILE* f, type_t t, const void* ptr) {
     case T_I64: return fprintf(f, "%ld", *(i64*)ptr);
     case T_F64: {
       own(char) s = NULL;
-      int c = asprintf(&s, "%.15g", *(f64*)ptr);
-      assert(c > 0);
+      (void)!asprintf(&s, "%.15g", *(f64*)ptr);
       if (strchr(s, '.') || strchr(s, 'e')) return fprintf(f, "%s", s);
       else return fprintf(f, "%s.", s);
     }

@@ -1,5 +1,7 @@
 bin/
 build/
+perf.data
+perf.data.*
 
 # Prerequisites
 *.d

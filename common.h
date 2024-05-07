@@ -12,6 +12,7 @@ static_assert(sizeof(f64) == sizeof(i64));
 #define WARN_UNUSED ATTR(warn_unused_result)
 #define DESTRUCTOR ATTR(destructor)
 #define PRINTF(i, j) ATTR(format(printf, i, j))
+#define ALIGNED(n) ATTR(aligned(n))
 
 #define UNREACHABLE __builtin_unreachable()
 #define NOT_IMPLEMENTED \
