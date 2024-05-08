@@ -18,7 +18,7 @@ static_assert(sizeof(f64) == sizeof(i64));
 #define NOT_IMPLEMENTED \
   assert(false);        \
   abort();
-#define DO(var, l) for (size_t var = 0; var < l; var++)
+#define DO(var, l) for (size_t var = 0, __l = l; var < __l; var++)
 #define DBG(...)                                   \
   do {                                             \
     fprintf(stderr, "%s:%d ", __FILE__, __LINE__); \

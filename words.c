@@ -230,7 +230,8 @@ DEF_WORD_1_1("zeros", zeros) {
 DEF_WORD_1_1("ones", ones) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
-  DO(i, y->n) array_mut_data_i64(y)[i] = 1;
+  t_i64* restrict data = array_mut_data_i64(y);
+  DO(i, y->n) data[i] = 1;
   return result_ok(y);
 }
 

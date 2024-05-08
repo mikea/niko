@@ -130,7 +130,7 @@ INLINE array_t* array_assert_mut(array_t* arr) {
   return arr;
 }
 INLINE void* array_mut_data(array_t* arr) { return (void*)array_data(array_assert_mut(arr)); }
-INLINE i64* array_mut_data_i64(array_t* arr) { return (i64*)array_mut_data(arr); }
+INLINE i64* restrict array_mut_data_i64(array_t* arr) { return (i64*)array_mut_data(arr); }
 
 INLINE array_t* array_alloc(type_t t, size_t n, shape_t s) {
   assert(shape_len(s) == n);

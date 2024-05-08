@@ -1,20 +1,30 @@
-> 1000000 ones 1000000 ones +
-Benchmark 1: bin/niko -e "1000000 ones 1000000 ones +"
-  Time (mean ± σ):      12.1 ms ±   0.3 ms    [User: 4.3 ms, System: 7.8 ms]
-  Range (min … max):    11.7 ms …  13.3 ms    193 runs
+> 10000000 zeros drop
+Benchmark 1: bin/niko -e "10000000 zeros drop"
+  Time (mean ± σ):      97.1 ms ±  42.7 ms    [User: 38.1 ms, System: 59.1 ms]
+  Range (min … max):    34.1 ms … 153.7 ms    28 runs
  
-> 1000000 ones dup +
-Benchmark 1: bin/niko -e "1000000 ones dup +"
-  Time (mean ± σ):       8.0 ms ±   0.2 ms    [User: 2.6 ms, System: 5.4 ms]
-  Range (min … max):     7.6 ms …   9.2 ms    271 runs
+> 10000000 ones drop
+Benchmark 1: bin/niko -e "10000000 ones drop"
+  Time (mean ± σ):      65.8 ms ±  28.5 ms    [User: 18.4 ms, System: 47.4 ms]
+  Range (min … max):    29.6 ms … 132.4 ms    55 runs
  
-> 1000000 ones 1 +
-Benchmark 1: bin/niko -e "1000000 ones 1 +"
-  Time (mean ± σ):       8.0 ms ±   0.2 ms    [User: 2.8 ms, System: 5.1 ms]
-  Range (min … max):     7.5 ms …   9.0 ms    280 runs
+> 10000000 ones 10000000 ones +
+Benchmark 1: bin/niko -e "10000000 ones 10000000 ones +"
+  Time (mean ± σ):     275.7 ms ±  31.2 ms    [User: 88.7 ms, System: 187.0 ms]
+  Range (min … max):   231.2 ms … 307.9 ms    10 runs
  
-> 1000000 ones 1. +
-Benchmark 1: bin/niko -e "1000000 ones 1. +"
-  Time (mean ± σ):       8.6 ms ±   1.6 ms    [User: 3.4 ms, System: 5.2 ms]
-  Range (min … max):     7.6 ms …  20.0 ms    264 runs
+> 10000000 ones dup +
+Benchmark 1: bin/niko -e "10000000 ones dup +"
+  Time (mean ± σ):     171.3 ms ±  45.8 ms    [User: 52.2 ms, System: 119.2 ms]
+  Range (min … max):    64.4 ms … 250.0 ms    26 runs
+ 
+> 10000000 ones 1 +
+Benchmark 1: bin/niko -e "10000000 ones 1 +"
+  Time (mean ± σ):     193.1 ms ±  14.8 ms    [User: 61.9 ms, System: 131.2 ms]
+  Range (min … max):   167.3 ms … 221.2 ms    14 runs
+ 
+> 10000000 ones 1. +
+Benchmark 1: bin/niko -e "10000000 ones 1. +"
+  Time (mean ± σ):     196.2 ms ±  34.7 ms    [User: 70.6 ms, System: 125.5 ms]
+  Range (min … max):    98.8 ms … 243.0 ms    16 runs
  

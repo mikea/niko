@@ -11,8 +11,10 @@ watch +WATCH_TARGET='build':
 build: (_build DEBUG_CFLAGS)
 release: (_build RELEASE_CFLAGS)
 
-run: build _test
+run: test
     bin/niko
+
+test: build _test
 
 clean:
     rm -rf bin build
@@ -20,11 +22,15 @@ clean:
 valgrind:
     valgrind --leak-check=full --track-origins=yes --show-reachable=yes bin/niko -t test_suite -v
 
+callgrind: release
+    rm callgrind.out.*
+    valgrind --tool=callgrind --dump-instr=yes bin/niko -e "1000000 ones 1000000 ones +"
+
 benchmarks: release
     just _benchmarks > benchmarks.results
 
 opt-report:
-    cpp -I . -P words.c > build/words.c
+    cpp -DNDEBUG -I . -P words.c > build/words.c
     clang-format -i build/words.c
     gcc {{RELEASE_CFLAGS}} -fopt-info-vec-missed -S -o build/words.o build/words.c
 
