@@ -36,11 +36,7 @@ static_assert(sizeof(f64) == sizeof(i64));
   })
 
 // memory management
-#define CONSTRUCTOR(p) ATTR(constructor(p))
-
-#if __INTELLISENSE__
-#pragma diag_suppress 1094 // suppress attribute construtore doesn't take parameter
-#endif
+#define CONSTRUCTOR ATTR(constructor)
 
 #define DEF_CLEANUP(t, free_fn)    \
   INLINE void t##_cleanup(t** p) { \

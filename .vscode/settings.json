@@ -2,6 +2,7 @@
     "C_Cpp.default.compilerPath": "/etc/profiles/per-user/mike/bin/gcc",
     "files.associations": {
         "*.h": "c",
+        "typeinfo": "c"
     },
     "C_Cpp.default.cStandard": "gnu23"
 }

@@ -85,7 +85,7 @@ int single_pointer_arginfo(const struct printf_info* __info, size_t n, int* argt
   return 1;
 }
 
-CONSTRUCTOR(1000) void register_printf_extensions() {
+CONSTRUCTOR void register_printf_extensions() {
   register_printf_specifier('A', printf_array, single_pointer_arginfo);
   register_printf_specifier('S', printf_str, single_pointer_arginfo);
   register_printf_specifier('H', printf_shape, single_pointer_arginfo);

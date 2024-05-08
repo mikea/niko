@@ -248,23 +248,31 @@ typedef struct interpreter_t interpreter_t;
 
 #define DEF_WORD_HANDLER(name) STATUS_T name(interpreter_t* inter, stack_t* stack)
 
-#define DEF_WORD(w, n)                                                                 \
+#define DEF_WORD_HANDLER_1_1(n)                                           \
+  INLINE RESULT_T n##_impl(const array_t* x);                             \
+  DEF_WORD_HANDLER(n) {                                                   \
+    R_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected"); \
+    own(array_t) x = stack_pop(stack);                                    \
+    result_t result = n##_impl(x);                                        \
+    if (result.ok) {                                                      \
+      stack_push(stack, result.either.a);                                 \
+      return status_ok();                                                 \
+    } else {                                                              \
+      return status_err(result.either.e);                                 \
+    }                                                                     \
+  }                                                                       \
+  INLINE RESULT_T n##_impl(const array_t* x)
+
+#define REGISTER_WORD(w, n)                                                            \
   STATUS_T w_##n(interpreter_t* inter, stack_t* stack);                                \
-  CONSTRUCTOR(1000) void w_##n##_register() {                                          \
+  CONSTRUCTOR void w_##n##_register() {                                                \
     entry_vector_add(&global_dict, (dict_entry_t){string_newf(w), atom_t_ffi(w_##n)}); \
-  }                                                                                    \
+  }
+
+#define DEF_WORD(w, n) \
+  REGISTER_WORD(w, n)  \
   DEF_WORD_HANDLER(w_##n)
 
-#define DEF_WORD1(w, n)                   \
-  RESULT_T n##_impl(const array_t* x);    \
-  DEF_WORD(w, n) {                        \
-    own(array_t) x = stack_pop(stack);    \
-    result_t result = n##_impl(x);        \
-    if (result.ok) {                      \
-      stack_push(stack, result.either.a); \
-      return status_ok();                 \
-    } else {                              \
-      return status_err(result.either.e); \
-    }                                     \
-  }                                       \
-  RESULT_T n##_impl(const array_t* x)
+#define DEF_WORD_1_1(w, n) \
+  REGISTER_WORD(w, n)      \
+  DEF_WORD_HANDLER_1_1(w_##n)

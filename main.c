@@ -73,6 +73,7 @@ STATUS_T interpter_word_impl(interpreter_t* inter, array_t* a, const str_t w) {
           return f(inter, inter->stack);
         }
         case 1: {
+          R_CHECK(stack_len(inter->stack) >= 1, "stack underflow: 1 value expected");
           array_t* x = stack_peek(inter->stack);
           f = ((t_ffi*)array_data(a))[x->t];
           R_CHECK(f, "%pT is not supported by `%pS`", &x->t, &w);

@@ -2,9 +2,6 @@
 
 #include "niko.h"
 
-#define GEN_REGISTER_SPEC(name, t) \
-  CONSTRUCTOR(500) void register_##name##_##t() { name##_table[TYPE_ENUM(t)] = name##_##t; }
-
 INLINE STATUS_T thread1(interpreter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_table[T_MAX]) {
   assert(x->t == T_ARR);
   array_t* out = array_alloc_as(x);
@@ -23,33 +20,52 @@ INLINE STATUS_T thread1(interpreter_t* inter, stack_t* stack, const array_t* x, 
   DEF_WORD_HANDLER(name##_t_arr) {        \
     own(array_t) x = stack_pop(stack);    \
     return thread1(inter, stack, x, ffi); \
-  }                                       \
-  GEN_REGISTER_SPEC(name, t_arr)
+  }
 
 // neg
 
 t_ffi neg_table[T_MAX];
 
 #define GEN_NEG(t)                                                           \
-  DEF_WORD_HANDLER(neg_##t) {                                                \
-    own(array_t) x = stack_pop(stack);                                       \
+  DEF_WORD_HANDLER_1_1(neg_##t) {                                            \
     array_t* out = array_alloc_as(x);                                        \
     DO(i, x->n)((t*)array_mut_data(out))[i] = -((const t*)array_data(x))[i]; \
-    stack_push(stack, out);                                                  \
-    R_OK;                                                                    \
-  }                                                                          \
-  GEN_REGISTER_SPEC(neg, t)
+    return result_ok(out);                                                   \
+  }
 
 GEN_NEG(t_i64);
 GEN_NEG(t_f64);
-
 GEN_THREAD1(neg, neg_table)
 
-#define UPDATE_NEG_TABLE(t) neg_table[TYPE_ENUM(t)] = neg_##t;
-
-CONSTRUCTOR(1000) void reg_neg() {
+CONSTRUCTOR void reg_neg() {
+  neg_table[T_I64] = neg_t_i64;
+  neg_table[T_F64] = neg_t_f64;
+  neg_table[T_ARR] = neg_t_arr;
   array_t* a = array_new_1d(T_FFI, T_MAX, neg_table);
   entry_vector_add(&global_dict, (dict_entry_t){string_newf("neg"), a});
+}
+
+// abs
+
+t_ffi abs_table[T_MAX];
+
+#define GEN_ABS(t, op)                                                          \
+  DEF_WORD_HANDLER_1_1(abs_##t) {                                               \
+    array_t* out = array_alloc_as(x);                                           \
+    DO(i, x->n)((t*)array_mut_data(out))[i] = op(((const t*)array_data(x))[i]); \
+    return result_ok(out);                                                      \
+  }
+
+GEN_ABS(t_i64, labs);
+GEN_ABS(t_f64, fabs);
+GEN_THREAD1(abs, abs_table)
+
+CONSTRUCTOR void reg_abs() {
+  abs_table[T_I64] = abs_t_i64;
+  abs_table[T_F64] = abs_t_f64;
+  abs_table[T_ARR] = abs_t_arr;
+  array_t* a = array_new_1d(T_FFI, T_MAX, abs_table);
+  entry_vector_add(&global_dict, (dict_entry_t){string_newf("abs"), a});
 }
 
 // sqrt, sin, et. al.
@@ -61,18 +77,20 @@ CONSTRUCTOR(1000) void reg_neg() {
     DO(i, x->n)((t_f64*)array_mut_data(out))[i] = op(((const t*)array_data(x))[i]); \
     stack_push(stack, out);                                                         \
     R_OK;                                                                           \
-  }                                                                                 \
-  CONSTRUCTOR(500) void register_##name##_##t() { name##_table[TYPE_ENUM(t)] = name##_##t; }
+  }
 
-#define GEN_FLOAT(name, op) \
-t_ffi name##_table[T_MAX]; \
-GEN_FLOAT1_SPEC(name, t_f64, op) \
-GEN_FLOAT1_SPEC(name, t_i64, op) \
-GEN_THREAD1(name, name##_table) \
-CONSTRUCTOR(1000) void reg_##name() { \
-  array_t* a = array_new_1d(T_FFI, T_MAX, name##_table); \
-  entry_vector_add(&global_dict, (dict_entry_t){string_newf(#name), a}); \
-} 
+#define GEN_FLOAT(name, op)                                                \
+  t_ffi name##_table[T_MAX];                                               \
+  GEN_FLOAT1_SPEC(name, t_f64, op)                                         \
+  GEN_FLOAT1_SPEC(name, t_i64, op)                                         \
+  GEN_THREAD1(name, name##_table)                                          \
+  CONSTRUCTOR void reg_##name() {                                          \
+    name##_table[T_I64] = name##_t_i64;                                    \
+    name##_table[T_F64] = name##_t_f64;                                    \
+    name##_table[T_ARR] = name##_t_arr;                                    \
+    array_t* a = array_new_1d(T_FFI, T_MAX, name##_table);                 \
+    entry_vector_add(&global_dict, (dict_entry_t){string_newf(#name), a}); \
+  }
 
 GEN_FLOAT(acos, acos)
 GEN_FLOAT(acosh, acosh)
@@ -192,8 +210,8 @@ GEN_BINOP("*", mul, MUL_OP)
 GEN_BINOP("-", minus, MINUS_OP)
 GEN_BINOP("/", div, DIV_OP)
 
-DEF_WORD1("shape", shape) { return result_ok(array_new(T_I64, x->r, shape_1d(&x->r), array_dims(x))); }
-DEF_WORD1("len", len) { return result_ok(atom_t_i64(x->n)); }
+DEF_WORD_1_1("shape", shape) { return result_ok(array_new(T_I64, x->r, shape_1d(&x->r), array_dims(x))); }
+DEF_WORD_1_1("len", len) { return result_ok(atom_t_i64(x->n)); }
 
 shape_t create_shape(const array_t* x) {
   assert(x->r <= 1);      // todo: report error
@@ -202,21 +220,21 @@ shape_t create_shape(const array_t* x) {
   return shape_create(x->n, array_data(x));
 }
 
-DEF_WORD1("zeros", zeros) {
+DEF_WORD_1_1("zeros", zeros) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
   DO(i, y->n) array_mut_data_i64(y)[i] = 0;
   return result_ok(y);
 }
 
-DEF_WORD1("ones", ones) {
+DEF_WORD_1_1("ones", ones) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
   DO(i, y->n) array_mut_data_i64(y)[i] = 1;
   return result_ok(y);
 }
 
-DEF_WORD1("index", index) {
+DEF_WORD_1_1("index", index) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
   DO(i, y->n) array_mut_data_i64(y)[i] = i;
@@ -242,6 +260,7 @@ DEF_WORD("drop", drop) {
 }
 
 DEF_WORD(".", dot) {
+  R_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
   own(array_t) x = stack_pop(stack);
   fprintf(inter->out, "%pA\n", x);
   R_OK;
@@ -251,3 +270,5 @@ DEF_WORD("exit", exit) {
   fprintf(inter->out, "bye\n");
   exit(0);
 }
+
+DEF_WORD("load_csv", load_csv) { R_OK; }
