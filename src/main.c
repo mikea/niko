@@ -61,7 +61,7 @@ void interpreter_free(interpreter_t* inter) {
 }
 DEF_CLEANUP(interpreter_t, interpreter_free);
 
-STATUS_T interpter_word_impl(interpreter_t* inter, array_t* a, const str_t w) {
+STATUS_T interpreter_word(interpreter_t* inter, array_t* a) {
   switch (a->t) {
     case T_FFI: {
       t_ffi f;
@@ -69,29 +69,22 @@ STATUS_T interpter_word_impl(interpreter_t* inter, array_t* a, const str_t w) {
       switch (a->r) {
         case 0: {
           f = *(t_ffi*)array_data(a);
-          R_CHECK(f, "`%pS` is not implemented", &w);
+          R_CHECK(f, "not implemented");
           return f(inter, inter->stack);
         }
         case 1: {
           R_CHECK(stack_len(inter->stack) >= 1, "stack underflow: 1 value expected");
           array_t* x = stack_peek(inter->stack);
           f = ((t_ffi*)array_data(a))[x->t];
-          R_CHECK(f, "%pT is not supported by `%pS`", &x->t, &w);
+          R_CHECK(f, "%pT is not supported", &x->t);
           return f(inter, inter->stack);
         }
         case 2: NOT_IMPLEMENTED
-        default: R_ERRF("unexpected ffi rank: %ld", a->r);
+        default: return status_errf("unexpected ffi rank: %ld", a->r);
       }
     }
-    default: R_ERRF("unexpected type: %d", a->t);
+    default: return status_errf("unexpected type: %d", a->t);
   }
-}
-
-STATUS_T interpreter_word(interpreter_t* inter, const str_t w) {
-  DO(i, inter->dict.l) if (str_eq(w, string_as_str(inter->dict.d[i].k))) {
-    return interpter_word_impl(inter, inter->dict.d[i].v, w);
-  }
-  return status_errf("unknown word '%pS'", &w);
 }
 
 STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
@@ -109,7 +102,12 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
       assert(inter->stack->l >= mark);  // todo: report error
       return concatenate(inter->stack, inter->stack->l - mark);
     }
-    case TOK_WORD: return interpreter_word(inter, t.text);
+    case TOK_WORD: {
+      DO(i, inter->dict.l) if (str_eq(t.text, string_as_str(inter->dict.d[i].k))) {
+        return interpreter_word(inter, inter->dict.d[i].v);
+      }
+      return status_errf("unknown word '%pS'", &t.text);
+    }
     case TOK_I64: {
       stack_push(inter->stack, atom_t_i64(t.val.i));
       R_OK;
@@ -127,9 +125,36 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
   UNREACHABLE;
 }
 
+token_t interpreter_next_token(interpreter_t* inter) { return next_token(&inter->line); }
+
+// todo: dedup with interpreter_token
+RESULT_T interpreter_read_next_word(interpreter_t* inter) {
+  token_t t = interpreter_next_token(inter);
+  switch (t.tok) {
+    case TOK_EOF: return result_errf("expected word, but end of input found");
+    case TOK_ERR: return result_errf("unexpected token: '%pS'", &t.text);
+    case TOK_ARR_OPEN: return result_errf("expected word, but '[' found");
+    case TOK_ARR_CLOSE: return result_errf("expected word, but '[' found");
+    case TOK_WORD: {
+      DO(i, inter->dict.l) if (str_eq(t.text, string_as_str(inter->dict.d[i].k))) {
+        return result_ok(array_inc_ref(inter->dict.d[i].v));
+      }
+      return result_errf("unknown word '%pS'", &t.text);
+    }
+    case TOK_I64: return result_ok(atom_t_i64(t.val.i));
+    case TOK_F64: return result_ok(atom_t_f64(t.val.i));
+    case TOK_STR: {
+      size_t l = t.val.s.l;
+      return result_ok(array_new(T_C8, l, shape_1d(&l), t.val.s.p));
+    }
+  }
+}
+
 STATUS_T interpreter_line(interpreter_t* inter, const char* s) {
+  inter->line = s;
+
   for (;;) {
-    token_t t = next_token(&s);
+    token_t t = interpreter_next_token(inter);
     if (t.tok == TOK_EOF) R_OK;
     R_IF_ERR(interpreter_token(inter, t));
   }

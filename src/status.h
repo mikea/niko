@@ -31,7 +31,6 @@ INLINE void status_print_error(status_t s) {
 }
 
 #define R_OK return status_ok()
-#define R_ERRF(...) return status_errf(__VA_ARGS__)
 
 #define R_IF_ERR(expr)                                \
   do {                                                \
@@ -39,4 +38,4 @@ INLINE void status_print_error(status_t s) {
     if (status_is_err(__status__)) return __status__; \
   } while (0)
 
-#define R_CHECK(cond, ...) if (!(cond)) R_ERRF(__VA_ARGS__)
+#define R_CHECK(cond, ...) if (!(cond)) return status_errf(__VA_ARGS__)

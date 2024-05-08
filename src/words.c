@@ -272,3 +272,20 @@ DEF_WORD("exit", exit) {
 }
 
 DEF_WORD("load_csv", load_csv) { R_OK; }
+
+// fold
+
+DEF_WORD("fold", fold) {
+  R_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
+  own(array_t) x = stack_pop(stack);
+
+  array_t* w = R_UNWRAP(interpreter_read_next_word(inter));
+
+  DO(i, x->n) {
+    array_t* y = array_new_atom(x->t, array_data_i(x, i));
+    stack_push(stack, y);
+    if (i > 0) interpreter_word(inter, w);
+  }
+
+  R_OK;
+}

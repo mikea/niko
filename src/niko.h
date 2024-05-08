@@ -124,6 +124,7 @@ INLINE shape_t array_shape(const array_t* a) { return (shape_t){a->r, array_dims
 
 INLINE const void* array_data(const array_t* arr) { return (void*)(arr + 1) + dims_sizeof(arr->r); }
 INLINE size_t array_data_sizeof(const array_t* a) { return type_sizeof(a->t, a->n); }
+INLINE const void* array_data_i(const array_t* a, size_t i) { return array_data(a) + type_sizeof(a->t, i); }
 
 INLINE array_t* array_assert_mut(array_t* arr) {
   assert(arr->rc == 1);
@@ -159,13 +160,15 @@ INLINE array_t* array_new(type_t t, size_t n, shape_t s, const void* x) {
   return a;
 }
 INLINE array_t* array_new_1d(type_t t, size_t n, const void* x) { return array_new(t, n, shape_1d(&n), x); }
+
 INLINE bool is_atom(const array_t* a) { return a->r == 0; }
+INLINE array_t* array_new_atom(type_t t, const void* x) { return array_new(t, 1, shape_atom(), x); }
 
 #define __DEF_TYPE_HELPER(t) \
-  INLINE array_t* atom_##t(t v) { return array_new(TYPE_ENUM(t), 1, shape_atom(), &v); }
+  INLINE array_t* atom_##t(t v) { return array_new_atom(TYPE_ENUM(t), &v); }
 TYPE_FOREACH(__DEF_TYPE_HELPER)
 
-#define __DO_ARRAY_IMPL(a, t, i, p, u)                             \
+#define __DO_ARRAY_IMPL(a, t, i, p, u)                          \
   for (bool u##b = 1; u##b; u##b = 0)                           \
     for (t* restrict p = (t*)array_mut_data(a); u##b; u##b = 0) \
       for (size_t i = 0, u##n = a->n; i < u##n && u##b; i++, p++)
@@ -183,6 +186,16 @@ typedef struct {
 } result_t;
 #define RESULT_T WARN_UNUSED result_t
 INLINE result_t result_ok(array_t* a) { return (result_t){.ok = true, .either.a = a}; }
+INLINE result_t result_err(string_t msg) { return (result_t){.ok = false, .either.e = msg}; }
+INLINE PRINTF(1, 2) result_t result_errf(const char* format, ...) {
+  return result_err(VA_ARGS_FWD(format, string_vnewf(format, args)));
+}
+#define R_UNWRAP(r)                                         \
+  ({                                                        \
+    result_t __result = (r);                                \
+    if (!__result.ok) return status_err(__result.either.e); \
+    __result.either.a;                                     \
+  })
 
 // stack
 
@@ -249,8 +262,11 @@ struct interpreter_t {
   size_t arr_level;
   size_t arr_marks[256];
   FILE* out;
+  const char* line;
 };
 typedef struct interpreter_t interpreter_t;
+RESULT_T interpreter_read_next_word(interpreter_t* inter);
+STATUS_T interpreter_word(interpreter_t* inter, array_t* a);
 
 // words
 

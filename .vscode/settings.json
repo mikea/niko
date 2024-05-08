@@ -4,5 +4,6 @@
         "*.h": "c",
         "typeinfo": "c"
     },
-    "C_Cpp.default.cStandard": "gnu23"
+    "C_Cpp.default.cStandard": "gnu23",
+    "cmake.configureOnOpen": true
 }
