@@ -1,15 +1,10 @@
 alias w := watch
 
-COMMON_CFLAGS := "-std=gnu2x -Wall -Werror=implicit-fallthrough -Werror=switch -I . -lm -g -msse2 -fno-math-errno -fno-trapping-math "
-DEBUG_CFLAGS := COMMON_CFLAGS + "-fno-inline-small-functions -Og"
-# useful flags: -Winline 
-RELEASE_CFLAGS := COMMON_CFLAGS + "-O3 -DNDEBUG -fno-omit-frame-pointer -march=native"
-
 watch +WATCH_TARGET='build':
     watchexec -rc -w . -- just {{WATCH_TARGET}}
 
-build: (_build DEBUG_CFLAGS)
-release: (_build RELEASE_CFLAGS)
+build: (_build "Debug")
+release: (_build "Release")
 
 run: test
     bin/niko
@@ -17,7 +12,7 @@ run: test
 test: build _test
 
 clean:
-    rm -rf bin build
+    rm -rf bin build callgrind.out.* perf.data perf.data.old
 
 valgrind:
     valgrind --leak-check=full --track-origins=yes --show-reachable=yes bin/niko -t test_suite -v
@@ -29,20 +24,23 @@ callgrind: release
 benchmarks: release
     just _benchmarks > benchmarks.results
 
-opt-report:
-    cpp -DNDEBUG -I . -P words.c > build/words.c
-    clang-format -i build/words.c
-    gcc {{RELEASE_CFLAGS}} -fopt-info-vec-missed -S -o build/words.o build/words.c
+# opt-report:
+#     gcc {{RELEASE_CFLAGS}} -E -P -o build/words.c words.c
+#     gcc {{RELEASE_CFLAGS}} -fverbose-asm -S -o build/words.s build/words.c
+#     clang-format -i build/words.c
+#     gcc {{RELEASE_CFLAGS}} -fopt-info-vec-missed -c -o build/words.o build/words.c
 
 [private]
 _test:
     bin/niko -t test_suite
 
 [private]
-_build CFLAGS:
-    mkdir -p bin build
-    re2c lexer.c -o build/lexer.c -i --case-ranges
-    gcc {{CFLAGS}} -o bin/niko main.c build/lexer.c print.c words.c
+_build BUILD_TYPE:
+    mkdir -p bin build/{{BUILD_TYPE}}
+    rm -rf bin/niko
+    cmake -B build/{{BUILD_TYPE}} -DCMAKE_BUILD_TYPE={{BUILD_TYPE}}
+    cmake --build build/{{BUILD_TYPE}}
+    cp build/{{BUILD_TYPE}}/niko bin/niko
 
 _benchmarks:
-    while IFS= read -r line; do echo "> $line"; hyperfine --warmup 10 --show-output "bin/niko -e \"$line\"" ; done < benchmarks
+    while IFS= read -r line; do echo "> $line"; hyperfine --warmup 10 "bin/niko -e \"$line\"" ; done < benchmarks

@@ -223,22 +223,21 @@ shape_t create_shape(const array_t* x) {
 DEF_WORD_1_1("zeros", zeros) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
-  DO(i, y->n) array_mut_data_i64(y)[i] = 0;
+  DO_ARRAY(y, t_i64, i, ptr) (*ptr) = 0;
   return result_ok(y);
 }
 
 DEF_WORD_1_1("ones", ones) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
-  t_i64* restrict data = array_mut_data_i64(y);
-  DO(i, y->n) data[i] = 1;
+  DO_ARRAY(y, t_i64, i, ptr) (*ptr) = 1;
   return result_ok(y);
 }
 
 DEF_WORD_1_1("index", index) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
-  DO(i, y->n) array_mut_data_i64(y)[i] = i;
+  DO_ARRAY(y, t_i64, i, ptr) (*ptr) = i;
   return result_ok(y);
 }
 

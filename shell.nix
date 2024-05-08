@@ -1,8 +1,12 @@
 { pkgs ? import <nixpkgs> {} }:
   pkgs.mkShell {
     nativeBuildInputs = with pkgs.buildPackages; [ 
-        watchexec just valgrind
+        # code dependencies
         gcc13 re2c glibc
+        # build dependencies
+        watchexec just cmake
+        # tools
+        valgrind
     ];
     # to compare performance
     packages = [

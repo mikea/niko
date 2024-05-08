@@ -165,6 +165,14 @@ INLINE bool is_atom(const array_t* a) { return a->r == 0; }
   INLINE array_t* atom_##t(t v) { return array_new(TYPE_ENUM(t), 1, shape_atom(), &v); }
 TYPE_FOREACH(__DEF_TYPE_HELPER)
 
+#define __DO_ARRAY_IMPL(a, t, i, p, u)                             \
+  for (bool u##b = 1; u##b; u##b = 0)                           \
+    for (t* restrict p = (t*)array_mut_data(a); u##b; u##b = 0) \
+      for (size_t i = 0, u##n = a->n; i < u##n && u##b; i++, p++)
+
+#define _DO_ARRAY_IMPL(a, t, i, p, u) __DO_ARRAY_IMPL(a, t, i, p, u)
+#define DO_ARRAY(a, t, i, p) _DO_ARRAY_IMPL(a, t, i, p, UNIQUE(__))
+
 // result
 typedef struct {
   bool ok;

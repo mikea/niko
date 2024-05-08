@@ -14,6 +14,11 @@ static_assert(sizeof(f64) == sizeof(i64));
 #define PRINTF(i, j) ATTR(format(printf, i, j))
 #define ALIGNED(n) ATTR(aligned(n))
 
+#define __PASTE__(a, b) a##b
+#define PASTE(a, b) __PASTE__(a, b)
+
+#define UNIQUE(n) PASTE(n, __COUNTER__)
+
 #define UNREACHABLE __builtin_unreachable()
 #define NOT_IMPLEMENTED \
   assert(false);        \
@@ -91,9 +96,6 @@ DEF_CLEANUP(FILE, fclose);
         9,8,7,6,5,4,3,2,1,0
 
 // APPLY
-
-#define __PASTE__(a, b) a##b
-#define PASTE(a, b) __PASTE__(a, b)
 
 #define __APPLY__1(F, a) F(a)
 #define __APPLY__2(F, a, b) __APPLY__1(F, a) F(b)
