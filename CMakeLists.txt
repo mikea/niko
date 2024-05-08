@@ -2,18 +2,18 @@ cmake_minimum_required(VERSION 3.27)
 
 project(niko VERSION 0.1 DESCRIPTION "niko programming language" LANGUAGES C)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lexer.c
-  COMMAND re2c -i --case-ranges -o ${CMAKE_CURRENT_BINARY_DIR}/lexer.c ${CMAKE_CURRENT_SOURCE_DIR}/lexer.re
-  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/lexer.re
+  COMMAND re2c -i --case-ranges -o ${CMAKE_CURRENT_BINARY_DIR}/lexer.c ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.re
+  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.re
   COMMENT "Generating lexer.c"
   VERBATIM
 )
 
-add_executable(niko main.c words.c print.c ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
+add_executable(niko src/main.c src/words.c src/print.c ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
 target_link_libraries(niko m)
 
 add_compile_options(-std=gnu2x -Wall -Werror=implicit-fallthrough -Werror=switch -msse2 -fno-math-errno -fno-trapping-math -fno-omit-frame-pointer -march=native)

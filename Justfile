@@ -18,8 +18,12 @@ valgrind:
     valgrind --leak-check=full --track-origins=yes --show-reachable=yes bin/niko -t test_suite -v
 
 callgrind: release
-    rm callgrind.out.*
-    valgrind --tool=callgrind --dump-instr=yes bin/niko -e "1000000 ones 1000000 ones +"
+    rm -f callgrind.out.* cachegrind.out.*
+    valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes bin/niko -e "10000000 ones 10000000 ones +"
+
+cachegrind: release
+    rm -f callgrind.out.* cachegrind.out.*
+    valgrind --tool=cachegrind bin/niko -e "100000000 ones 100000000 ones +"
 
 benchmarks: release
     just _benchmarks > benchmarks.results

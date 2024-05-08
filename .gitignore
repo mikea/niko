@@ -3,6 +3,7 @@ build/
 perf.data
 perf.data.*
 callgrind.*
+cachegrind.*
 
 # Prerequisites
 *.d
