@@ -210,7 +210,12 @@ GEN_BINOP("*", mul, MUL_OP)
 GEN_BINOP("-", minus, MINUS_OP)
 GEN_BINOP("/", div, DIV_OP)
 
-DEF_WORD_1_1("shape", shape) { return result_ok(array_new(T_I64, x->r, shape_1d(&x->r), array_dims(x))); }
+DEF_WORD_1_1("shape", shape) {
+  dim_t d = x->r;
+  array_t* y = array_alloc(T_I64, x->r, shape_1d(&d));
+  DO_ARRAY(y, t_i64, i, p) *p = array_dims(x)[i];
+  return result_ok(y);
+}
 DEF_WORD_1_1("len", len) { return result_ok(atom_t_i64(x->n)); }
 
 shape_t create_shape(const array_t* x) {
@@ -223,21 +228,21 @@ shape_t create_shape(const array_t* x) {
 DEF_WORD_1_1("zeros", zeros) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
-  DO_ARRAY(y, t_i64, i, ptr) (*ptr) = 0;
+  DO_ARRAY(y, t_i64, i, ptr)(*ptr) = 0;
   return result_ok(y);
 }
 
 DEF_WORD_1_1("ones", ones) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
-  DO_ARRAY(y, t_i64, i, ptr) (*ptr) = 1;
+  DO_ARRAY(y, t_i64, i, ptr)(*ptr) = 1;
   return result_ok(y);
 }
 
 DEF_WORD_1_1("index", index) {
   shape_t s = create_shape(x);
   array_t* y = array_alloc(T_I64, shape_len(s), s);
-  DO_ARRAY(y, t_i64, i, ptr) (*ptr) = i;
+  DO_ARRAY(y, t_i64, i, ptr)(*ptr) = i;
   return result_ok(y);
 }
 
@@ -284,7 +289,7 @@ DEF_WORD("fold", fold) {
   DO(i, x->n) {
     array_t* y = array_new_atom(x->t, array_data_i(x, i));
     stack_push(stack, y);
-    if (i > 0) interpreter_word(inter, w);
+    if (i > 0) R_IF_ERR(interpreter_word(inter, w));
   }
 
   R_OK;

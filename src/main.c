@@ -11,7 +11,8 @@ DESTRUCTOR void global_dict_free() {
 
 STATUS_T concatenate(stack_t* stack, size_t len) {
   if (!len) {
-    stack_push(stack, array_alloc(T_I64, 0, shape_1d(&len)));
+    dim_t d = len;
+    stack_push(stack, array_alloc(T_I64, 0, shape_1d(&d)));
     R_OK;
   }
   bool all_common = true;
@@ -25,7 +26,8 @@ STATUS_T concatenate(stack_t* stack, size_t len) {
 
   array_t* a;
   if (!all_common) {
-    a = array_alloc(T_ARR, len, shape_1d(&len));
+    dim_t d = len;
+    a = array_alloc(T_ARR, len, shape_1d(&d));
     DO(i, len) { ((array_t**)array_mut_data(a))[i] = array_inc_ref(stack_i(stack, len - i - 1)); }
   } else {
     own(shape_t) new_shape = shape_extend(common_shape, len);
@@ -118,7 +120,8 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
     }
     case TOK_STR: {
       size_t l = t.val.s.l;
-      stack_push(inter->stack, array_new(T_C8, l, shape_1d(&l), t.val.s.p));
+      dim_t d = l;
+      stack_push(inter->stack, array_new_t_c8(l, shape_1d(&d), t.val.s.p));
       R_OK;
     }
   }
@@ -145,9 +148,11 @@ RESULT_T interpreter_read_next_word(interpreter_t* inter) {
     case TOK_F64: return result_ok(atom_t_f64(t.val.i));
     case TOK_STR: {
       size_t l = t.val.s.l;
-      return result_ok(array_new(T_C8, l, shape_1d(&l), t.val.s.p));
+      dim_t d = l;
+      return result_ok(array_new_t_c8(l, shape_1d(&d), t.val.s.p));
     }
   }
+  UNREACHABLE;
 }
 
 STATUS_T interpreter_line(interpreter_t* inter, const char* s) {
