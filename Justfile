@@ -1,7 +1,7 @@
 alias w := watch
 
 watch +WATCH_TARGET='build':
-    watchexec -rc -w . -- just {{WATCH_TARGET}}
+    watchexec -rc -w . --ignore *.results -- just {{WATCH_TARGET}}
 
 build: (_build "Debug")
 release: (_build "Release")
@@ -17,16 +17,20 @@ clean:
 valgrind:
     valgrind --leak-check=full --track-origins=yes --show-reachable=yes bin/niko -t test_suite -v
 
-callgrind: release
+callgrind EXPR="10000000 zeros": release
     rm -f callgrind.out.* cachegrind.out.*
-    valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes bin/niko -e "10000000 ones 10000000 ones +"
+    # 
+    valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes bin/niko -e "{{EXPR}}"
 
-cachegrind: release
+cachegrind EXPR="10000000 zeros": release
     rm -f callgrind.out.* cachegrind.out.*
-    valgrind --tool=cachegrind bin/niko -e "100000000 ones 100000000 ones +"
+    valgrind --tool=cachegrind bin/niko -e {{EXPR}}"
 
 benchmarks: release
-    just _benchmarks > benchmarks.results
+    taskset -c 4 just _benchmarks > benchmarks.results
+
+stat EXPR="10000000 zeros": release
+    perf stat -- bin/niko -e "{{EXPR}}"
 
 # opt-report:
 #     gcc {{RELEASE_CFLAGS}} -E -P -o build/words.c words.c
@@ -48,6 +52,6 @@ _build BUILD_TYPE:
 
 _benchmarks:
     while IFS= read -r line; do echo "> $line"; \
-        perf stat -- bin/niko -e "$line" 2>&1 ; \
-        hyperfine --warmup 10 "bin/niko -e \"$line\"" ; \
+        perf stat -- build/Release/niko -e "$line" 2>&1 ; \
+        hyperfine --warmup 10 "build/Release/niko -e \"$line\"" ; \
         done < benchmarks

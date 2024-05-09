@@ -12,7 +12,6 @@ static_assert(sizeof(f64) == sizeof(i64));
 #define WARN_UNUSED ATTR(warn_unused_result)
 #define DESTRUCTOR ATTR(destructor)
 #define PRINTF(i, j) ATTR(format(printf, i, j))
-#define ALIGNED(n) ATTR(aligned(n))
 
 #define __PASTE__(a, b) a##b
 #define PASTE(a, b) __PASTE__(a, b)
@@ -41,6 +40,12 @@ static_assert(sizeof(f64) == sizeof(i64));
   })
 
 // memory management
+
+#define ALIGNED(n) ATTR(aligned(n))
+
+#define __ALIGN_MASK(x,mask)    (((x)+(mask))&~(mask))
+#define ALIGN(x,a)              __ALIGN_MASK(x,(typeof(x))(a)-1)
+
 #define CONSTRUCTOR ATTR(constructor)
 
 #define DEF_CLEANUP(t, free_fn)    \

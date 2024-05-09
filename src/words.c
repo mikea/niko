@@ -76,7 +76,7 @@ CONSTRUCTOR void reg_abs() {
     array_t* out = array_alloc(T_F64, x->n, array_shape(x));                        \
     DO(i, x->n)((t_f64*)array_mut_data(out))[i] = op(((const t*)array_data(x))[i]); \
     stack_push(stack, out);                                                         \
-    R_OK;                                                                           \
+    STATUS_OK;                                                                      \
   }
 
 #define GEN_FLOAT(name, op)                                                \
@@ -156,7 +156,7 @@ STATUS_T w_binop(stack_t* stack,
   array_t* out = array_alloc(type_table[x->t][y->t], n, s);
   op(out->n, array_data(x), array_data(y), array_mut_data(out));
   stack_push(stack, out);
-  R_OK;
+  STATUS_OK;
 }
 
 #define GEN_BINOP_SPECIALIZATION(name, a_t, b_t, y_t, expr)                                           \
@@ -213,7 +213,7 @@ GEN_BINOP("/", div, DIV_OP)
 DEF_WORD_1_1("shape", shape) {
   dim_t d = x->r;
   array_t* y = array_alloc(T_I64, x->r, shape_1d(&d));
-  DO_ARRAY(y, t_i64, i, p) *p = array_dims(x)[i];
+  DO_ARRAY(y, t_i64, i, p)* p = array_dims(x)[i];
   return result_ok(y);
 }
 DEF_WORD_1_1("len", len) { return result_ok(atom_t_i64(x->n)); }
@@ -224,6 +224,10 @@ shape_t create_shape(const array_t* x) {
   if (is_atom(x)) return shape_1d(array_data(x));
   return shape_create(x->n, array_data(x));
 }
+
+// INLINE void fill_simd(size_t n, vmax_i64* restrict SIMD_ALIGNED out, vmax_i64 x) {
+//    DO(i, n) out[i] = x;
+//  }
 
 DEF_WORD_1_1("zeros", zeros) {
   shape_t s = create_shape(x);
@@ -248,7 +252,7 @@ DEF_WORD_1_1("index", index) {
 
 DEF_WORD("dup", dup) {
   stack_push(stack, array_inc_ref(stack_peek(stack)));
-  R_OK;
+  STATUS_OK;
 }
 
 DEF_WORD("swap", swap) {
@@ -256,19 +260,19 @@ DEF_WORD("swap", swap) {
   array_t* b = stack_pop(stack);
   stack_push(stack, a);
   stack_push(stack, b);
-  R_OK;
+  STATUS_OK;
 }
 
 DEF_WORD("drop", drop) {
   stack_drop(stack);
-  R_OK;
+  STATUS_OK;
 }
 
 DEF_WORD(".", dot) {
   R_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
   own(array_t) x = stack_pop(stack);
   fprintf(inter->out, "%pA\n", x);
-  R_OK;
+  STATUS_OK;
 }
 
 DEF_WORD("exit", exit) {
@@ -276,7 +280,7 @@ DEF_WORD("exit", exit) {
   exit(0);
 }
 
-DEF_WORD("load_csv", load_csv) { R_OK; }
+DEF_WORD("load_csv", load_csv) { STATUS_OK; }
 
 // fold
 
@@ -292,5 +296,5 @@ DEF_WORD("fold", fold) {
     if (i > 0) R_IF_ERR(interpreter_word(inter, w));
   }
 
-  R_OK;
+  STATUS_OK;
 }

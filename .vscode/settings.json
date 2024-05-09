@@ -2,7 +2,8 @@
     "C_Cpp.default.compilerPath": "/etc/profiles/per-user/mike/bin/gcc",
     "files.associations": {
         "*.h": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "random": "c"
     },
     "C_Cpp.default.cStandard": "gnu23",
     "cmake.configureOnOpen": true

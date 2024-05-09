@@ -30,7 +30,7 @@ INLINE void status_print_error(status_t s) {
   fprintf(stderr, "ERROR: %pS\n", &msg);
 }
 
-#define R_OK return status_ok()
+#define STATUS_OK return status_ok()
 
 #define R_IF_ERR(expr)                                \
   do {                                                \

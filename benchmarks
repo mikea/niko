@@ -1,6 +1,7 @@
-10000000 zeros drop
-10000000 ones drop
-10000000 index drop
+10000000 zeros
+10000000 ones
+10000000 index
+11 index 1 + index
 10000000 ones 10000000 ones +
 10000000 ones dup +
 10000000 ones 1 +

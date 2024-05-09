@@ -100,9 +100,17 @@
 [ 10 ]
 > [ 2 3 4 5 ] zeros shape .
 [ 2 3 4 5 ]
+> 100 index shape .
+[ 100 ]
+> 10 index 1 + zeros shape .
+[ 1 2 3 4 5 6 7 8 9 10 ]
 # len
 > 10 zeros len .
 10
+> 100 index len .
+100
+> 10 index 1 + index len .
+3628800
 ## unary words
 # neg
 > 1 neg .
@@ -232,3 +240,5 @@ ERROR: unsupported types
 # fold
 > 10 index fold + .
 45
+> 10000 ones fold + .
+10000

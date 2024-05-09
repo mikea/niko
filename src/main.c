@@ -1,6 +1,8 @@
+#include <getopt.h>
+#include <unistd.h> 
+
 #include "niko.h"
 
-#include <getopt.h>
 
 entry_vector_t global_dict;
 
@@ -13,7 +15,7 @@ STATUS_T concatenate(stack_t* stack, size_t len) {
   if (!len) {
     dim_t d = len;
     stack_push(stack, array_alloc(T_I64, 0, shape_1d(&d)));
-    R_OK;
+    STATUS_OK;
   }
   bool all_common = true;
   const shape_t common_shape = array_shape(stack_peek(stack));
@@ -42,7 +44,7 @@ STATUS_T concatenate(stack_t* stack, size_t len) {
   }
   DO(i, len) stack_drop(stack);
   stack_push(stack, a);
-  R_OK;
+  STATUS_OK;
 }
 
 // interpreter
@@ -91,12 +93,12 @@ STATUS_T interpreter_word(interpreter_t* inter, array_t* a) {
 
 STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
   switch (t.tok) {
-    case TOK_EOF: R_OK;
+    case TOK_EOF: STATUS_OK;
     case TOK_ERR: return status_errf("unexpected token: '%pS'", &t.text);
     case TOK_ARR_OPEN: {
       assert(inter->arr_level < sizeof(inter->arr_marks) / sizeof(inter->arr_marks[0]));
       inter->arr_marks[inter->arr_level++] = inter->stack->l;
-      R_OK;
+      STATUS_OK;
     }
     case TOK_ARR_CLOSE: {
       assert(inter->arr_level);  // todo: report error
@@ -112,17 +114,17 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
     }
     case TOK_I64: {
       stack_push(inter->stack, atom_t_i64(t.val.i));
-      R_OK;
+      STATUS_OK;
     }
     case TOK_F64: {
       stack_push(inter->stack, atom_t_f64(t.val.d));
-      R_OK;
+      STATUS_OK;
     }
     case TOK_STR: {
       size_t l = t.val.s.l;
       dim_t d = l;
       stack_push(inter->stack, array_new_t_c8(l, shape_1d(&d), t.val.s.p));
-      R_OK;
+      STATUS_OK;
     }
   }
   UNREACHABLE;
@@ -160,10 +162,10 @@ STATUS_T interpreter_line(interpreter_t* inter, const char* s) {
 
   for (;;) {
     token_t t = interpreter_next_token(inter);
-    if (t.tok == TOK_EOF) R_OK;
+    if (t.tok == TOK_EOF) STATUS_OK;
     R_IF_ERR(interpreter_token(inter, t));
   }
-  R_OK;
+  STATUS_OK;
 }
 
 // repl
@@ -173,16 +175,19 @@ STATUS_T repl() {
   own(char) input = NULL;
 
   own(interpreter_t) inter = interpreter_new();
+  bool prompt = isatty(STDIN_FILENO);
 
   while (true) {
-    if (inter->arr_level) {
-      printf("%ld> ", inter->arr_level);
-    } else {
-      stack_print(inter->stack);
-      printf(" > ");
+    if (prompt) {
+      if (inter->arr_level) {
+        printf("%ld> ", inter->arr_level);
+      } else {
+        stack_print(inter->stack);
+        printf(" > ");
+      }
     }
 
-    if (getline(&input, &input_size, stdin) <= 0) R_OK;
+    if (getline(&input, &input_size, stdin) <= 0) STATUS_OK;
     status_t result = interpreter_line(inter, input);
     if (status_is_err(result)) {
       str_t msg = status_msg(result);
@@ -246,7 +251,7 @@ STATUS_T test(const char* fname, bool v) {
 
   if (rest_out && *rest_out) fprintf(stderr, "ERROR %s:%ld : umatched output: '%s'\n", fname, in_line_no, rest_out);
 
-  R_OK;
+  STATUS_OK;
 }
 
 STATUS_T eval(const char* stmt) {
