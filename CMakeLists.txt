@@ -16,8 +16,8 @@ add_custom_command(
 add_executable(niko src/main.c src/words.c src/print.c ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
 target_link_libraries(niko m)
 
-add_compile_options(-std=gnu2x -Wall -Werror=implicit-fallthrough -Werror=switch -msse2 -fno-math-errno -fno-trapping-math -fno-omit-frame-pointer -march=native)
+add_compile_options(-std=gnu2x -Wall -Werror=implicit-fallthrough -Werror=switch -msse2 -fno-math-errno -fno-trapping-math -fno-omit-frame-pointer)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-inline-small-functions -Og")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -g")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -g -mavx2")
 
 # set(CMAKE_VERBOSE_MAKEFILE ON)

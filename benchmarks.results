@@ -1,35 +1,161 @@
 > 10000000 zeros drop
+
+ Performance counter stats for 'bin/niko -e 10000000 zeros drop':
+
+            144.97 msec task-clock:u                     #    0.989 CPUs utilized             
+                 0      context-switches:u               #    0.000 /sec                      
+                 0      cpu-migrations:u                 #    0.000 /sec                      
+            19,603      page-faults:u                    #  135.221 K/sec                     
+        30,437,932      cycles:u                         #    0.210 GHz                       
+           279,990      instructions:u                   #    0.01  insn per cycle            
+            79,586      branches:u                       #  548.982 K/sec                     
+             4,167      branch-misses:u                  #    5.24% of all branches           
+
+       0.146509650 seconds time elapsed
+
+       0.033146000 seconds user
+       0.113502000 seconds sys
+
+
 Benchmark 1: bin/niko -e "10000000 zeros drop"
-  Time (mean ± σ):      36.5 ms ±   2.2 ms    [User: 8.9 ms, System: 27.6 ms]
-  Range (min … max):    34.4 ms …  48.5 ms    76 runs
+  Time (mean ± σ):     127.7 ms ±  18.7 ms    [User: 34.2 ms, System: 93.6 ms]
+  Range (min … max):    90.7 ms … 170.4 ms    22 runs
  
 > 10000000 ones drop
+
+ Performance counter stats for 'bin/niko -e 10000000 ones drop':
+
+            148.88 msec task-clock:u                     #    0.996 CPUs utilized             
+                 0      context-switches:u               #    0.000 /sec                      
+                 0      cpu-migrations:u                 #    0.000 /sec                      
+            19,602      page-faults:u                    #  131.662 K/sec                     
+        19,688,382      cycles:u                         #    0.132 GHz                       
+        15,279,352      instructions:u                   #    0.78  insn per cycle            
+         2,579,491      branches:u                       #   17.326 M/sec                     
+             4,136      branch-misses:u                  #    0.16% of all branches           
+
+       0.149474416 seconds time elapsed
+
+       0.034056000 seconds user
+       0.115190000 seconds sys
+
+
 Benchmark 1: bin/niko -e "10000000 ones drop"
-  Time (mean ± σ):      33.1 ms ±   0.6 ms    [User: 9.8 ms, System: 23.3 ms]
-  Range (min … max):    32.0 ms …  35.0 ms    79 runs
+  Time (mean ± σ):     119.6 ms ±  13.5 ms    [User: 33.4 ms, System: 86.3 ms]
+  Range (min … max):    80.6 ms … 150.0 ms    25 runs
  
 > 10000000 index drop
+
+ Performance counter stats for 'bin/niko -e 10000000 index drop':
+
+            126.21 msec task-clock:u                     #    0.989 CPUs utilized             
+                 0      context-switches:u               #    0.000 /sec                      
+                 0      cpu-migrations:u                 #    0.000 /sec                      
+            19,602      page-faults:u                    #  155.319 K/sec                     
+        19,496,979      cycles:u                         #    0.154 GHz                       
+        20,279,307      instructions:u                   #    1.04  insn per cycle            
+         2,579,480      branches:u                       #   20.439 M/sec                     
+             3,777      branch-misses:u                  #    0.15% of all branches           
+
+       0.127578676 seconds time elapsed
+
+       0.042253000 seconds user
+       0.085512000 seconds sys
+
+
 Benchmark 1: bin/niko -e "10000000 index drop"
-  Time (mean ± σ):      34.1 ms ±   1.3 ms    [User: 10.1 ms, System: 24.0 ms]
-  Range (min … max):    32.9 ms …  44.3 ms    79 runs
+  Time (mean ± σ):     123.1 ms ±   5.6 ms    [User: 36.5 ms, System: 86.8 ms]
+  Range (min … max):   112.3 ms … 136.9 ms    22 runs
  
 > 10000000 ones 10000000 ones +
+
+ Performance counter stats for 'bin/niko -e 10000000 ones 10000000 ones +':
+
+            395.39 msec task-clock:u                     #    0.996 CPUs utilized             
+                 0      context-switches:u               #    0.000 /sec                      
+                 0      cpu-migrations:u                 #    0.000 /sec                      
+            58,667      page-faults:u                    #  148.377 K/sec                     
+        69,220,029      cycles:u                         #    0.175 GHz                       
+        45,320,549      instructions:u                   #    0.65  insn per cycle            
+         7,619,129      branches:u                       #   19.270 M/sec                     
+             4,124      branch-misses:u                  #    0.05% of all branches           
+
+       0.396918035 seconds time elapsed
+
+       0.122942000 seconds user
+       0.273871000 seconds sys
+
+
 Benchmark 1: bin/niko -e "10000000 ones 10000000 ones +"
-  Time (mean ± σ):     102.8 ms ±   2.1 ms    [User: 33.2 ms, System: 69.5 ms]
-  Range (min … max):   100.0 ms … 106.5 ms    28 runs
+  Time (mean ± σ):     375.8 ms ±  16.6 ms    [User: 119.0 ms, System: 256.9 ms]
+  Range (min … max):   354.8 ms … 398.6 ms    10 runs
  
 > 10000000 ones dup +
+
+ Performance counter stats for 'bin/niko -e 10000000 ones dup +':
+
+            275.39 msec task-clock:u                     #    0.995 CPUs utilized             
+                 0      context-switches:u               #    0.000 /sec                      
+                 0      cpu-migrations:u                 #    0.000 /sec                      
+            39,136      page-faults:u                    #  142.110 K/sec                     
+        45,361,490      cycles:u                         #    0.165 GHz                       
+        30,299,640      instructions:u                   #    0.67  insn per cycle            
+         5,099,234      branches:u                       #   18.516 M/sec                     
+             4,162      branch-misses:u                  #    0.08% of all branches           
+
+       0.276738830 seconds time elapsed
+
+       0.084993000 seconds user
+       0.191984000 seconds sys
+
+
 Benchmark 1: bin/niko -e "10000000 ones dup +"
-  Time (mean ± σ):      69.0 ms ±   1.7 ms    [User: 21.7 ms, System: 47.2 ms]
-  Range (min … max):    66.5 ms …  72.8 ms    41 runs
+  Time (mean ± σ):     246.1 ms ±   7.6 ms    [User: 80.4 ms, System: 166.0 ms]
+  Range (min … max):   226.0 ms … 258.5 ms    11 runs
  
 > 10000000 ones 1 +
+
+ Performance counter stats for 'bin/niko -e 10000000 ones 1 +':
+
+            273.07 msec task-clock:u                     #    0.998 CPUs utilized             
+                 0      context-switches:u               #    0.000 /sec                      
+                 0      cpu-migrations:u                 #    0.000 /sec                      
+            39,135      page-faults:u                    #  143.314 K/sec                     
+        43,518,166      cycles:u                         #    0.159 GHz                       
+        27,799,631      instructions:u                   #    0.64  insn per cycle            
+         5,099,199      branches:u                       #   18.673 M/sec                     
+             4,156      branch-misses:u                  #    0.08% of all branches           
+
+       0.273722193 seconds time elapsed
+
+       0.087934000 seconds user
+       0.185861000 seconds sys
+
+
 Benchmark 1: bin/niko -e "10000000 ones 1 +"
-  Time (mean ± σ):      68.1 ms ±   0.9 ms    [User: 22.1 ms, System: 46.0 ms]
-  Range (min … max):    66.8 ms …  71.5 ms    41 runs
+  Time (mean ± σ):     252.1 ms ±   9.2 ms    [User: 78.4 ms, System: 173.9 ms]
+  Range (min … max):   243.4 ms … 271.3 ms    11 runs
  
 > 10000000 ones 1. +
+
+ Performance counter stats for 'bin/niko -e 10000000 ones 1. +':
+
+            279.53 msec task-clock:u                     #    0.998 CPUs utilized             
+                 0      context-switches:u               #    0.000 /sec                      
+                 0      cpu-migrations:u                 #    0.000 /sec                      
+            39,133      page-faults:u                    #  139.998 K/sec                     
+        52,673,791      cycles:u                         #    0.188 GHz                       
+        75,300,578      instructions:u                   #    1.43  insn per cycle            
+        12,599,362      branches:u                       #   45.074 M/sec                     
+             4,159      branch-misses:u                  #    0.03% of all branches           
+
+       0.280057405 seconds time elapsed
+
+       0.088984000 seconds user
+       0.190966000 seconds sys
+
+
 Benchmark 1: bin/niko -e "10000000 ones 1. +"
-  Time (mean ± σ):      72.2 ms ±   3.8 ms    [User: 23.3 ms, System: 48.8 ms]
-  Range (min … max):    67.7 ms …  82.7 ms    40 runs
+  Time (mean ± σ):     258.9 ms ±   5.3 ms    [User: 85.2 ms, System: 174.0 ms]
+  Range (min … max):   247.2 ms … 268.7 ms    11 runs
  

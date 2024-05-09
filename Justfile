@@ -47,4 +47,7 @@ _build BUILD_TYPE:
     cp build/{{BUILD_TYPE}}/niko bin/niko
 
 _benchmarks:
-    while IFS= read -r line; do echo "> $line"; hyperfine --warmup 10 "bin/niko -e \"$line\"" ; done < benchmarks
+    while IFS= read -r line; do echo "> $line"; \
+        perf stat -- bin/niko -e "$line" 2>&1 ; \
+        hyperfine --warmup 10 "bin/niko -e \"$line\"" ; \
+        done < benchmarks
