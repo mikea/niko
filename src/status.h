@@ -38,4 +38,4 @@ INLINE void status_print_error(status_t s) {
     if (status_is_err(__status__)) return __status__; \
   } while (0)
 
-#define R_CHECK(cond, ...) if (!(cond)) return status_errf(__VA_ARGS__)
+#define STATUS_CHECK(cond, ...) if (!(cond)) return status_errf(__VA_ARGS__)

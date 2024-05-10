@@ -26,6 +26,7 @@ typedef struct {
     TOK_ARR_OPEN,
     TOK_ARR_CLOSE,
     TOK_STR,
+    TOK_QUOTE,
   } tok;
   str_t text;
   union {
@@ -138,7 +139,7 @@ STATUS_T interpreter_word(interpreter_t* inter, array_t* a);
 #define DEF_WORD_HANDLER_1_1(n)                                           \
   INLINE RESULT_T n##_impl(const array_t* x);                             \
   DEF_WORD_HANDLER(n) {                                                   \
-    R_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected"); \
+    STATUS_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected"); \
     own(array_t) x = stack_pop(stack);                                    \
     result_t result = n##_impl(x);                                        \
     if (result.ok) {                                                      \

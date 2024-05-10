@@ -2,183 +2,183 @@
 
  Performance counter stats for 'build/Release/niko -e 10000000 zeros':
 
-            148.47 msec task-clock:u                     #    0.990 CPUs utilized             
+            146.88 msec task-clock:u                     #    0.995 CPUs utilized             
                  0      context-switches:u               #    0.000 /sec                      
                  0      cpu-migrations:u                 #    0.000 /sec                      
-            19,602      page-faults:u                    #  132.025 K/sec                     
-        30,494,930      cycles:u                         #    0.205 GHz                       
-           281,823      instructions:u                   #    0.01  insn per cycle            
-            79,773      branches:u                       #  537.292 K/sec                     
-             4,159      branch-misses:u                  #    5.21% of all branches           
+            19,600      page-faults:u                    #  133.443 K/sec                     
+        30,558,428      cycles:u                         #    0.208 GHz                       
+           281,809      instructions:u                   #    0.01  insn per cycle            
+            79,766      branches:u                       #  543.073 K/sec                     
+             3,777      branch-misses:u                  #    4.74% of all branches           
 
-       0.149975107 seconds time elapsed
+       0.147657867 seconds time elapsed
 
-       0.046013000 seconds user
-       0.104031000 seconds sys
+       0.041187000 seconds user
+       0.106485000 seconds sys
 
 
 Benchmark 1: build/Release/niko -e "10000000 zeros"
-  Time (mean ± σ):     132.4 ms ±   9.5 ms    [User: 35.6 ms, System: 96.3 ms]
-  Range (min … max):   112.3 ms … 145.5 ms    22 runs
+  Time (mean ± σ):     142.2 ms ±   8.7 ms    [User: 37.4 ms, System: 104.7 ms]
+  Range (min … max):   131.6 ms … 157.8 ms    20 runs
  
 > 10000000 ones
 
  Performance counter stats for 'build/Release/niko -e 10000000 ones':
 
-            124.68 msec task-clock:u                     #    0.989 CPUs utilized             
+            130.78 msec task-clock:u                     #    0.989 CPUs utilized             
                  0      context-switches:u               #    0.000 /sec                      
                  0      cpu-migrations:u                 #    0.000 /sec                      
-            19,600      page-faults:u                    #  157.207 K/sec                     
-        18,798,265      cycles:u                         #    0.151 GHz                       
-        15,281,159      instructions:u                   #    0.81  insn per cycle            
-         2,579,661      branches:u                       #   20.691 M/sec                     
-             4,227      branch-misses:u                  #    0.16% of all branches           
+            19,601      page-faults:u                    #  149.883 K/sec                     
+        18,661,467      cycles:u                         #    0.143 GHz                       
+        15,281,144      instructions:u                   #    0.82  insn per cycle            
+         2,579,656      branches:u                       #   19.726 M/sec                     
+             3,851      branch-misses:u                  #    0.15% of all branches           
 
-       0.126078430 seconds time elapsed
+       0.132277337 seconds time elapsed
 
-       0.039026000 seconds user
-       0.087059000 seconds sys
+       0.033091000 seconds user
+       0.099273000 seconds sys
 
 
 Benchmark 1: build/Release/niko -e "10000000 ones"
-  Time (mean ± σ):     128.6 ms ±   5.3 ms    [User: 37.4 ms, System: 91.2 ms]
-  Range (min … max):   119.1 ms … 135.6 ms    23 runs
+  Time (mean ± σ):     125.6 ms ±   6.5 ms    [User: 36.0 ms, System: 89.7 ms]
+  Range (min … max):   118.0 ms … 138.5 ms    23 runs
  
 > 10000000 index
 
  Performance counter stats for 'build/Release/niko -e 10000000 index':
 
-            129.61 msec task-clock:u                     #    0.989 CPUs utilized             
+            130.58 msec task-clock:u                     #    0.988 CPUs utilized             
                  0      context-switches:u               #    0.000 /sec                      
                  0      cpu-migrations:u                 #    0.000 /sec                      
-            19,604      page-faults:u                    #  151.248 K/sec                     
-        19,066,291      cycles:u                         #    0.147 GHz                       
-        20,281,106      instructions:u                   #    1.06  insn per cycle            
-         2,579,646      branches:u                       #   19.902 M/sec                     
-             3,667      branch-misses:u                  #    0.14% of all branches           
+            19,603      page-faults:u                    #  150.126 K/sec                     
+        19,092,950      cycles:u                         #    0.146 GHz                       
+        20,281,102      instructions:u                   #    1.06  insn per cycle            
+         2,579,650      branches:u                       #   19.756 M/sec                     
+             4,106      branch-misses:u                  #    0.16% of all branches           
 
-       0.131030740 seconds time elapsed
+       0.132114894 seconds time elapsed
 
-       0.033067000 seconds user
-       0.098200000 seconds sys
+       0.037769000 seconds user
+       0.094424000 seconds sys
 
 
 Benchmark 1: build/Release/niko -e "10000000 index"
-  Time (mean ± σ):     128.7 ms ±   7.1 ms    [User: 35.3 ms, System: 93.5 ms]
-  Range (min … max):   118.0 ms … 144.7 ms    23 runs
+  Time (mean ± σ):     125.3 ms ±   5.4 ms    [User: 37.4 ms, System: 87.9 ms]
+  Range (min … max):   118.1 ms … 132.7 ms    22 runs
  
 > 11 index 1 + index
 
  Performance counter stats for 'build/Release/niko -e 11 index 1 + index':
 
-            517.68 msec task-clock:u                     #    0.996 CPUs utilized             
+            513.61 msec task-clock:u                     #    0.997 CPUs utilized             
                  0      context-switches:u               #    0.000 /sec                      
                  0      cpu-migrations:u                 #    0.000 /sec                      
-            78,034      page-faults:u                    #  150.738 K/sec                     
-        74,240,682      cycles:u                         #    0.143 GHz                       
-        80,175,483      instructions:u                   #    1.08  insn per cycle            
-        10,117,905      branches:u                       #   19.545 M/sec                     
-             4,217      branch-misses:u                  #    0.04% of all branches           
+            78,031      page-faults:u                    #  151.927 K/sec                     
+        75,147,919      cycles:u                         #    0.146 GHz                       
+        80,175,460      instructions:u                   #    1.07  insn per cycle            
+        10,117,898      branches:u                       #   19.700 M/sec                     
+             4,244      branch-misses:u                  #    0.04% of all branches           
 
-       0.519649534 seconds time elapsed
+       0.515179086 seconds time elapsed
 
-       0.149045000 seconds user
-       0.370111000 seconds sys
+       0.145765000 seconds user
+       0.369405000 seconds sys
 
 
 Benchmark 1: build/Release/niko -e "11 index 1 + index"
-  Time (mean ± σ):     494.8 ms ±  34.1 ms    [User: 139.5 ms, System: 355.0 ms]
-  Range (min … max):   442.6 ms … 533.1 ms    10 runs
+  Time (mean ± σ):     478.5 ms ±  15.0 ms    [User: 144.1 ms, System: 334.3 ms]
+  Range (min … max):   465.1 ms … 505.3 ms    10 runs
  
 > 10000000 ones 10000000 ones +
 
  Performance counter stats for 'build/Release/niko -e 10000000 ones 10000000 ones +':
 
-            420.05 msec task-clock:u                     #    0.996 CPUs utilized             
+            384.66 msec task-clock:u                     #    0.996 CPUs utilized             
                  0      context-switches:u               #    0.000 /sec                      
                  0      cpu-migrations:u                 #    0.000 /sec                      
-            58,666      page-faults:u                    #  139.665 K/sec                     
-        69,799,612      cycles:u                         #    0.166 GHz                       
-        45,323,785      instructions:u                   #    0.65  insn per cycle            
-         7,619,649      branches:u                       #   18.140 M/sec                     
-             3,837      branch-misses:u                  #    0.05% of all branches           
+            58,667      page-faults:u                    #  152.518 K/sec                     
+        68,478,883      cycles:u                         #    0.178 GHz                       
+        45,323,754      instructions:u                   #    0.66  insn per cycle            
+         7,619,638      branches:u                       #   19.809 M/sec                     
+             3,770      branch-misses:u                  #    0.05% of all branches           
 
-       0.421674199 seconds time elapsed
+       0.386068033 seconds time elapsed
 
-       0.131623000 seconds user
-       0.290170000 seconds sys
+       0.120018000 seconds user
+       0.266040000 seconds sys
 
 
 Benchmark 1: build/Release/niko -e "10000000 ones 10000000 ones +"
-  Time (mean ± σ):     394.8 ms ±  13.5 ms    [User: 126.2 ms, System: 268.4 ms]
-  Range (min … max):   370.4 ms … 407.5 ms    10 runs
+  Time (mean ± σ):     375.3 ms ±  13.0 ms    [User: 124.3 ms, System: 251.0 ms]
+  Range (min … max):   363.4 ms … 397.0 ms    10 runs
  
 > 10000000 ones dup +
 
  Performance counter stats for 'build/Release/niko -e 10000000 ones dup +':
 
-            289.01 msec task-clock:u                     #    0.995 CPUs utilized             
+            252.58 msec task-clock:u                     #    0.994 CPUs utilized             
                  0      context-switches:u               #    0.000 /sec                      
                  0      cpu-migrations:u                 #    0.000 /sec                      
-            39,136      page-faults:u                    #  135.415 K/sec                     
-        44,021,228      cycles:u                         #    0.152 GHz                       
-        30,302,490      instructions:u                   #    0.69  insn per cycle            
-         5,099,664      branches:u                       #   17.645 M/sec                     
-             4,293      branch-misses:u                  #    0.08% of all branches           
+            39,134      page-faults:u                    #  154.937 K/sec                     
+        43,436,753      cycles:u                         #    0.172 GHz                       
+        30,302,466      instructions:u                   #    0.70  insn per cycle            
+         5,099,660      branches:u                       #   20.190 M/sec                     
+             3,935      branch-misses:u                  #    0.08% of all branches           
 
-       0.290472110 seconds time elapsed
+       0.254077627 seconds time elapsed
 
-       0.079615000 seconds user
-       0.210980000 seconds sys
+       0.079042000 seconds user
+       0.175095000 seconds sys
 
 
 Benchmark 1: build/Release/niko -e "10000000 ones dup +"
-  Time (mean ± σ):     259.6 ms ±  12.5 ms    [User: 80.4 ms, System: 179.1 ms]
-  Range (min … max):   242.8 ms … 278.6 ms    10 runs
+  Time (mean ± σ):     259.4 ms ±  11.0 ms    [User: 78.3 ms, System: 181.1 ms]
+  Range (min … max):   246.2 ms … 276.2 ms    11 runs
  
 > 10000000 ones 1 +
 
  Performance counter stats for 'build/Release/niko -e 10000000 ones 1 +':
 
-            261.80 msec task-clock:u                     #    0.994 CPUs utilized             
+            298.22 msec task-clock:u                     #    0.982 CPUs utilized             
                  0      context-switches:u               #    0.000 /sec                      
                  0      cpu-migrations:u                 #    0.000 /sec                      
-            39,135      page-faults:u                    #  149.484 K/sec                     
-        45,249,824      cycles:u                         #    0.173 GHz                       
-        27,802,593      instructions:u                   #    0.61  insn per cycle            
-         5,099,655      branches:u                       #   19.479 M/sec                     
-             3,813      branch-misses:u                  #    0.07% of all branches           
+            39,133      page-faults:u                    #  131.222 K/sec                     
+        46,616,531      cycles:u                         #    0.156 GHz                       
+        27,802,594      instructions:u                   #    0.60  insn per cycle            
+         5,099,666      branches:u                       #   17.100 M/sec                     
+             4,024      branch-misses:u                  #    0.08% of all branches           
 
-       0.263310228 seconds time elapsed
+       0.303648688 seconds time elapsed
 
-       0.077822000 seconds user
-       0.185576000 seconds sys
+       0.089826000 seconds user
+       0.210593000 seconds sys
 
 
 Benchmark 1: build/Release/niko -e "10000000 ones 1 +"
-  Time (mean ± σ):     254.2 ms ±  10.6 ms    [User: 76.5 ms, System: 177.6 ms]
-  Range (min … max):   244.9 ms … 271.0 ms    10 runs
+  Time (mean ± σ):     245.9 ms ±   0.4 ms    [User: 76.1 ms, System: 169.9 ms]
+  Range (min … max):   245.2 ms … 246.8 ms    11 runs
  
 > 10000000 ones 1. +
 
  Performance counter stats for 'build/Release/niko -e 10000000 ones 1. +':
 
-            256.79 msec task-clock:u                     #    0.995 CPUs utilized             
+            278.50 msec task-clock:u                     #    0.995 CPUs utilized             
                  0      context-switches:u               #    0.000 /sec                      
                  0      cpu-migrations:u                 #    0.000 /sec                      
-            39,133      page-faults:u                    #  152.392 K/sec                     
-        52,685,423      cycles:u                         #    0.205 GHz                       
-        75,303,590      instructions:u                   #    1.43  insn per cycle            
-        12,599,827      branches:u                       #   49.066 M/sec                     
-             3,791      branch-misses:u                  #    0.03% of all branches           
+            39,133      page-faults:u                    #  140.515 K/sec                     
+        54,832,877      cycles:u                         #    0.197 GHz                       
+        75,303,589      instructions:u                   #    1.37  insn per cycle            
+        12,599,836      branches:u                       #   45.242 M/sec                     
+             3,971      branch-misses:u                  #    0.03% of all branches           
 
-       0.258203918 seconds time elapsed
+       0.279867136 seconds time elapsed
 
-       0.083479000 seconds user
-       0.174909000 seconds sys
+       0.093003000 seconds user
+       0.187007000 seconds sys
 
 
 Benchmark 1: build/Release/niko -e "10000000 ones 1. +"
-  Time (mean ± σ):     262.5 ms ±  13.0 ms    [User: 90.2 ms, System: 172.3 ms]
-  Range (min … max):   249.2 ms … 288.3 ms    11 runs
+  Time (mean ± σ):     259.7 ms ±   8.9 ms    [User: 87.3 ms, System: 172.4 ms]
+  Range (min … max):   248.6 ms … 271.3 ms    10 runs
  

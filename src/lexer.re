@@ -34,7 +34,7 @@ token_t next_token(const char** s) {
         eof = [\x00];
         eow = [ \t\n\x00];
         spaces = [ \t\n]+;
-        word = [^ ^\t^\n^\x00^1-9][^ \t\n\x00]*;
+        word = [^ ^\t^\n^\x00^1-9^`][^ \t\n\x00]*;
 
         eof { TOK(TOK_EOF); }
         spaces { continue; }
@@ -43,6 +43,7 @@ token_t next_token(const char** s) {
         "[" / eow { TOK(TOK_ARR_OPEN); }
         "]" / eow { TOK(TOK_ARR_CLOSE); }
         str / eow { TOK_VAL(TOK_STR, .val.s = str_new(yytext+1, YYCURSOR-1)); }
+        "`" word / eow { TOK_VAL(TOK_QUOTE, .val.s = str_new(yytext+1, YYCURSOR)); }
         word / eow { TOK(TOK_WORD); }
         * { TOK(TOK_ERR); }
     */
