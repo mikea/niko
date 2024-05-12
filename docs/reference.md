@@ -8,6 +8,8 @@
 
 ### over
 
+### swap
+
 ## Creating Arrays
 
 ### zeros ones
@@ -19,6 +21,18 @@
 ### len
 
 ### shape
+
+## Unary Operations
+
+### abs
+
+### neg
+
+### Special functions
+
+## Binary Operations
+
+### +-*/
 
 ## Higher Level Operations
 
