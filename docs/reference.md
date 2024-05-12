@@ -4,29 +4,29 @@
 
 ### `dup`
 
-### drop
+### `drop`
 
-### over
+### `over`
 
-### swap
+### `swap`
 
 ## Creating Arrays
 
-### zeros, ones
+### `zeros`, `ones`
 
-### index
+### `index`
 
 ## Array Introspection
 
-### len
+### `len`
 
-### shape
+### `shape`
 
 ## Unary Operations
 
-### abs
+### `abs`
 
-### neg
+### `neg`
 
 ### Special functions
 
@@ -37,3 +37,7 @@
 ## Higher Level Operations
 
 ### fold
+
+## Input/Output
+
+### `.`
