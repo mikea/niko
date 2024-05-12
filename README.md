@@ -25,13 +25,18 @@ Following element types are supported:
 - i64
 - f64
 
-
 #### Characters
 
 #### Integers
 
 #### Floats
 
+#### Array Literals
 
+To create an array literal use `[` `]` words to enter them (remember the spaces):
 
+```
+> [ 1 2 3 ] .
+> [ [ 1. 2. 3. ] [ 4. 5. 6. ] ]
+```
 
