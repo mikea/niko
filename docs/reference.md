@@ -32,7 +32,7 @@
 
 ## Binary Operations
 
-### +-*/
+### `+`, `-`, `*`, `/`
 
 ## Higher Level Operations
 
