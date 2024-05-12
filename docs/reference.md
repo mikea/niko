@@ -2,7 +2,7 @@
 
 ## Stack Manipulation
 
-### dup
+### `dup`
 
 ### drop
 
