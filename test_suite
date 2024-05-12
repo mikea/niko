@@ -238,9 +238,9 @@ ERROR: unsupported types
 0.5
 ## higher order words
 # fold
-> 10 index `+ fold .
+> 10 index +' fold .
 45
-> 10000 ones `+ fold .
+> 10000 ones +' fold .
 10000
-> 10 index 1 + `* fold .
+> 10 index 1 + *' fold .
 3628800
