@@ -25,6 +25,7 @@ Following element types are supported:
 - i64
 - f64
 
+
 #### Characters
 
 Strings are sequences if characters: `"abc"`.
