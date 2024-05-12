@@ -27,9 +27,16 @@ Following element types are supported:
 
 #### Characters
 
+Strings are sequences if characters: `"abc"`.
+
 #### Integers
 
+Integers are 64-bit wide: `0`, `1024`, `-25`.
+
 #### Floats
+
+Floats are 64-bit wide. Float literal must contain `.` or `e` symbols:
+`0.`, `1e-16`, `-3.1415`.
 
 #### Array Literals
 
