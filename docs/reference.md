@@ -12,7 +12,7 @@
 
 ## Creating Arrays
 
-### zeros ones
+### zeros, ones
 
 ### index
 
