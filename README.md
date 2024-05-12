@@ -19,3 +19,19 @@ Array has a length and it is always equals to the product of its dimensions.
 Arrays of rank 0 are called sacalars and always have 1 element. 
 
 Dimensions have to either be all non-zero or all zero. 
+
+Following element types are supported:
+- char
+- i64
+- f64
+
+
+#### Characters
+
+#### Integers
+
+#### Floats
+
+
+
+
