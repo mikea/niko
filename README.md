@@ -1,12 +1,15 @@
 # Niko
 
-Niko is stack-oriented array programming language. It is heavily influenced by Forth and Lisp.
+Niko is a stack-oriented array programming language. 
+It is primarily inspired by Forth, Lisp and only then by modern array languages. 
 
 ## Syntax
 
-Whitepsaces consist of space, tab and new line character. Words are sequences of non-whitespace symbols.
+Niko program consists of a sequence of words separated by whitespaces. 
 
-Words are normally evaluated left to right.
+Whitepsaces consist of space, tab and new line character.
+
+Words are evaluated left to right.
 
 ### Arrays
 
