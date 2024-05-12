@@ -31,7 +31,8 @@ Following element types are supported:
 
 #### Characters
 
-Strings are sequences if characters: `"abc"`.
+Characters are 8-bit. 
+Arrays of characters are called strings and are entered using quotes: `"abc"`.
 
 #### Integers
 
