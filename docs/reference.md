@@ -46,7 +46,11 @@
 
 ### Mathematical Functions
 
+`x -> y`
+
 ## Binary Operations
+
+`x y -> z`
 
 ### `+`, `-`, `*`, `/`
 
