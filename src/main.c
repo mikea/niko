@@ -311,7 +311,7 @@ STATUS_T markdown(const char* fname) {
 
   FILE_cleanup(&file);
   FILE_cleanup(&temp);
-  STATUS_CHECK(rename(tmp_template, fname), "rename error");
+  STATUS_CHECK(!rename(tmp_template, fname), "rename error");
   STATUS_OK;
 }
 
