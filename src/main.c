@@ -87,7 +87,7 @@ STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e) {
           STATUS_CHECK(stack_len(inter->stack) >= 2, "stack underflow: 2 value expected");
           array_t* y = stack_i(inter->stack, 0);
           array_t* x = stack_i(inter->stack, 1);
-          f = ((t_ffi (*)[T_MAX])array_data(a))[x->t][y->t];
+          f = ((t_ffi(*)[T_MAX])array_data(a))[x->t][y->t];
           STATUS_CHECK(f, "%pT %pT are not supported", &x->t, &y->t);
           return f(inter, inter->stack);
         }
@@ -176,9 +176,7 @@ STATUS_T repl() {
   own(interpreter_t) inter = interpreter_new();
   bool prompt = isatty(STDIN_FILENO);
 
-  if (prompt) {
-    printf("niko %s (%s)\n", GIT_DESCRIBE, COMPILE_TIME);
-  }
+  if (prompt) printf("niko %s (%s)\n", GIT_DESCRIBE, COMPILE_TIME);
 
   while (true) {
     if (prompt) {
@@ -197,6 +195,21 @@ STATUS_T repl() {
       fprintf(stderr, "ERROR: %pS\n", &msg);
       status_free(result);
     }
+  }
+}
+
+void interpreter_line_capture_out(interpreter_t* inter, const char* line, char** out, size_t* out_size) {
+  FILE* fout = open_memstream(out, out_size);
+  inter->out = fout;
+  status_t result = interpreter_line(inter, line);
+  inter->out = stdout;
+  fclose(fout);
+
+  if (status_is_err(result)) {
+    free(*out);
+    str_t msg = status_msg(result);
+    *out_size = asprintf(out, "ERROR: %pS\n", &msg);
+    status_free(result);
   }
 }
 
@@ -228,19 +241,8 @@ STATUS_T test(const char* fname, bool v) {
       if (rest_out && *rest_out) fprintf(stderr, "ERROR %s:%ld : umatched output: '%s'\n", fname, in_line_no, rest_out);
       if (out) free(out);
       in_line_no = line_no;
-      FILE* fout = open_memstream(&out, &out_size);
-      inter->out = fout;
-      status_t result = interpreter_line(inter, line + 1);
-      inter->out = stdout;
-      fclose(fout);
+      interpreter_line_capture_out(inter, line + 1, &out, &out_size);
       stack_clear(inter->stack);
-
-      if (status_is_err(result)) {
-        free(out);
-        str_t msg = status_msg(result);
-        out_size = asprintf(&out, "ERROR: %pS\n", &msg);
-        status_free(result);
-      }
       rest_out = out;
       continue;
     }
@@ -265,39 +267,52 @@ STATUS_T eval(const char* stmt) {
 STATUS_T markdown(const char* fname) {
   own(FILE) file = fopen(fname, "r");
   STATUS_CHECK(file, "can't open file: %s", fname);
-  STATUS_CHECK(!fseek(file, 0, SEEK_END), "fseek error");
-  long size = ftell(file);
-  rewind(file);
-  own(char) buffer = malloc(size);
-  long read = fread(buffer, 1, size, file);
-  STATUS_CHECK(size == read, "fread error: %ld vs %ld", size, read);
-  string_t text = (string_t){size, buffer};
 
-  str_t t = string_as_str(text);
-  str_t markdown_prefix = str_fromc("```nk");
-  while (true) {
-    str_t code = str_memmem(t, markdown_prefix);
-    if (str_is_empty(code)) {
-      NOT_IMPLEMENTED;
-    }
-    str_t prefix = str_new(t.p, code.p);
-    printf("%pS%pS", &prefix, &markdown_prefix);
-    code = str_skip(code, markdown_prefix.l);
+  char tmp_template[] = "/tmp/niko-XXXXXX";
+  int temp_fd = mkstemp(tmp_template);
+  STATUS_CHECK(temp_fd, "can't create temp file");
+  own(FILE) temp = fdopen(temp_fd, "w");
 
-    while (true) {
-      DBG("%pS", &code);
-      str_t line = str_memchr(code, '\n');
-      if (str_is_empty(line)) {
-        NOT_IMPLEMENTED;
-      }
-      DBG("%pS", &line);
-      NOT_IMPLEMENTED;
+  const str_t code_start = str_fromc("```nk\n");
+  const str_t code_end = str_fromc("```");
+
+  own(interpreter_t) inter = interpreter_new();
+
+  size_t len = 0;
+  own(char) line = NULL;
+
+  size_t read;
+  size_t line_no = 0;
+
+  own(char) out = NULL;
+  size_t out_size;
+
+  bool in_code = false;
+
+  while ((read = getline(&line, &len, file)) != -1) {
+    line_no++;
+    str_t l = str_fromc(line);
+
+    if (in_code) {
+      if (str_starts_with(l, code_end)) {
+        fprintf(temp, "%pS", &l);
+        in_code = false;
+      } else if (*l.p == '>') {
+        fprintf(temp, "%pS", &l);
+        interpreter_line_capture_out(inter, l.p + 1, &out, &out_size);
+        fprintf(temp, "%s", out);
+      } else {
+      };
+    } else {
+      fprintf(temp, "%pS", &l);
+      if (str_ends_with(l, code_start)) in_code = true;
     }
-    NOT_IMPLEMENTED;
   }
-  DBG("%pS", &text);
 
-  NOT_IMPLEMENTED;
+  FILE_cleanup(&file);
+  FILE_cleanup(&temp);
+  STATUS_CHECK(rename(tmp_template, fname), "rename error");
+  STATUS_OK;
 }
 
 // main

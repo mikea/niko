@@ -41,6 +41,10 @@ INLINE str_t str_slice(const str_t s, size_t b, size_t e) {
   assert(b <= s.l && e <= s.l);
   return str_new(s.p + b, s.p + e);
 }
+INLINE str_t str_first(const str_t s, size_t n) { return str_slice(s, 0, n); }
+INLINE str_t str_last(const str_t s, size_t n) { return str_slice(s, s.l - n, s.l); }
+INLINE bool str_starts_with(const str_t s, const str_t p) { return s.l >= p.l && str_eq(str_first(s, p.l), p); }
+INLINE bool str_ends_with(const str_t s, const str_t p) { return s.l >= p.l && str_eq(str_last(s, p.l), p); }
 
 // owned string
 typedef struct {
