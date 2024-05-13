@@ -10,10 +10,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "array.h"
 #include "common.h"
 #include "status.h"
 #include "str.h"
-#include "array.h"
 
 // token
 typedef struct {
@@ -38,8 +38,6 @@ typedef struct {
 
 token_t next_token(const char** s);
 
-
-
 // result
 typedef struct {
   bool ok;
@@ -58,7 +56,7 @@ INLINE PRINTF(1, 2) result_t result_errf(const char* format, ...) {
   ({                                                        \
     result_t __result = (r);                                \
     if (!__result.ok) return status_err(__result.either.e); \
-    __result.either.a;                                     \
+    __result.either.a;                                      \
   })
 
 // stack
@@ -110,10 +108,11 @@ INLINE void stack_print(stack_t* stack) {
 
 // dictionary
 
-typedef struct {
+struct dict_entry_t {
   string_t k;
   array_t* v;
-} dict_entry_t;
+};
+typedef struct dict_entry_t dict_entry_t;
 
 GEN_VECTOR(entry_vector, dict_entry_t);
 
@@ -130,31 +129,31 @@ struct interpreter_t {
 };
 typedef struct interpreter_t interpreter_t;
 RESULT_T interpreter_read_next_word(interpreter_t* inter);
-STATUS_T interpreter_word(interpreter_t* inter, array_t* a);
+STATUS_T interpreter_word(interpreter_t* inter, dict_entry_t* e);
 
 // words
 
 #define DEF_WORD_HANDLER(name) STATUS_T name(interpreter_t* inter, stack_t* stack)
 
-#define DEF_WORD_HANDLER_1_1(n)                                           \
-  INLINE RESULT_T n##_impl(const array_t* x);                             \
-  DEF_WORD_HANDLER(n) {                                                   \
+#define DEF_WORD_HANDLER_1_1(n)                                                \
+  INLINE RESULT_T n##_impl(const array_t* x);                                  \
+  DEF_WORD_HANDLER(n) {                                                        \
     STATUS_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected"); \
-    own(array_t) x = stack_pop(stack);                                    \
-    result_t result = n##_impl(x);                                        \
-    if (result.ok) {                                                      \
-      stack_push(stack, result.either.a);                                 \
-      return status_ok();                                                 \
-    } else {                                                              \
-      return status_err(result.either.e);                                 \
-    }                                                                     \
-  }                                                                       \
+    own(array_t) x = stack_pop(stack);                                         \
+    result_t result = n##_impl(x);                                             \
+    if (result.ok) {                                                           \
+      stack_push(stack, result.either.a);                                      \
+      return status_ok();                                                      \
+    } else {                                                                   \
+      return status_err(result.either.e);                                      \
+    }                                                                          \
+  }                                                                            \
   INLINE RESULT_T n##_impl(const array_t* x)
 
-#define REGISTER_WORD(w, n)                                                            \
-  STATUS_T w_##n(interpreter_t* inter, stack_t* stack);                                \
-  CONSTRUCTOR void w_##n##_register() {                                                \
-    entry_vector_add(&global_dict, (dict_entry_t){string_newf(w), atom_t_ffi(w_##n)}); \
+#define REGISTER_WORD(w, n)                                                                        \
+  STATUS_T w_##n(interpreter_t* inter, stack_t* stack);                                            \
+  CONSTRUCTOR void w_##n##_register() {                                                            \
+    entry_vector_add(&global_dict, (dict_entry_t){string_newf(w), array_new_scalar_t_ffi(w_##n)}); \
   }
 
 #define DEF_WORD(w, n) \

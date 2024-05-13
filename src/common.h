@@ -58,6 +58,7 @@ DEF_CLEANUP(char, free);
 DEF_CLEANUP(FILE, fclose);
 
 #define own(t) CLEANUP(t##_cleanup) t*
+#define borrow(t) t*
 
 #define GEN_VECTOR(name, t)                        \
   typedef struct {                                 \

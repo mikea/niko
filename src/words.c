@@ -124,11 +124,7 @@ GEN_FLOAT(tanh, tanh)
 
 typedef void (*binop_t)(size_t n, const void* restrict x, const void* restrict y, void* restrict out);
 
-STATUS_T w_binop(stack_t* stack,
-                 type_t type_table[T_MAX][T_MAX],
-                 binop_t op_table[T_MAX][T_MAX],
-                 binop_t x_scalar_table[T_MAX][T_MAX],
-                 binop_t y_scalar_table[T_MAX][T_MAX]) {
+STATUS_T w_binop(stack_t* stack, type_t t, binop_t kernel, binop_t x_scalar_kernel, binop_t y_scalar_kernel) {
   own(array_t) y = stack_pop(stack);
   own(array_t) x = stack_pop(stack);
 
@@ -136,16 +132,16 @@ STATUS_T w_binop(stack_t* stack,
   shape_t s;
   size_t n;
 
-  if (is_atom(x)) {
-    op = x_scalar_table[x->t][y->t];
+  if (array_is_scalar(x)) {
+    op = x_scalar_kernel;
     n = y->n;
     s = array_shape(y);
-  } else if (is_atom(y)) {
-    op = y_scalar_table[x->t][y->t];
+  } else if (array_is_scalar(y)) {
+    op = y_scalar_kernel;
     n = x->n;
     s = array_shape(x);
   } else if (x->n == y->n) {
-    op = op_table[x->t][y->t];
+    op = kernel;
     n = x->n;
     s = array_shape(x);
   } else {
@@ -153,13 +149,13 @@ STATUS_T w_binop(stack_t* stack,
   }
 
   if (op == NULL) return status_errf("unsupported types");
-  array_t* out = array_alloc(type_table[x->t][y->t], n, s);
+  array_t* out = array_alloc(t, n, s);
   op(out->n, array_data(x), array_data(y), array_mut_data(out));
   stack_push(stack, out);
   STATUS_OK;
 }
 
-#define GEN_BINOP_SPECIALIZATION(name, a_t, b_t, y_t, expr)                                           \
+#define GEN_BINOP_KERNEL(name, a_t, b_t, y_t, expr)                                                   \
   void name(size_t n, const void* restrict a_ptr, const void* restrict b_ptr, void* restrict y_ptr) { \
     y_t* restrict y = y_ptr;                                                                          \
     const a_t* restrict a = a_ptr;                                                                    \
@@ -167,37 +163,33 @@ STATUS_T w_binop(stack_t* stack,
     DO(i, n) y[i] = (expr);                                                                           \
   }
 
-#define GEN_BINOP_SPECIALIZATIONS(name, a_t, b_t, y_t, op)                                 \
-  GEN_BINOP_SPECIALIZATION(name##_##a_t##_##b_t, a_t, b_t, y_t, op((a[i]), (b[i])))        \
-  GEN_BINOP_SPECIALIZATION(name##_scalar_##a_t##_##b_t, a_t, b_t, y_t, op((a[0]), (b[i]))) \
-  GEN_BINOP_SPECIALIZATION(name##_##a_t##_scalar_##b_t, a_t, b_t, y_t, op((a[i]), (b[0])))
+#define GEN_BINOP_KERNELS(name, a_t, b_t, y_t, op)                                 \
+  GEN_BINOP_KERNEL(name##_##a_t##_##b_t, a_t, b_t, y_t, op((a[i]), (b[i])))        \
+  GEN_BINOP_KERNEL(name##_scalar_##a_t##_##b_t, a_t, b_t, y_t, op((a[0]), (b[i]))) \
+  GEN_BINOP_KERNEL(name##_##a_t##_scalar_##b_t, a_t, b_t, y_t, op((a[i]), (b[0])))
 
-#define GEN_BINOP(word, name, op)                                                                                   \
-  GEN_BINOP_SPECIALIZATIONS(name, t_i64, t_i64, t_i64, op)                                                          \
-  GEN_BINOP_SPECIALIZATIONS(name, t_i64, t_f64, t_f64, op)                                                          \
-  GEN_BINOP_SPECIALIZATIONS(name, t_f64, t_i64, t_f64, op)                                                          \
-  GEN_BINOP_SPECIALIZATIONS(name, t_f64, t_f64, t_f64, op)                                                          \
-  binop_t name##_table[T_MAX][T_MAX] =                                                                              \
-      TYPE_ROW(/* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL),                                                     \
-               /* i64 */ TYPE_ROW(NULL, name##_t_i64_t_i64, name##_t_i64_t_f64, NULL, NULL),                        \
-               /* f64 */ TYPE_ROW(NULL, name##_t_f64_t_i64, name##_t_f64_t_f64, NULL, NULL),                        \
-               /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL), /* ffi */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL)); \
-  binop_t name##_a_scalar_table[T_MAX][T_MAX] =                                                                     \
-      TYPE_ROW(/* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL),                                                     \
-               /* i64 */ TYPE_ROW(NULL, name##_scalar_t_i64_t_i64, name##_scalar_t_i64_t_f64, NULL, NULL),          \
-               /* f64 */ TYPE_ROW(NULL, name##_scalar_t_f64_t_i64, name##_scalar_t_f64_t_f64, NULL, NULL),          \
-               /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL), /* ffi */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL)); \
-  binop_t name##_b_scalar_table[T_MAX][T_MAX] =                                                                     \
-      TYPE_ROW(/* c8 */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL),                                                     \
-               /* i64 */ TYPE_ROW(NULL, name##_t_i64_scalar_t_i64, name##_t_i64_scalar_t_f64, NULL, NULL),          \
-               /* f64 */ TYPE_ROW(NULL, name##_t_f64_scalar_t_i64, name##_t_f64_scalar_t_f64, NULL, NULL),          \
-               /* arr */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL), /* ffi */ TYPE_ROW(NULL, NULL, NULL, NULL, NULL)); \
-  type_t name##_type_table[T_MAX][T_MAX] =                                                                          \
-      TYPE_ROW(/* c8 */ TYPE_ROW_ID, /* i64 */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR, T_FFI),                          \
-               /* f64 */ TYPE_ROW(T_C8, T_F64, T_F64, T_ARR, T_FFI),                                                \
-               /* arr */ TYPE_ROW(T_C8, T_I64, T_F64, T_ARR, T_FFI), /* ffi */ TYPE_ROW_ID);                        \
-  DEF_WORD(word, name) {                                                                                            \
-    return w_binop(stack, name##_type_table, name##_table, name##_a_scalar_table, name##_b_scalar_table);           \
+#define GEN_BINOP_SPECIALIZATION(name, a_t, b_t, y_t, op)                                                  \
+  GEN_BINOP_KERNELS(name##_kernel, a_t, b_t, y_t, op)                                                      \
+  DEF_WORD_HANDLER(name##_##a_t##_##b_t) {                                                                 \
+    return w_binop(stack, TYPE_ENUM(y_t), name##_kernel_##a_t##_##b_t, name##_kernel_scalar_##a_t##_##b_t, \
+                   name##_kernel_##a_t##_scalar_##b_t);                                                    \
+  }
+
+#define GEN_BINOP(word, name, op)                                         \
+  GEN_BINOP_SPECIALIZATION(name, t_i64, t_i64, t_i64, op)                 \
+  GEN_BINOP_SPECIALIZATION(name, t_i64, t_f64, t_f64, op)                 \
+  GEN_BINOP_SPECIALIZATION(name, t_f64, t_i64, t_f64, op)                 \
+  GEN_BINOP_SPECIALIZATION(name, t_f64, t_f64, t_f64, op)                 \
+  t_ffi name##_table[T_MAX][T_MAX] = {};                                  \
+  CONSTRUCTOR void reg_##name() {                                         \
+    name##_table[T_I64][T_I64] = name##_t_i64_t_i64;                      \
+    name##_table[T_F64][T_I64] = name##_t_f64_t_i64;                      \
+    name##_table[T_I64][T_F64] = name##_t_i64_t_f64;                      \
+    name##_table[T_F64][T_F64] = name##_t_f64_t_f64;                      \
+    size_t dims[2] = {T_MAX, T_MAX};                                      \
+    shape_t sh = (shape_t){2, dims};                                      \
+    array_t* a = array_new(T_FFI, T_MAX * T_MAX, sh, name##_table);       \
+    entry_vector_add(&global_dict, (dict_entry_t){string_newf(word), a}); \
   }
 
 #define PLUS_OP(a, b) (a) + (b)
@@ -208,7 +200,7 @@ STATUS_T w_binop(stack_t* stack,
 GEN_BINOP("+", plus, PLUS_OP)
 GEN_BINOP("*", mul, MUL_OP)
 GEN_BINOP("-", minus, MINUS_OP)
-GEN_BINOP("/", div, DIV_OP)
+GEN_BINOP("/", divide, DIV_OP)
 
 DEF_WORD_1_1("shape", shape) {
   dim_t d = x->r;
@@ -216,12 +208,12 @@ DEF_WORD_1_1("shape", shape) {
   DO_ARRAY(y, t_i64, i, p)* p = array_dims(x)[i];
   return result_ok(y);
 }
-DEF_WORD_1_1("len", len) { return result_ok(atom_t_i64(x->n)); }
+DEF_WORD_1_1("len", len) { return result_ok(array_new_scalar_t_i64(x->n)); }
 
 shape_t create_shape(const array_t* x) {
   assert(x->r <= 1);      // todo: report error
   assert(x->t == T_I64);  // todo: report error
-  if (is_atom(x)) return shape_1d(array_data(x));
+  if (array_is_scalar(x)) return shape_1d(array_data(x));
   return shape_create(x->n, array_data(x));
 }
 
@@ -286,14 +278,17 @@ DEF_WORD("load_csv", load_csv) { STATUS_OK; }
 
 DEF_WORD("fold", fold) {
   STATUS_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
-  own(array_t) op = stack_pop(stack);
-  own(array_t) x = stack_pop(stack);
+  NOT_IMPLEMENTED;
+  // own(array_t) op = stack_pop(stack);
+  // own(array_t) x = stack_pop(stack);
 
-  DO(i, x->n) {
-    array_t* y = array_new_atom(x->t, array_data_i(x, i));
-    stack_push(stack, y);
-    if (i > 0) R_IF_ERR(interpreter_word(inter, op));
-  }
+  // DO(i, x->n) {
+  //   array_t* y = array_new_atom(x->t, array_data_i(x, i));
+  //   stack_push(stack, y);
+  //   if (i > 0) R_IF_ERR(interpreter_word(inter, op));
+  // }
 
-  STATUS_OK;
+  // STATUS_OK;
 }
+
+DEF_WORD("+'fold", plus_fold) { NOT_IMPLEMENTED; }

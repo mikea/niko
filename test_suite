@@ -214,7 +214,7 @@
 > 1. 2 + .
 3.
 > "abc" 2 +
-ERROR: unsupported types
+ERROR: c8 i64 are not supported
 # *
 > 312 45 * .
 14040

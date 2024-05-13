@@ -64,7 +64,8 @@ void interpreter_free(interpreter_t* inter) {
 }
 DEF_CLEANUP(interpreter_t, interpreter_free);
 
-STATUS_T interpreter_word(interpreter_t* inter, array_t* a) {
+STATUS_T interpreter_word(interpreter_t* inter, dict_entry_t* e) {
+  array_t* a = e->v;
   switch (a->t) {
     case T_FFI: {
       t_ffi f;
@@ -82,7 +83,14 @@ STATUS_T interpreter_word(interpreter_t* inter, array_t* a) {
           STATUS_CHECK(f, "%pT is not supported", &x->t);
           return f(inter, inter->stack);
         }
-        case 2: NOT_IMPLEMENTED
+        case 2: {
+          STATUS_CHECK(stack_len(inter->stack) >= 2, "stack underflow: 2 value expected");
+          array_t* y = stack_i(inter->stack, 0);
+          array_t* x = stack_i(inter->stack, 1);
+          f = ((t_ffi (*)[T_MAX])array_data(a))[x->t][y->t];
+          STATUS_CHECK(f, "%pT %pT are not supported", &x->t, &y->t);
+          return f(inter, inter->stack);
+        }
         default: return status_errf("unexpected ffi rank: %ld", a->r);
       }
     }
@@ -113,14 +121,14 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
     case TOK_WORD: {
       dict_entry_t* e = _interpreter_find_word(inter, t.text);
       STATUS_CHECK(e, "unknown word '%pS'", &t.text);
-      return interpreter_word(inter, e->v);
+      return interpreter_word(inter, e);
     }
     case TOK_I64: {
-      stack_push(inter->stack, atom_t_i64(t.val.i));
+      stack_push(inter->stack, array_new_scalar_t_i64(t.val.i));
       STATUS_OK;
     }
     case TOK_F64: {
-      stack_push(inter->stack, atom_t_f64(t.val.d));
+      stack_push(inter->stack, array_new_scalar_t_f64(t.val.d));
       STATUS_OK;
     }
     case TOK_STR: {
@@ -132,7 +140,7 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
     case TOK_QUOTE: {
       dict_entry_t* e = _interpreter_find_word(inter, t.val.s);
       STATUS_CHECK(e, "unknown word '%pS'", &t.text);
-      stack_push(inter->stack, array_inc_ref(e->v));
+      stack_push(inter->stack, array_new_scalar_t_dict_entry(e));
       STATUS_OK;
     }
   }
@@ -185,7 +193,7 @@ STATUS_T repl() {
 
 STATUS_T test(const char* fname, bool v) {
   own(FILE) file = fopen(fname, "r");
-  if (!file) return status_errf("test: can't open file: %s", fname);
+  STATUS_CHECK(file, "test: can't open file: %s", fname);
 
   size_t len = 0;
   own(char) line = NULL;
@@ -243,19 +251,57 @@ STATUS_T eval(const char* stmt) {
   return interpreter_line(inter, stmt);
 }
 
+STATUS_T markdown(const char* fname) {
+  own(FILE) file = fopen(fname, "r");
+  STATUS_CHECK(file, "can't open file: %s", fname);
+  STATUS_CHECK(!fseek(file, 0, SEEK_END), "fseek error");
+  long size = ftell(file);
+  rewind(file);
+  own(char) buffer = malloc(size);
+  long read = fread(buffer, 1, size, file);
+  STATUS_CHECK(size == read, "fread error: %ld vs %ld", size, read);
+  string_t text = (string_t){size, buffer};
+
+  str_t t = string_as_str(text);
+  str_t markdown_prefix = str_fromc("```nk");
+  while (true) {
+    str_t code = str_memmem(t, markdown_prefix);
+    if (str_is_empty(code)) {
+      NOT_IMPLEMENTED;
+    }
+    str_t prefix = str_new(t.p, code.p);
+    printf("%pS%pS", &prefix, &markdown_prefix);
+    code = str_skip(code, markdown_prefix.l);
+
+    while (true) {
+      DBG("%pS", &code);
+      str_t line = str_memchr(code, '\n');
+      if (str_is_empty(line)) {
+        NOT_IMPLEMENTED;
+      }
+      DBG("%pS", &line);
+      NOT_IMPLEMENTED;
+    }
+    NOT_IMPLEMENTED;
+  }
+  DBG("%pS", &text);
+
+  NOT_IMPLEMENTED;
+}
+
 // main
 
 int main(int argc, char* argv[]) {
-  char* t = NULL;
+  char *t = NULL, *e = NULL, *m = NULL;
   bool v = false;
-  char* e = NULL;
 
   int opt;
-  while ((opt = getopt(argc, argv, "vht:e:")) != -1) {
+  while ((opt = getopt(argc, argv, "vht:e:m:")) != -1) {
     switch (opt) {
       case 't': t = optarg; break;
       case 'v': v = true; break;
       case 'e': e = optarg; break;
+      case 'm': m = optarg; break;
       case 'h':
       default:
         fprintf(stderr, "Usage: %s | %s -t test_file [-v] | %s -e stmt | %s -h \n", argv[0], argv[0], argv[0], argv[0]);
@@ -265,6 +311,7 @@ int main(int argc, char* argv[]) {
 
   status_t s;
   if (t) s = test(t, v);
+  else if (m) s = markdown(m);
   else if (e) s = eval(e);
   else s = repl();
   if (status_is_ok(s)) return 0;

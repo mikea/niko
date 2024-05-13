@@ -38,6 +38,9 @@ stat EXPR="10000000 zeros": release
 #     clang-format -i build/words.c
 #     gcc {{RELEASE_CFLAGS}} -fopt-info-vec-missed -c -o build/words.o build/words.c
 
+docs: build
+    bin/niko -m docs/examples.md
+
 [private]
 _test:
     bin/niko -t test_suite

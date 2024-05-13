@@ -8,19 +8,38 @@ typedef struct {
   const char* p;
 } str_t;
 
+INLINE str_t str_empty() { return (str_t){0, NULL}; }
 INLINE str_t str_new(const char* b, const char* e) { return (str_t){e - b, b}; }
 INLINE str_t str_fromc(const char* c) { return (str_t){strlen(c), c}; }
 INLINE size_t str_len(const str_t s) { return s.l; }
+INLINE bool str_is_empty(const str_t s) { return !s.l; }
 INLINE bool str_eq(const str_t s1, const str_t s2) { return s1.l == s2.l && !memcmp(s1.p, s2.p, s1.l); }
 INLINE bool str_eqc(const str_t s, const char* c) { return str_eq(s, str_fromc(c)); }
 INLINE void str_fprint(const str_t s, FILE* f) { DO(i, str_len(s)) putc(*(s.p + i), f); }
 INLINE void str_print(const str_t s) { str_fprint(s, stdout); }
 INLINE char str_i(const str_t s, size_t i) { return *(s.p + i); }
+INLINE const char* str_end(const str_t s) { return s.p + s.l; }
 INLINE char* str_toc(str_t s) {
   char* c = malloc(s.l + 1);
   memcpy(c, s.p, s.l);
   c[s.l] = 0;
   return c;
+}
+INLINE str_t str_memmem(const str_t h, const str_t n) {
+  void* p = memmem(h.p, h.l, n.p, n.l);
+  return p ? str_new(p, str_end(h)) : str_empty();
+}
+INLINE str_t str_memchr(const str_t h, char n) {
+  void* p = memchr(h.p, n, h.l);
+  return p ? str_new(p, str_end(h)) : str_empty();
+}
+INLINE str_t str_skip(const str_t s, size_t b) {
+  assert(b <= s.l);
+  return (str_t){.l = s.l - b, .p = s.p + b};
+}
+INLINE str_t str_slice(const str_t s, size_t b, size_t e) {
+  assert(b <= s.l && e <= s.l);
+  return str_new(s.p + b, s.p + e);
 }
 
 // owned string

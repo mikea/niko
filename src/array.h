@@ -2,10 +2,11 @@
 
 #include "common.h"
 #include "simd.h"
+#include "status.h"
 
 // type
-typedef enum { T_C8, T_I64, T_F64, T_ARR, T_FFI } type_t;
-#define T_MAX (T_FFI + 1)
+typedef enum { T_C8, T_I64, T_F64, T_ARR, T_FFI, T_DICT_ENTRY } type_t;
+#define T_MAX (T_DICT_ENTRY + 1)
 
 typedef char t_c8;
 #define t_c8_enum T_C8
@@ -27,23 +28,27 @@ struct stack_t;
 typedef STATUS_T (*t_ffi)(struct interpreter_t* inter, struct stack_t* s);
 #define t_ffi_enum T_FFI
 
+struct dict_entry_t;
+typedef struct dict_entry_t* t_dict_entry;
+#define t_dict_entry_enum T_DICT_ENTRY
+
 #define TYPE_ENUM(t) t##_enum
 #define TYPE_SIMD(t) t##_simd
 
-#define TYPE_FOREACH(f) f(t_c8) f(t_i64) f(t_f64) f(t_arr) f(t_ffi)
+#define TYPE_FOREACH(f) f(t_c8) f(t_i64) f(t_f64) f(t_arr) f(t_ffi) f(t_dict_entry)
 #define TYPE_FOREACH_SIMD(f) f(t_i64, vmax_i64) f(t_f64, vmax_f64)
 
-#define TYPE_ROW(v_c8, v_i64, v_f64, v_arr, v_ffi) \
-  { v_c8, v_i64, v_f64, v_arr, v_ffi }
+#define TYPE_ROW(v_c8, v_i64, v_f64, v_arr, v_ffi, v_dict_entry) \
+  { v_c8, v_i64, v_f64, v_arr, v_ffi, v_dict_entry }
 
-#define TYPE_ROW_FOREACH(f) TYPE_ROW(f(t_c8), f(t_i64), f(t_f64), f(t_arr), f(t_ffi))
+#define TYPE_ROW_FOREACH(f) TYPE_ROW(f(t_c8), f(t_i64), f(t_f64), f(t_arr), f(t_ffi), f(t_dict_entry))
 
 #define TYPE_ROW_ID TYPE_ROW(T_C8, T_I64, T_F64, T_ARR, T_FFI)
 
 static size_t type_sizeof_table[T_MAX] = TYPE_ROW_FOREACH(sizeof);
 INLINE size_t type_sizeof(type_t t, size_t n) { return n * type_sizeof_table[t]; }
 
-static const char* type_name_table[T_MAX] = TYPE_ROW("c8", "i64", "f64", "arr", "ffi");
+static const char* type_name_table[T_MAX] = TYPE_ROW("c8", "i64", "f64", "arr", "ffi", "dict");
 INLINE const char* type_name(type_t t) { return type_name_table[t]; }
 
 
@@ -66,7 +71,7 @@ INLINE shape_t* shape_new(size_t r) {
 }
 INLINE void shape_free(shape_t* s) { free(s); }
 DEF_CLEANUP(shape_t, shape_free);
-INLINE shape_t shape_atom() { return (shape_t){0, NULL}; }
+INLINE shape_t shape_scalar() { return (shape_t){0, NULL}; }
 INLINE shape_t shape_1d(const dim_t* d) { return (shape_t){1, d}; }
 INLINE shape_t shape_create(size_t r, const dim_t* d) { return (shape_t){r, d}; }
 INLINE bool shape_eq(shape_t s1, shape_t s2) { return s1.r == s2.r && !memcmp(s1.d, s2.d, dims_sizeof(s1.r)); }
@@ -159,11 +164,11 @@ INLINE array_t* array_new_1d(type_t t, size_t n, const void* x) {
   return array_new(t, n, shape_1d(&d), x);
 }
 
-INLINE bool is_atom(const array_t* a) { return a->r == 0; }
-INLINE array_t* array_new_atom(type_t t, const void* x) { return array_new(t, 1, shape_atom(), x); }
+INLINE bool array_is_scalar(const array_t* a) { return a->r == 0; }
+INLINE array_t* array_new_scalar(type_t t, const void* x) { return array_new(t, 1, shape_scalar(), x); }
 
 #define __DEF_TYPE_HELPER(t)                                                 \
-  INLINE array_t* atom_##t(t v) { return array_new_atom(TYPE_ENUM(t), &v); } \
+  INLINE array_t* array_new_scalar_##t(t v) { return array_new_scalar(TYPE_ENUM(t), &v); } \
   INLINE array_t* array_new_##t(size_t n, shape_t s, const t* x) { return array_new(TYPE_ENUM(t), n, s, x); } 
 
 TYPE_FOREACH(__DEF_TYPE_HELPER)
