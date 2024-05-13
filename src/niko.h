@@ -129,7 +129,7 @@ struct interpreter_t {
 };
 typedef struct interpreter_t interpreter_t;
 RESULT_T interpreter_read_next_word(interpreter_t* inter);
-STATUS_T interpreter_word(interpreter_t* inter, dict_entry_t* e);
+STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e);
 
 // words
 

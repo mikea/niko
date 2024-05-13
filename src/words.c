@@ -278,17 +278,18 @@ DEF_WORD("load_csv", load_csv) { STATUS_OK; }
 
 DEF_WORD("fold", fold) {
   STATUS_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
-  NOT_IMPLEMENTED;
-  // own(array_t) op = stack_pop(stack);
-  // own(array_t) x = stack_pop(stack);
+  own(array_t) op = stack_pop(stack);
+  own(array_t) x = stack_pop(stack);
+  STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
+  dict_entry_t* e = *array_data_t_dict_entry(op);
 
-  // DO(i, x->n) {
-  //   array_t* y = array_new_atom(x->t, array_data_i(x, i));
-  //   stack_push(stack, y);
-  //   if (i > 0) R_IF_ERR(interpreter_word(inter, op));
-  // }
+  DO(i, x->n) {
+    array_t* y = array_new_scalar(x->t, array_data_i(x, i));
+    stack_push(stack, y);
+    if (i > 0) R_IF_ERR(interpreter_dict_entry(inter, e));
+  }
 
-  // STATUS_OK;
+  STATUS_OK;
 }
 
 DEF_WORD("+'fold", plus_fold) { NOT_IMPLEMENTED; }

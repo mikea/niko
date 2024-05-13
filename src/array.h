@@ -51,7 +51,6 @@ INLINE size_t type_sizeof(type_t t, size_t n) { return n * type_sizeof_table[t];
 static const char* type_name_table[T_MAX] = TYPE_ROW("c8", "i64", "f64", "arr", "ffi", "dict");
 INLINE const char* type_name(type_t t) { return type_name_table[t]; }
 
-
 // dims
 
 typedef size_t dim_t;
@@ -167,17 +166,19 @@ INLINE array_t* array_new_1d(type_t t, size_t n, const void* x) {
 INLINE bool array_is_scalar(const array_t* a) { return a->r == 0; }
 INLINE array_t* array_new_scalar(type_t t, const void* x) { return array_new(t, 1, shape_scalar(), x); }
 
-#define __DEF_TYPE_HELPER(t)                                                 \
-  INLINE array_t* array_new_scalar_##t(t v) { return array_new_scalar(TYPE_ENUM(t), &v); } \
-  INLINE array_t* array_new_##t(size_t n, shape_t s, const t* x) { return array_new(TYPE_ENUM(t), n, s, x); } 
+#define __DEF_TYPE_HELPER(t)                                                                                  \
+  INLINE array_t* array_new_scalar_##t(t v) { return array_new_scalar(TYPE_ENUM(t), &v); }                    \
+  INLINE array_t* array_new_##t(size_t n, shape_t s, const t* x) { return array_new(TYPE_ENUM(t), n, s, x); } \
+  INLINE t* array_data_##t(array_t* a) { return (t*)array_data(a); }
 
 TYPE_FOREACH(__DEF_TYPE_HELPER)
 
-#define __DEF_SIMD_HELPER(t, v) \
-  INLINE v* restrict array_mut_data_##v(array_t* a) { return (v* restrict) array_mut_data(__array_assert_simd_aligned(a)); }
+#define __DEF_SIMD_HELPER(t, v)                                         \
+  INLINE v* restrict array_mut_data_##v(array_t* a) {                   \
+    return (v* restrict)array_mut_data(__array_assert_simd_aligned(a)); \
+  }
 
 TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
-
 
 #define __DO_ARRAY_IMPL(a, t, i, p, u)                          \
   for (bool u##b = 1; u##b; u##b = 0)                           \

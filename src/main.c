@@ -64,7 +64,7 @@ void interpreter_free(interpreter_t* inter) {
 }
 DEF_CLEANUP(interpreter_t, interpreter_free);
 
-STATUS_T interpreter_word(interpreter_t* inter, dict_entry_t* e) {
+STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e) {
   array_t* a = e->v;
   switch (a->t) {
     case T_FFI: {
@@ -121,7 +121,7 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
     case TOK_WORD: {
       dict_entry_t* e = _interpreter_find_word(inter, t.text);
       STATUS_CHECK(e, "unknown word '%pS'", &t.text);
-      return interpreter_word(inter, e);
+      return interpreter_dict_entry(inter, e);
     }
     case TOK_I64: {
       stack_push(inter->stack, array_new_scalar_t_i64(t.val.i));
