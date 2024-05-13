@@ -38,6 +38,12 @@
 
 ### fold
 
+`x op' -> y`
+
+### fold_by
+
+`x axis op' -> y`
+
 ## Input/Output
 
 ### `.`
