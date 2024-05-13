@@ -4,31 +4,47 @@
 
 ### `dup`
 
+`x -> x x`
+
 ### `drop`
+
+`x ->`
 
 ### `over`
 
+`x y -> x y x`
+
 ### `swap`
+
+`x y -> y x`
 
 ## Creating Arrays
 
 ### `zeros`, `ones`
 
+`shape -> x`
+
 ### `index`
+
+`shape -> x`
 
 ## Array Introspection
 
 ### `len`
 
+`x -> y`
+
 ### `shape`
+
+`x -> y`
 
 ## Unary Operations
 
-### `abs`
+### `abs`, `neg`
 
-### `neg`
+`x -> y`
 
-### Special functions
+### Mathematical Functions
 
 ## Binary Operations
 
