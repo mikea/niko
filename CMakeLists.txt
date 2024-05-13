@@ -27,3 +27,15 @@ add_custom_command(
 
 add_executable(niko src/main.c src/words.c src/print.c ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
 target_link_libraries(niko m)
+
+
+execute_process(
+  COMMAND git describe --always --dirty
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_DESCRIBE
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+string(TIMESTAMP COMPILE_TIME UTC)
+add_definitions(-DCOMPILE_TIME="${COMPILE_TIME}")
+add_definitions(-DGIT_DESCRIBE="${GIT_DESCRIBE}")

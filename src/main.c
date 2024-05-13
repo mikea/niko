@@ -162,12 +162,23 @@ STATUS_T interpreter_line(interpreter_t* inter, const char* s) {
 
 // repl
 
+#ifndef GIT_DESCRIBE
+#define GIT_DESCRIBE "unknown"
+#endif
+#ifndef COMPILE_TIME
+#define COMPILE_TIME "unknown"
+#endif
+
 STATUS_T repl() {
   size_t input_size = 0;
   own(char) input = NULL;
 
   own(interpreter_t) inter = interpreter_new();
   bool prompt = isatty(STDIN_FILENO);
+
+  if (prompt) {
+    printf("niko %s (%s)\n", GIT_DESCRIBE, COMPILE_TIME);
+  }
 
   while (true) {
     if (prompt) {
