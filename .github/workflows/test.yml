@@ -23,4 +23,4 @@ jobs:
       run: |
           just test
           just release
-
+          git diff --exit-code
