@@ -19,9 +19,11 @@ jobs:
     - name: Install dependecies
       run: sudo apt-get install just re2c
 
-    - name: Test
-      run: |
-          just test
-          just release
+    - name: Debug
+      run: just test
+
+    - name: Release
+      run: just release
+
     - name: Verify Clean Git Tree
       run: git diff --exit-code
