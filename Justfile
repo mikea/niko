@@ -4,7 +4,7 @@ watch +WATCH_TARGET='build':
     watchexec -rc -w . --ignore *.results -- just {{WATCH_TARGET}}
 
 build: (_build "Debug")
-release: (_build "Release")
+release: (_build "Release") _test _docs
 
 run: test
     bin/niko
