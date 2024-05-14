@@ -2,6 +2,62 @@
 
 #include "niko.h"
 
+// stack manipulation
+
+DEF_WORD("dup", dup) {
+  stack_push(stack, array_inc_ref(stack_peek(stack)));
+  STATUS_OK;
+}
+
+DEF_WORD("swap", swap) {
+  array_t* a = stack_pop(stack);
+  array_t* b = stack_pop(stack);
+  stack_push(stack, a);
+  stack_push(stack, b);
+  STATUS_OK;
+}
+
+DEF_WORD("drop", drop) {
+  stack_drop(stack);
+  STATUS_OK;
+}
+
+DEF_WORD("nip", nip) {
+  array_t* a = stack_pop(stack);
+  stack_drop(stack);
+  stack_push(stack, a);
+  STATUS_OK;
+}
+
+DEF_WORD("over", over) {
+  array_t* a = stack_i(stack, 1);
+  stack_push(stack, array_inc_ref(a));
+  STATUS_OK;
+}
+
+DEF_WORD("rot", rot) {
+  array_t* a = stack_pop(stack);
+  array_t* b = stack_pop(stack);
+  array_t* c = stack_pop(stack);
+  stack_push(stack, b);
+  stack_push(stack, a);
+  stack_push(stack, c);
+  STATUS_OK;
+}
+
+DEF_WORD("tuck", tuck) {
+  array_t* a = stack_pop(stack);
+  array_t* b = stack_pop(stack);
+  stack_push(stack, array_inc_ref(a));
+  stack_push(stack, b);
+  stack_push(stack, a);
+  STATUS_OK;
+}
+
+// todo: pick
+
+// unary words
+
 INLINE STATUS_T thread1(interpreter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_table[T_MAX]) {
   assert(x->t == T_ARR);
   array_t* out = array_alloc_as(x);
@@ -242,23 +298,6 @@ DEF_WORD_1_1("index", index) {
   return result_ok(y);
 }
 
-DEF_WORD("dup", dup) {
-  stack_push(stack, array_inc_ref(stack_peek(stack)));
-  STATUS_OK;
-}
-
-DEF_WORD("swap", swap) {
-  array_t* a = stack_pop(stack);
-  array_t* b = stack_pop(stack);
-  stack_push(stack, a);
-  stack_push(stack, b);
-  STATUS_OK;
-}
-
-DEF_WORD("drop", drop) {
-  stack_drop(stack);
-  STATUS_OK;
-}
 
 DEF_WORD(".", dot) {
   STATUS_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
