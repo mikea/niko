@@ -9,7 +9,7 @@ INLINE STATUS_T thread1(interpreter_t* inter, stack_t* stack, const array_t* x, 
     stack_push(stack, ((const array_t**)array_data(x))[i]);
     t_ffi ffi = ffi_table[stack_peek(stack)->t];
     assert(ffi);
-    R_IF_ERR(ffi(inter, stack));
+    STATUS_UNWRAP(ffi(inter, stack));
     ((array_t**)array_mut_data(out))[i] = stack_pop(stack);
   }
   stack_push(stack, out);
@@ -286,7 +286,7 @@ DEF_WORD("fold", fold) {
   DO(i, x->n) {
     array_t* y = array_new_scalar(x->t, array_data_i(x, i));
     stack_push(stack, y);
-    if (i > 0) R_IF_ERR(interpreter_dict_entry(inter, e));
+    if (i > 0) STATUS_UNWRAP(interpreter_dict_entry(inter, e));
   }
 
   STATUS_OK;

@@ -52,12 +52,14 @@ INLINE result_t result_err(string_t msg) { return (result_t){.ok = false, .eithe
 INLINE PRINTF(1, 2) result_t result_errf(const char* format, ...) {
   return result_err(VA_ARGS_FWD(format, string_vnewf(format, args)));
 }
-#define R_UNWRAP(r)                                         \
+#define RESULT_UNWRAP(r)                                         \
   ({                                                        \
     result_t __result = (r);                                \
     if (!__result.ok) return status_err(__result.either.e); \
     __result.either.a;                                      \
   })
+
+#define RESULT_OK(a) return result_ok(a)
 
 // stack
 
@@ -65,7 +67,7 @@ typedef struct stack_t stack_t;
 struct stack_t {
   array_t** bottom;
   size_t l;
-  size_t size;
+  size_t cap;
 };
 
 INLINE stack_t* stack_new() { return calloc(1, sizeof(stack_t)); }
@@ -81,11 +83,11 @@ INLINE void stack_free(stack_t* s) {
 INLINE size_t stack_len(const stack_t* s) { return s->l; }
 INLINE bool stack_is_empty(const stack_t* s) { return !stack_len(s); }
 INLINE void stack_grow(stack_t* s) {
-  s->size = (s->size + 1) * 2;
-  s->bottom = reallocarray(s->bottom, sizeof(array_t*), s->size);
+  s->cap = (s->cap + 1) * 2;
+  s->bottom = reallocarray(s->bottom, sizeof(array_t*), s->cap);
 }
 INLINE void stack_push(stack_t* stack, const array_t* a) {
-  if (stack->l == stack->size) stack_grow(stack);
+  if (stack->l == stack->cap) stack_grow(stack);
   stack->bottom[stack->l++] = (array_t*)a;
 }
 INLINE stack_t* stack_assert_not_empty(stack_t* stack) {
@@ -119,9 +121,13 @@ GEN_VECTOR(entry_vector, dict_entry_t);
 extern entry_vector_t global_dict;
 
 // interpreter
+
 struct interpreter_t {
+  enum { MODE_INTERPRET, MODE_COMPILE } mode;
   entry_vector_t dict;
   stack_t* stack;
+  stack_t* comp_stack;
+  dict_entry_t comp;
   size_t arr_level;
   size_t arr_marks[256];
   FILE* out;

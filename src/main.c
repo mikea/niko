@@ -10,11 +10,10 @@ DESTRUCTOR void global_dict_free() {
   free(global_dict.d);
 }
 
-STATUS_T concatenate(stack_t* stack, size_t len) {
+RESULT_T concatenate(stack_t* stack, size_t len) {
   if (!len) {
     dim_t d = len;
-    stack_push(stack, array_alloc(T_I64, 0, shape_1d(&d)));
-    STATUS_OK;
+    RESULT_OK(array_alloc(T_I64, 0, shape_1d(&d)));
   }
   bool all_common = true;
   const shape_t common_shape = array_shape(stack_peek(stack));
@@ -42,8 +41,7 @@ STATUS_T concatenate(stack_t* stack, size_t len) {
     }
   }
   DO(i, len) stack_drop(stack);
-  stack_push(stack, a);
-  STATUS_OK;
+  RESULT_OK(a);
 }
 
 // interpreter
@@ -51,18 +49,22 @@ STATUS_T concatenate(stack_t* stack, size_t len) {
 interpreter_t* interpreter_new() {
   interpreter_t* inter = calloc(1, sizeof(interpreter_t));
   inter->stack = stack_new();
+  inter->comp_stack = stack_new();
   inter->out = stdout;
   DO(i, global_dict.l) entry_vector_add(&inter->dict, global_dict.d[i]);
   return inter;
 }
 void interpreter_free(interpreter_t* inter) {
   stack_free(inter->stack);
+  stack_free(inter->comp_stack);
   // todo: we didn't copy the stirng in _new, which we should
   // DO(i, inter->dict.l) string_free(inter->dict.d[i].n);
   free(inter->dict.d);
   free(inter);
 }
 DEF_CLEANUP(interpreter_t, interpreter_free);
+
+token_t _interpreter_next_token(interpreter_t* inter) { return next_token(&inter->line); }
 
 STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e) {
   array_t* a = e->v;
@@ -94,6 +96,25 @@ STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e) {
         default: return status_errf("unexpected ffi rank: %ld", a->r);
       }
     }
+    case T_ARR: {
+      DO_ARRAY(a, t_arr, i, p) {
+        switch ((*p)->t) {
+          case T_C8:
+          case T_I64:
+          case T_F64: {
+            stack_push(inter->stack, array_inc_ref(*p));
+            break;
+          }
+          case T_ARR: NOT_IMPLEMENTED;
+          case T_FFI: NOT_IMPLEMENTED;
+          case T_DICT_ENTRY: {
+            STATUS_UNWRAP(interpreter_dict_entry(inter, *array_data_t_dict_entry(*p)));
+            break;
+          };
+        }
+      }
+      STATUS_OK;
+    }
     default: return status_errf("unexpected type: %d", a->t);
   }
 }
@@ -116,38 +137,100 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
       assert(inter->arr_level);  // todo: report error
       size_t mark = inter->arr_marks[--inter->arr_level];
       assert(inter->stack->l >= mark);  // todo: report error
-      return concatenate(inter->stack, inter->stack->l - mark);
+      array_t* a = RESULT_UNWRAP(concatenate(inter->stack, inter->stack->l - mark));
+      stack_push(inter->stack, a);
+      STATUS_OK;
     }
     case TOK_WORD: {
-      dict_entry_t* e = _interpreter_find_word(inter, t.text);
-      STATUS_CHECK(e, "unknown word '%pS'", &t.text);
-      return interpreter_dict_entry(inter, e);
+      if (str_eqc(t.text, ":")) {
+        STATUS_CHECK(inter->mode == MODE_INTERPRET, ": can be used only in interpret mode");
+        inter->mode = MODE_COMPILE;
+        assert(stack_is_empty(inter->comp_stack));
+        assert(inter->comp.v == NULL);
+        token_t next = _interpreter_next_token(inter);
+        STATUS_CHECK(next.tok == TOK_WORD, "word expected");
+        inter->comp.k = str_copy(next.text);
+        STATUS_OK;
+      } else if (str_eqc(t.text, ";")) {
+        STATUS_CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
+        inter->comp.v = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->bottom);
+        inter->comp_stack->l = 0;
+        entry_vector_add(&inter->dict, inter->comp);
+        inter->comp.v = NULL;
+        inter->mode = MODE_INTERPRET;
+        STATUS_OK;
+      } else {
+        dict_entry_t* e = _interpreter_find_word(inter, t.text);
+        STATUS_CHECK(e, "unknown word '%pS'", &t.text);
+
+        switch (inter->mode) {
+          case MODE_INTERPRET: return interpreter_dict_entry(inter, e);
+          case MODE_COMPILE: {
+            stack_push(inter->comp_stack, array_new_scalar_t_dict_entry(e));
+            STATUS_OK;
+          }
+        }
+
+        UNREACHABLE;
+      }
     }
     case TOK_I64: {
-      stack_push(inter->stack, array_new_scalar_t_i64(t.val.i));
-      STATUS_OK;
+      switch (inter->mode) {
+        case MODE_INTERPRET: {
+          stack_push(inter->stack, array_new_scalar_t_i64(t.val.i));
+          STATUS_OK;
+        };
+        case MODE_COMPILE: {
+          stack_push(inter->comp_stack, array_new_scalar_t_i64(t.val.i));
+          STATUS_OK;
+        }
+      }
+      UNREACHABLE;
     }
     case TOK_F64: {
-      stack_push(inter->stack, array_new_scalar_t_f64(t.val.d));
-      STATUS_OK;
+      switch (inter->mode) {
+        case MODE_INTERPRET: {
+          stack_push(inter->stack, array_new_scalar_t_f64(t.val.d));
+          STATUS_OK;
+        };
+        case MODE_COMPILE: {
+          NOT_IMPLEMENTED;
+        }
+      }
+      UNREACHABLE;
     }
     case TOK_STR: {
       size_t l = t.val.s.l;
       dim_t d = l;
-      stack_push(inter->stack, array_new_t_c8(l, shape_1d(&d), t.val.s.p));
-      STATUS_OK;
+
+      switch (inter->mode) {
+        case MODE_INTERPRET: {
+          stack_push(inter->stack, array_new_t_c8(l, shape_1d(&d), t.val.s.p));
+          STATUS_OK;
+        };
+        case MODE_COMPILE: {
+          NOT_IMPLEMENTED;
+        }
+      }
+
+      UNREACHABLE;
     }
     case TOK_QUOTE: {
       dict_entry_t* e = _interpreter_find_word(inter, t.val.s);
       STATUS_CHECK(e, "unknown word '%pS'", &t.text);
-      stack_push(inter->stack, array_new_scalar_t_dict_entry(e));
-      STATUS_OK;
+      switch (inter->mode) {
+        case MODE_INTERPRET: {
+          stack_push(inter->stack, array_new_scalar_t_dict_entry(e));
+          STATUS_OK;
+        };
+        case MODE_COMPILE: {
+          NOT_IMPLEMENTED;
+        }
+      }
     }
   }
   UNREACHABLE;
 }
-
-token_t _interpreter_next_token(interpreter_t* inter) { return next_token(&inter->line); }
 
 STATUS_T interpreter_line(interpreter_t* inter, const char* s) {
   inter->line = s;
@@ -155,9 +238,24 @@ STATUS_T interpreter_line(interpreter_t* inter, const char* s) {
   for (;;) {
     token_t t = _interpreter_next_token(inter);
     if (t.tok == TOK_EOF) STATUS_OK;
-    R_IF_ERR(interpreter_token(inter, t));
+    STATUS_UNWRAP(interpreter_token(inter, t));
   }
   STATUS_OK;
+}
+
+void interpreter_line_capture_out(interpreter_t* inter, const char* line, char** out, size_t* out_size) {
+  FILE* fout = open_memstream(out, out_size);
+  inter->out = fout;
+  status_t result = interpreter_line(inter, line);
+  inter->out = stdout;
+  fclose(fout);
+
+  if (status_is_err(result)) {
+    free(*out);
+    str_t msg = status_msg(result);
+    *out_size = asprintf(out, "ERROR: %pS\n", &msg);
+    status_free(result);
+  }
 }
 
 // repl
@@ -195,21 +293,6 @@ STATUS_T repl() {
       fprintf(stderr, "ERROR: %pS\n", &msg);
       status_free(result);
     }
-  }
-}
-
-void interpreter_line_capture_out(interpreter_t* inter, const char* line, char** out, size_t* out_size) {
-  FILE* fout = open_memstream(out, out_size);
-  inter->out = fout;
-  status_t result = interpreter_line(inter, line);
-  inter->out = stdout;
-  fclose(fout);
-
-  if (status_is_err(result)) {
-    free(*out);
-    str_t msg = status_msg(result);
-    *out_size = asprintf(out, "ERROR: %pS\n", &msg);
-    status_free(result);
   }
 }
 

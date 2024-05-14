@@ -66,3 +66,8 @@ INLINE PRINTF(1, 2) string_t string_newf(const char* format, ...) {
   return VA_ARGS_FWD(format, string_vnewf(format, args));
 }
 INLINE str_t string_as_str(string_t s) { return (str_t){s.l, s.p}; }
+INLINE string_t str_copy(const str_t s) {
+  char* p = malloc(s.l);
+  memcpy(p, s.p, s.l);
+  return (string_t){.l = s.l, .p = p};
+}

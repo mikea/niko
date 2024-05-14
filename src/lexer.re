@@ -34,7 +34,7 @@ token_t next_token(const char** s) {
         eof = [\x00];
         eow = [ \t\n\x00];
         spaces = [ \t\n]+;
-        word = [^ ^\t^\n^\x00^1-9][^ \t\n\x00]*;
+        word = [^ ^\t^\n^\x00][^ \t\n\x00]*;
 
         eof { TOK(TOK_EOF); }
         spaces { continue; }

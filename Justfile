@@ -38,8 +38,7 @@ stat EXPR="10000000 zeros": release
 #     clang-format -i build/words.c
 #     gcc {{RELEASE_CFLAGS}} -fopt-info-vec-missed -c -o build/words.o build/words.c
 
-docs: test
-    bin/niko -m docs/examples.md
+docs: test _docs
 
 [private]
 _test:
@@ -52,6 +51,10 @@ _build BUILD_TYPE:
     cmake -B build/{{BUILD_TYPE}} -DCMAKE_BUILD_TYPE={{BUILD_TYPE}}
     cmake --build build/{{BUILD_TYPE}}
     cp build/{{BUILD_TYPE}}/niko bin/niko
+
+[private]
+_docs:
+    bin/niko -m docs/examples.md
 
 _benchmarks:
     while IFS= read -r line; do echo "> $line"; \

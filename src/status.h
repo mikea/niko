@@ -32,7 +32,7 @@ INLINE void status_print_error(status_t s) {
 
 #define STATUS_OK return status_ok()
 
-#define R_IF_ERR(expr)                                \
+#define STATUS_UNWRAP(expr)                                \
   do {                                                \
     status_t __status__ = (expr);                     \
     if (status_is_err(__status__)) return __status__; \

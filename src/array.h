@@ -88,14 +88,15 @@ INLINE shape_t* shape_extend(shape_t s, dim_t sz) {
 }
 
 // array: (header, dims, data)
-typedef struct {
+struct array_t {
   type_t t;          // type
   size_t rc;         // ref count
   size_t n;          // number of elements
   void* restrict p;  // simd aligned size and length if n is large enough
   size_t r;          // rank
   dim_t d[0];        // dims
-} array_t;
+};
+typedef struct array_t array_t;
 
 INLINE bool __array_data_simd_aligned(type_t t, size_t n) { return n >= 2 * SIMD_REG_WIDTH_BYTES / type_sizeof(t, 1); }
 INLINE bool array_data_simd_aligned(const array_t* a) { return __array_data_simd_aligned(a->t, a->n); }
