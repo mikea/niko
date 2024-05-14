@@ -333,8 +333,10 @@ STATUS_T test(const char* fname, bool v) {
     if (memcmp(line, rest_out, read)) {
       fprintf(stderr, "ERROR %s:%ld : mismatched output, expected: '%s' actual: '%s' \n", fname, in_line_no, line,
               rest_out);
+      rest_out = NULL;
+    } else {
+      rest_out += read;
     }
-    rest_out += read;
   }
 
   if (rest_out && *rest_out) fprintf(stderr, "ERROR %s:%ld : umatched output: '%s'\n", fname, in_line_no, rest_out);

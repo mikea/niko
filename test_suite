@@ -8,6 +8,8 @@
 9223372036854775807
 > 9223372036854775808 .
 9223372036854775807
+> 0 .
+0
 # floats
 > 1. .
 1.
@@ -112,6 +114,17 @@
 [ 0 1 2 3 4 5 6 7 8 9 ]
 > [ 2 3 ] index .
 [ [ 0 1 2 ] [ 3 4 5 ] ]
+# reshape
+> 5 index 9 reshape .
+[ 0 1 2 3 4 0 1 2 3 ]
+> 5 index [ 8 ] reshape .
+[ 0 1 2 3 4 0 1 2 ]
+> 5 index 3 reshape .
+[ 0 1 2 ]
+> 5 index [ 3 4 ] reshape .
+[ [ 0 1 2 3 ] [ 4 0 1 2 ] [ 3 4 0 1 ] ]
+> 5 index [ 2 2 ] reshape .
+[ [ 0 1 ] [ 2 3 ] ]
 ## information about arrays
 # shape
 > 10 zeros shape .
@@ -276,3 +289,7 @@ ERROR: c8 i64 are not supported
 ## error handling
 > 1999912+
 ERROR: unknown word '1999912+'
+## \words
+# \c
+> 10 index \c .
+ERROR: stack underflow: 1 value expected

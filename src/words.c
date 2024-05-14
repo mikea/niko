@@ -266,6 +266,8 @@ DEF_WORD_1_1("shape", shape) {
 }
 DEF_WORD_1_1("len", len) { return result_ok(array_new_scalar_t_i64(x->n)); }
 
+// creating arrays
+
 shape_t create_shape(const array_t* x) {
   assert(x->r <= 1);      // todo: report error
   assert(x->t == T_I64);  // todo: report error
@@ -298,6 +300,19 @@ DEF_WORD_1_1("index", index) {
   return result_ok(y);
 }
 
+DEF_WORD("reshape", reshape) {
+  STATUS_CHECK(stack_len(stack) > 1, "stack underflow: 2 values expected");
+  own(array_t) x = stack_pop(stack);
+  own(array_t) y = stack_pop(stack);
+  shape_t s = create_shape(x);
+  array_t* z = array_alloc(y->t, shape_len(s), s);
+  size_t ys = type_sizeof(y->t, y->n);
+  DO(i, type_sizeof(y->t, z->n)) {
+    ((char*)array_mut_data(z))[i] = ((char*)array_data(y))[i % ys];
+  }
+  stack_push(stack, z);
+  STATUS_OK;
+}
 
 DEF_WORD(".", dot) {
   STATUS_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
@@ -312,6 +327,14 @@ DEF_WORD("exit", exit) {
 }
 
 DEF_WORD("load_csv", load_csv) { STATUS_OK; }
+
+// repl
+
+DEF_WORD("\\c", slash_clear) {
+  stack_clear(stack);
+  STATUS_OK;
+}
+
 
 // fold
 

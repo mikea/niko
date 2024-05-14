@@ -28,7 +28,7 @@ token_t next_token(const char** s) {
         re2c:yyfill:enable = 0;
         re2c:define:YYCTYPE = char;
 
-        integer = "-"?[1-9][0-9]*;
+        integer = "-"?[0-9][0-9]*;
         float = ("-"?[0-9]+"."[0-9]*)|("-"?[0-9]+"."?[0-9]*[eE]"-"?[1-9][0-9]*);
         str = "\""[^"]*"\"";
         eof = [\x00];

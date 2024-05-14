@@ -1,5 +1,11 @@
 # Niko Reference
 
+## Development Aids
+
+|Word|Signature|Description|
+|---|---|---|
+|`\c`|`( ... -> )`|clears the stack
+
 ## Stack Manipulation
 
 |Word|Signature|Description|
@@ -14,13 +20,13 @@
 
 ## Creating Arrays
 
-### `zeros`, `ones`
+|Word|Signature|Description|
+|---|---|---|
+|`zeros`|`( s -> x )`|creates array with shape `s` filled with zeros
+|`ones`|`( s -> x )`|creates array with shape `s` filled with ones
+|`index`|`( s -> x )`|creates array with shape `s` filled values from `0` to the length-1
+|`reshape`|`( x s -> y)`|reshapes `x` according to the shape `s` repeating or truncating if necessary
 
-`shape -> x`
-
-### `index`
-
-`shape -> x`
 
 ## Array Introspection
 
