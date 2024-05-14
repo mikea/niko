@@ -23,4 +23,5 @@ jobs:
       run: |
           just test
           just release
-          git diff --exit-code
+    - name: Verify Clean Git Tree
+      run: git diff --exit-code
