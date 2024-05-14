@@ -267,6 +267,13 @@ void interpreter_line_capture_out(interpreter_t* inter, const char* line, char**
 #define COMPILE_TIME "unknown"
 #endif
 
+INLINE void stack_print_repl(stack_t* stack) {
+  DO(i, stack->l) {
+    if (i > 0) printf(" ");
+    printf("%25pA", stack->bottom[i]);
+  }
+}
+
 STATUS_T repl() {
   size_t input_size = 0;
   own(char) input = NULL;
@@ -281,7 +288,7 @@ STATUS_T repl() {
       if (inter->arr_level) {
         printf("%ld> ", inter->arr_level);
       } else {
-        stack_print(inter->stack);
+        stack_print_repl(inter->stack);
         printf(" > ");
       }
     }

@@ -28,7 +28,7 @@ size_t print_ptr(FILE* f, type_t t, const void* ptr) {
   UNREACHABLE;
 }
 
-size_t print_array_impl(FILE* f, type_t t, shape_t s, const void* x) {
+size_t print_array_impl(FILE* f, type_t t, shape_t s, const void* x, size_t w) {
   if (s.r == 0) return print_ptr(f, t, x);
   size_t c = 0;
   if (s.r == 1 && t == T_C8) {
@@ -42,7 +42,11 @@ size_t print_array_impl(FILE* f, type_t t, shape_t s, const void* x) {
   shape_t sub_shape = (shape_t){s.r - 1, s.d + 1};
   size_t stride = type_sizeof(t, shape_len(sub_shape));
   DO(i, *s.d) {
-    c += print_array_impl(f, t, sub_shape, x + stride * i);
+    if (w < c + 6) {
+      c += fprintf(f, "... ");
+      break;
+    }
+    c += print_array_impl(f, t, sub_shape, x + stride * i, w - c - 2);
     c += fprintf(f, " ");
   }
   c += fprintf(f, "]");
@@ -52,7 +56,7 @@ size_t print_array_impl(FILE* f, type_t t, shape_t s, const void* x) {
 int printf_array(FILE* f, const struct printf_info* info, const void* const* args) {
   assert(info->user == p_modifier);  // p modifier expected
   const array_t* a = *((const array_t**)(args[0]));
-  return print_array_impl(f, a->t, array_shape(a), array_data(a));
+  return print_array_impl(f, a->t, array_shape(a), array_data(a), info->width ? info->width : SIZE_MAX);
 }
 
 int printf_str(FILE* f, const struct printf_info* info, const void* const* args) {

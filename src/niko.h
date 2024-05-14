@@ -101,12 +101,6 @@ INLINE array_t* stack_i(stack_t* s, size_t i) {
   return s->bottom[s->l - i - 1];
 }
 INLINE array_t* stack_peek(stack_t* s) { return stack_i(s, 0); }
-INLINE void stack_print(stack_t* stack) {
-  DO(i, stack->l) {
-    if (i > 0) printf(" ");
-    printf("%pA", stack->bottom[i]);
-  }
-}
 
 // dictionary
 
