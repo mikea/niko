@@ -30,19 +30,18 @@
 
 ## Array Introspection
 
-### `len`
-
-`x -> y`
-
-### `shape`
-
-`x -> y`
+|Word|Signature|Description|
+|---|---|---|
+|`len`|`( x -> n )`|replaces top array with total number of its elements
+|`shape`|`( x -> x )`|replaces top array with 1-d array of its shape
 
 ## Unary Operations
 
-### `abs`, `neg`
+|Word|Signature|Description|
+|---|---|---|
+|`abs`|`( x -> y )`|replaces array with new array of the same type and shape with absolute values
+|`neg`|`( x -> y )`|replaces array with new array of the same type and shape with negative values
 
-`x -> y`
 
 ### Mathematical Functions
 
