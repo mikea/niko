@@ -16,6 +16,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Install dependecies
+      run: sudo apt-get just re2c
+
     - name: Test
       run: just test
 
