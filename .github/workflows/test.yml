@@ -11,11 +11,16 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v4
 
+    - name: Install dependecies
+      run: sudo apt-get install just re2c
+
     - name: Test
-      run: just test
+      run: |
+          just test
+          just release
 
