@@ -10,8 +10,14 @@
 ## Temperature Convertion
 
 ```nk
-> : centigrade 32 - 5 * 9. /;
+> : centigrade 32 - 5 * 9. / ;
+> : fahrenheit 9 * 5. / 32 + ;
 > 72 centigrade .
+
+> 21 fahrenheit .
+
+> 11 index 10 * fahrenheit .
+
 
 ```
 
