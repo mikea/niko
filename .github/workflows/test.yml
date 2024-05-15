@@ -21,7 +21,7 @@ jobs:
         sudo apt-get install just re2c libopenblas-dev liblapacke-dev
 
     - name: Debug
-      run: LDFLAGS="-lfoo" just test
+      run: LDFLAGS="-llapacke" just test
 
     - name: Release
       run: LDFLAGS="-llapacke" just release
