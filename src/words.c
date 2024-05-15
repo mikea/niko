@@ -403,7 +403,7 @@ DEF_WORD("+'fold", plus_fold) { NOT_IMPLEMENTED; }
 
 DEF_WORD("pascal", pascal) {
   own(array_t) x = stack_pop(stack);
-  size_t n;
+  size_t n = 0;
   STATUS_UNWRAP(as_size_t(x, &n));
 
   dim_t dims[2] = {n, n};
