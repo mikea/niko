@@ -68,7 +68,7 @@ DEF_WORD("tuck", tuck) {
 DEF_WORD("pick", pick) {
   STATUS_CHECK(stack_len(stack) > 0, "stack underflow: 1 value expected");
   own(array_t) x = stack_pop(stack);
-  size_t n;
+  size_t n = 0;
   STATUS_UNWRAP(as_size_t(x, &n));
   STATUS_CHECK(stack_len(stack) > n, "stack underflow: index %ld >= stack size %ld", n, stack_len(stack));
 
