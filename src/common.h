@@ -1,6 +1,10 @@
 #pragma once
 
+#include <assert.h>
+#include <stdarg.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 typedef int64_t i64;
 typedef double f64;

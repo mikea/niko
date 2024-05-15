@@ -80,12 +80,15 @@ DEF_WORD("pick", pick) {
 INLINE STATUS_T thread1(interpreter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_table[T_MAX]) {
   assert(x->t == T_ARR);
   array_t* out = array_alloc_as(x);
+
+  array_t* const* src = array_data_t_arr(x);
+  array_t** dst = array_mut_data_t_arr(out);
   DO(i, x->n) {
-    stack_push(stack, ((const array_t**)array_data(x))[i]);
+    stack_push(stack, array_inc_ref(src[i]));
     t_ffi ffi = ffi_table[stack_peek(stack)->t];
     assert(ffi);
     STATUS_UNWRAP(ffi(inter, stack));
-    ((array_t**)array_mut_data(out))[i] = stack_pop(stack);
+    dst[i] = stack_pop(stack);
   }
   stack_push(stack, out);
   return status_ok();
@@ -264,7 +267,7 @@ STATUS_T w_binop(stack_t* stack, type_t t, binop_t kernel, binop_t x_scalar_kern
     size_t dims[2] = {T_MAX, T_MAX};                                \
     shape_t sh = (shape_t){2, dims};                                \
     array_t* a = array_new(T_FFI, T_MAX * T_MAX, sh, name##_table); \
-    global_dict_add_new(string_from_c(word), a);                   \
+    global_dict_add_new(string_from_c(word), a);                    \
   }
 
 #define PLUS_OP(a, b) (a) + (b)

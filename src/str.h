@@ -1,6 +1,8 @@
 #pragma once
 
 #include "common.h"
+#include <stddef.h>
+#include <string.h>
 
 // unowned string
 typedef struct {

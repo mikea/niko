@@ -100,6 +100,8 @@ struct array_t {
 };
 typedef struct array_t array_t;
 
+void array_free(array_t* a);
+
 INLINE bool __array_data_simd_aligned(type_t t, size_t n) { return n >= 2 * SIMD_REG_WIDTH_BYTES / type_sizeof(t, 1); }
 INLINE bool array_data_simd_aligned(const array_t* a) { return __array_data_simd_aligned(a->t, a->n); }
 
@@ -110,8 +112,12 @@ INLINE const void* array_data(const array_t* arr) { return arr->p; }
 INLINE size_t array_data_sizeof(const array_t* a) { return type_sizeof(a->t, a->n); }
 INLINE const void* array_data_i(const array_t* a, size_t i) { return array_data(a) + type_sizeof(a->t, i); }
 
+INLINE const array_t* __array_assert_type(const array_t* a, type_t t) {
+  assert(a->t == t);
+  return a;
+}
 INLINE array_t* __array_assert_mut(array_t* arr) {
-  assert(arr->rc == 1 && !arr->owner);
+  assert(arr->rc <= 1 && !arr->owner);
   return arr;
 }
 INLINE array_t* __array_assert_simd_aligned(array_t* arr) {
@@ -145,11 +151,7 @@ INLINE array_t* array_alloc(type_t t, size_t n, shape_t s) {
 
 INLINE void array_dec_ref(array_t* arr);
 
-INLINE void array_free(array_t* a) {
-  if (a->owner) array_dec_ref(a->owner);
-  else if (__array_data_simd_aligned(a->t, a->n)) free(a->p);
-  free(a);
-}
+
 INLINE array_t* array_inc_ref(array_t* arr) {
   arr->rc++;
   return arr;
@@ -195,7 +197,12 @@ INLINE array_t* array_new_scalar(type_t t, const void* x) { return array_new(t, 
 #define __DEF_TYPE_HELPER(t)                                                                                  \
   INLINE array_t* array_new_scalar_##t(t v) { return array_new_scalar(TYPE_ENUM(t), &v); }                    \
   INLINE array_t* array_new_##t(size_t n, shape_t s, const t* x) { return array_new(TYPE_ENUM(t), n, s, x); } \
-  INLINE t* array_data_##t(array_t* a) { return (t*)array_data(a); }
+  INLINE const t* array_data_##t(const array_t* a) {                                                          \
+    return (const t*)array_data(__array_assert_type(a, TYPE_ENUM(t)));                                        \
+  }                                                                                                           \
+  INLINE t* array_mut_data_##t(array_t* a) {                                                                  \
+    return (t*)array_mut_data((array_t*)__array_assert_type(a, TYPE_ENUM(t)));                                \
+  }
 
 TYPE_FOREACH(__DEF_TYPE_HELPER)
 

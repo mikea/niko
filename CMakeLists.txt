@@ -27,7 +27,7 @@ add_custom_command(
 option(USE_LAPACK_64 "Use LAPACK 64-bit library (needed for ubuntu)" OFF)
 
 add_executable(niko 
-  src/main.c src/words.c src/print.c src/blas.c
+  src/main.c src/words.c src/print.c src/blas.c src/array.c
   ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
 target_link_libraries(niko m)
 
