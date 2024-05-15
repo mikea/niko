@@ -17,7 +17,8 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Install dependecies
-      run: sudo apt-get install just re2c libopenblas-dev
+      run: |
+        sudo apt-get install just re2c libopenblas-dev liblapacke-dev
 
     - name: Debug
       run: just test
