@@ -19,13 +19,13 @@ jobs:
     - name: Install dependecies
       run: |
         sudo apt-get install just re2c libopenblas-dev liblapacke-dev
-        export CMAKE_EXE_LINKER_FLAGS="-llapacke"
+        export LDFLAGS="-llapacke"
 
     - name: Debug
-      run: CMAKE_EXE_LINKER_FLAGS="-llapacke" just test
+      run: just test
 
     - name: Release
-      run: CMAKE_EXE_LINKER_FLAGS="-llapacke" just release
+      run: just release
 
     - name: Verify Clean Git Tree
       run: git diff --exit-code
