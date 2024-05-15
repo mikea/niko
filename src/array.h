@@ -74,7 +74,7 @@ INLINE shape_t shape_scalar() { return (shape_t){0, NULL}; }
 INLINE shape_t shape_1d(const dim_t* d) { return (shape_t){1, d}; }
 INLINE shape_t shape_create(size_t r, const dim_t* d) { return (shape_t){r, d}; }
 INLINE bool shape_eq(shape_t s1, shape_t s2) { return s1.r == s2.r && !memcmp(s1.d, s2.d, dims_sizeof(s1.r)); }
-INLINE size_t shape_len(shape_t s) {
+INLINE CONST size_t shape_len(shape_t s) {
   size_t y = 1;
   DO(i, s.r) y *= s.d[i];
   return y;
@@ -86,12 +86,14 @@ INLINE shape_t* shape_extend(shape_t s, dim_t sz) {
   *d = sz;
   return r;
 }
+INLINE shape_t shape_cell(shape_t s, size_t r) { return (shape_t){r, s.d + s.r - r}; }
 
 // array: (header, dims, data)
 struct array_t {
-  type_t t;          // type
-  size_t rc;         // ref count
-  size_t n;          // number of elements
+  type_t t;   // type
+  size_t rc;  // ref count
+  size_t n;   // number of elements
+  struct array_t* owner;
   void* restrict p;  // simd aligned size and length if n is large enough
   size_t r;          // rank
   dim_t d[0];        // dims
@@ -109,7 +111,7 @@ INLINE size_t array_data_sizeof(const array_t* a) { return type_sizeof(a->t, a->
 INLINE const void* array_data_i(const array_t* a, size_t i) { return array_data(a) + type_sizeof(a->t, i); }
 
 INLINE array_t* __array_assert_mut(array_t* arr) {
-  assert(arr->rc == 1);
+  assert(arr->rc == 1 && !arr->owner);
   return arr;
 }
 INLINE array_t* __array_assert_simd_aligned(array_t* arr) {
@@ -136,12 +138,16 @@ INLINE array_t* array_alloc(type_t t, size_t n, shape_t s) {
   a->rc = 1;
   a->n = n;
   a->r = s.r;
+  a->owner = NULL;
   memcpy(a + 1, s.d, dims_sizeof(s.r));
   return a;
 }
 
+INLINE void array_dec_ref(array_t* arr);
+
 INLINE void array_free(array_t* a) {
-  if (__array_data_simd_aligned(a->t, a->n)) free(a->p);
+  if (a->owner) array_dec_ref(a->owner);
+  else if (__array_data_simd_aligned(a->t, a->n)) free(a->p);
   free(a);
 }
 INLINE array_t* array_inc_ref(array_t* arr) {
@@ -162,6 +168,18 @@ INLINE array_t* array_new(type_t t, size_t n, shape_t s, const void* x) {
 INLINE array_t* array_new_1d(type_t t, size_t n, const void* x) {
   dim_t d = n;
   return array_new(t, n, shape_1d(&d), x);
+}
+INLINE array_t* array_new_slice(array_t* x, size_t n, shape_t s, const void* p) {
+  array_inc_ref(x);
+  array_t* y = malloc(sizeof(array_t) + dims_sizeof(s.r));
+  y->t = x->t;
+  y->rc = 1;
+  y->n = n;
+  y->r = s.r;
+  y->p = (void*)p;
+  y->owner = x;
+  memcpy(y + 1, s.d, dims_sizeof(s.r));
+  return y;
 }
 
 INLINE bool array_is_scalar(const array_t* a) { return a->r == 0; }

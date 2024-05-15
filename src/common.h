@@ -19,11 +19,16 @@ static_assert(sizeof(f64) == sizeof(i64));
 
 #define UNIQUE(n) PASTE(n, __COUNTER__)
 
-#define UNREACHABLE __builtin_unreachable()
 #define NOT_IMPLEMENTED \
   do {                  \
     assert(false);      \
     abort();            \
+  } while (0)
+#define UNREACHABLE          \
+  do {                       \
+    __builtin_unreachable(); \
+    assert(false);           \
+    abort();                 \
   } while (0)
 #define DO(var, l) for (size_t var = 0, __l = l; var < __l; var++)
 #define DBG(...)                                   \

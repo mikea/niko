@@ -23,7 +23,7 @@ size_t print_ptr(FILE* f, type_t t, const void* ptr) {
     case T_C8: UNREACHABLE;
     case T_ARR: return fprintf(f, "%pA", *(array_t**)ptr);
     case T_FFI: return fprintf(f, "<native_function>");
-    case T_DICT_ENTRY: return fprintf(f, "%pS", &((*(t_dict_entry*)ptr)->k));
+    case T_DICT_ENTRY: return fprintf(f, "%pS'", &((*(t_dict_entry*)ptr)->k));
   }
   UNREACHABLE;
 }

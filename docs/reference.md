@@ -55,13 +55,10 @@
 
 ## Higher Level Operations
 
-### fold
-
-`x op' -> y`
-
-### fold_by
-
-`x axis op' -> y`
+|Word|Signature|Description|
+|---|---|---|
+|`fold`|`( x op' -> y )`| fold cells of rank `0` using `op`
+|`fold_rank`|`( x r op' -> y )`| fold cells of rank `r` using `op`
 
 ## Input/Output
 

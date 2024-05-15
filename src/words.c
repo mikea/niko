@@ -339,7 +339,7 @@ DEF_WORD("\\c", slash_clear) {
 // fold
 
 DEF_WORD("fold", fold) {
-  STATUS_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
+  STATUS_CHECK(stack_len(stack) > 1, "stack underflow: 2 values expected");
   own(array_t) op = stack_pop(stack);
   own(array_t) x = stack_pop(stack);
   STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
@@ -349,6 +349,44 @@ DEF_WORD("fold", fold) {
     array_t* y = array_new_scalar(x->t, array_data_i(x, i));
     stack_push(stack, y);
     if (i > 0) STATUS_UNWRAP(interpreter_dict_entry(inter, e));
+  }
+
+  STATUS_OK;
+}
+
+STATUS_T as_size_t(array_t* a, size_t* out) {
+  STATUS_CHECK(a->r == 0, "scalar expected");
+  STATUS_CHECK(a->t == T_I64, "int scalar expected");
+  *out = *array_data_t_i64(a);
+  STATUS_OK;
+}
+
+DEF_WORD("fold_rank", fold_rank) {
+  STATUS_CHECK(stack_len(stack) > 2, "stack underflow: 3 values expected");
+  own(array_t) op = stack_pop(stack);
+  STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
+  dict_entry_t* e = *array_data_t_dict_entry(op);
+
+  own(array_t) r = stack_pop(stack);
+  STATUS_CHECK(r->r == 0, "scalar expected");
+  STATUS_CHECK(r->t == T_I64, "int scalar expected");
+
+  own(array_t) x = stack_pop(stack);
+
+  size_t rank = 0;
+  STATUS_UNWRAP(as_size_t(r, &rank));
+
+  shape_t cell = shape_cell(array_shape(x), rank);
+  size_t l = shape_len(cell);
+  size_t stride = type_sizeof(x->t, l);
+
+  const void* ptr = array_data(x);
+  DO(i, x->n / l) {
+    array_t* y = array_new_slice(x, l, cell, ptr + stride * i);
+    stack_push(stack, y);
+    if (i > 0) {
+      STATUS_UNWRAP(interpreter_dict_entry(inter, e));
+    }
   }
 
   STATUS_OK;

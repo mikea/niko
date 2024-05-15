@@ -279,6 +279,18 @@ ERROR: c8 i64 are not supported
 10000
 > 10 index 1 + *' fold .
 3628800
+> [ 2 3 4 ] index +' fold .
+276
+# fold_rank
+> [ 2 3 4 ] index 0 +' fold_rank .
+276
+> [ 2 3 4 ] index 1 +' fold_rank .
+[ 60 66 72 78 ]
+> [ 2 3 4 ] index 2 +' fold_rank .
+[ [ 12 14 16 18 ] [ 20 22 24 26 ] [ 28 30 32 34 ] ]
+> [ 2 3 4 ] index 3 +' fold_rank .
+[ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
+#
 ## defining new words
 > : one 1 ; one .
 1
