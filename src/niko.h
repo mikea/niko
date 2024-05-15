@@ -105,20 +105,40 @@ INLINE array_t* stack_peek(stack_t* s) { return stack_i(s, 0); }
 // dictionary
 
 struct dict_entry_t {
+  struct dict_entry_t* n;
   string_t k;
   array_t* v;
 };
 typedef struct dict_entry_t dict_entry_t;
 
-GEN_VECTOR(entry_vector, dict_entry_t);
+INLINE dict_entry_t* dict_entry_new(dict_entry_t* n, string_t k, array_t* v) {
+  dict_entry_t* e = malloc(sizeof(dict_entry_t));
+  e->n = n;
+  e->k = k;
+  e->v = v;
+  return e;
+}
+INLINE dict_entry_t* dict_entry_free(dict_entry_t* e) {
+  dict_entry_t*n = e->n;
+  string_free(e->k);
+  array_dec_ref(e->v);
+  free(e);
+  return n;
+}
+INLINE void dict_entry_free_chain(dict_entry_t* e) {
+  while (e) e = dict_entry_free(e);
+}
 
-extern entry_vector_t global_dict;
+extern dict_entry_t* global_dict;
+INLINE void global_dict_add_new(string_t k, array_t* v) {
+  global_dict = dict_entry_new(global_dict, k, v);
+}
 
 // interpreter
 
 struct interpreter_t {
   enum { MODE_INTERPRET, MODE_COMPILE } mode;
-  entry_vector_t dict;
+  dict_entry_t* dict;
   stack_t* stack;
   stack_t* comp_stack;
   dict_entry_t comp;
@@ -152,8 +172,8 @@ STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e);
 
 #define REGISTER_WORD(w, n)                                                                        \
   STATUS_T w_##n(interpreter_t* inter, stack_t* stack);                                            \
-  CONSTRUCTOR void __register_w_##n() {                                                          \
-    entry_vector_add(&global_dict, (dict_entry_t){string_newf(w), array_new_scalar_t_ffi(w_##n)}); \
+  CONSTRUCTOR void __register_w_##n() {                                                            \
+    global_dict_add_new(string_from_c(w), array_new_scalar_t_ffi(w_##n)); \
   }
 
 #define DEF_WORD(w, n) \

@@ -10,11 +10,11 @@ typedef struct {
 
 INLINE str_t str_empty() { return (str_t){0, NULL}; }
 INLINE str_t str_new(const char* b, const char* e) { return (str_t){e - b, b}; }
-INLINE str_t str_fromc(const char* c) { return (str_t){strlen(c), c}; }
+INLINE str_t str_from_c(const char* c) { return (str_t){strlen(c), c}; }
 INLINE size_t str_len(const str_t s) { return s.l; }
 INLINE bool str_is_empty(const str_t s) { return !s.l; }
 INLINE bool str_eq(const str_t s1, const str_t s2) { return s1.l == s2.l && !memcmp(s1.p, s2.p, s1.l); }
-INLINE bool str_eqc(const str_t s, const char* c) { return str_eq(s, str_fromc(c)); }
+INLINE bool str_eqc(const str_t s, const char* c) { return str_eq(s, str_from_c(c)); }
 INLINE void str_fprint(const str_t s, FILE* f) { DO(i, str_len(s)) putc(*(s.p + i), f); }
 INLINE void str_print(const str_t s) { str_fprint(s, stdout); }
 INLINE char str_i(const str_t s, size_t i) { return *(s.p + i); }
@@ -71,3 +71,4 @@ INLINE string_t str_copy(const str_t s) {
   memcpy(p, s.p, s.l);
   return (string_t){.l = s.l, .p = p};
 }
+INLINE string_t string_from_c(const char* s) { return str_copy(str_from_c(s)); }

@@ -3,11 +3,10 @@
 
 #include "niko.h"
 
-entry_vector_t global_dict;
+dict_entry_t* global_dict = NULL;
 
 DESTRUCTOR void global_dict_free() {
-  DO(i, global_dict.l) string_free(global_dict.d[i].k);
-  free(global_dict.d);
+  dict_entry_free_chain(global_dict);
 }
 
 RESULT_T concatenate(stack_t* stack, size_t len) {
@@ -51,15 +50,12 @@ interpreter_t* interpreter_new() {
   inter->stack = stack_new();
   inter->comp_stack = stack_new();
   inter->out = stdout;
-  DO(i, global_dict.l) entry_vector_add(&inter->dict, global_dict.d[i]);
   return inter;
 }
 void interpreter_free(interpreter_t* inter) {
   stack_free(inter->stack);
   stack_free(inter->comp_stack);
-  // todo: we didn't copy the stirng in _new, which we should
-  // DO(i, inter->dict.l) string_free(inter->dict.d[i].n);
-  free(inter->dict.d);
+  dict_entry_free_chain(inter->dict);
   free(inter);
 }
 DEF_CLEANUP(interpreter_t, interpreter_free);
@@ -120,7 +116,12 @@ STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e) {
 }
 
 dict_entry_t* _interpreter_find_word(interpreter_t* inter, const str_t n) {
-  DO(i, inter->dict.l) if (str_eq(n, string_as_str(inter->dict.d[i].k))) { return &inter->dict.d[i]; }
+  for (dict_entry_t* e = inter->dict; e; e = e->n) {
+    if (str_eq(n, string_as_str(e->k))) return e;
+  }
+  for (dict_entry_t* e = global_dict; e; e = e->n) {
+    if (str_eq(n, string_as_str(e->k))) return e;
+  }
   return NULL;
 }
 
@@ -155,14 +156,13 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
         STATUS_CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
         inter->comp.v = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->bottom);
         inter->comp_stack->l = 0;
-        entry_vector_add(&inter->dict, inter->comp);
+        inter->dict = dict_entry_new(inter->dict, inter->comp.k, inter->comp.v);
         inter->comp.v = NULL;
         inter->mode = MODE_INTERPRET;
         STATUS_OK;
       } else {
         dict_entry_t* e = _interpreter_find_word(inter, t.text);
         STATUS_CHECK(e, "unknown word '%pS'", &t.text);
-
         switch (inter->mode) {
           case MODE_INTERPRET: return interpreter_dict_entry(inter, e);
           case MODE_COMPILE: {
@@ -367,8 +367,8 @@ STATUS_T markdown(const char* fname) {
   STATUS_CHECK(temp_fd, "can't create temp file");
   own(FILE) temp = fdopen(temp_fd, "w");
 
-  const str_t code_start = str_fromc("```nk\n");
-  const str_t code_end = str_fromc("```");
+  const str_t code_start = str_from_c("```nk\n");
+  const str_t code_end = str_from_c("```");
 
   own(interpreter_t) inter = interpreter_new();
 
@@ -385,7 +385,7 @@ STATUS_T markdown(const char* fname) {
 
   while ((read = getline(&line, &len, file)) != -1) {
     line_no++;
-    str_t l = str_fromc(line);
+    str_t l = str_from_c(line);
 
     if (in_code) {
       if (str_starts_with(l, code_end)) {

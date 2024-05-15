@@ -96,6 +96,15 @@
 2
 1
 2
+# pick
+> 0 1 2 3 4 0 pick . 1 pick . 2 pick . 3 pick . 4 pick . \c
+4
+3
+2
+1
+0
+> 5 pick
+ERROR: stack underflow: index 5 >= stack size 0
 ## creating arrays
 # zeros
 > 10 zeros .

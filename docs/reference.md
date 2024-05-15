@@ -17,6 +17,7 @@
 |`rot`|`( x y z -> z x y )`|rotates top three items on the stack
 |`swap`|`( x y -> y x )`|exchanges top to items of the stack
 |`tuck`|`( x y -> y x y )`|places a copy of the top of the stack below the second item
+|`pick`|`( n -> x )`| places a copy of `n`-th element on top of the stack. `0 pick` equals `dup`.
 
 ## Creating Arrays
 
