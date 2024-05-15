@@ -8,7 +8,6 @@ find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
 add_compile_options(
-  -DLAPACK_ILP64
   -mavx2
   -std=gnu2x 
   -mmemset-strategy=vector_loop:-1:noalign
