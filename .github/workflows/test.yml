@@ -18,7 +18,7 @@ jobs:
 
     - name: Install dependecies
       run: |
-        sudo apt-get install just re2c libopenblas64-dev liblapacke64-dev valgrind
+        sudo apt-get install just re2c libopenblas64-dev liblapacke64-dev libopenblas-dev liblapacke-dev valgrind
 
     - name: Valgrind
       run: just valgrind
