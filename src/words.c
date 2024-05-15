@@ -237,7 +237,7 @@ STATUS_T w_binop(stack_t* stack, type_t t, binop_t kernel, binop_t x_scalar_kern
   GEN_BINOP_SPECIALIZATION(name, t_f64, t_i64, t_f64, op)                 \
   GEN_BINOP_SPECIALIZATION(name, t_f64, t_f64, t_f64, op)                 \
   t_ffi name##_table[T_MAX][T_MAX] = {};                                  \
-  CONSTRUCTOR void reg_##name() {                                         \
+  CONSTRUCTOR void __register_w_##name() {                                \
     name##_table[T_I64][T_I64] = name##_t_i64_t_i64;                      \
     name##_table[T_F64][T_I64] = name##_t_f64_t_i64;                      \
     name##_table[T_I64][T_F64] = name##_t_i64_t_f64;                      \
@@ -307,9 +307,7 @@ DEF_WORD("reshape", reshape) {
   shape_t s = create_shape(x);
   array_t* z = array_alloc(y->t, shape_len(s), s);
   size_t ys = type_sizeof(y->t, y->n);
-  DO(i, type_sizeof(y->t, z->n)) {
-    ((char*)array_mut_data(z))[i] = ((char*)array_data(y))[i % ys];
-  }
+  DO(i, type_sizeof(y->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)array_data(y))[i % ys]; }
   stack_push(stack, z);
   STATUS_OK;
 }
@@ -334,7 +332,6 @@ DEF_WORD("\\c", slash_clear) {
   stack_clear(stack);
   STATUS_OK;
 }
-
 
 // fold
 
@@ -384,12 +381,29 @@ DEF_WORD("fold_rank", fold_rank) {
   DO(i, x->n / l) {
     array_t* y = array_new_slice(x, l, cell, ptr + stride * i);
     stack_push(stack, y);
-    if (i > 0) {
-      STATUS_UNWRAP(interpreter_dict_entry(inter, e));
-    }
+    if (i > 0) STATUS_UNWRAP(interpreter_dict_entry(inter, e));
   }
 
   STATUS_OK;
 }
 
 DEF_WORD("+'fold", plus_fold) { NOT_IMPLEMENTED; }
+
+DEF_WORD("pascal", pascal) {
+  own(array_t) x = stack_pop(stack);
+  size_t n;
+  STATUS_UNWRAP(as_size_t(x, &n));
+
+  dim_t dims[2] = {n, n};
+  array_t* y = array_alloc(T_I64, n * n, shape_create(2, dims));
+  t_i64* ptr = array_mut_data(y);
+
+  DO(i, n) {
+    ptr[i] = 1;
+    ptr[i * n] = 1;
+  }
+  DO(i, n) DO(j, n) if (i > 0 && j > 0) ptr[i * n + j] = ptr[i * n + j - 1] + ptr[(i - 1) * n + j];
+
+  stack_push(stack, y);
+  STATUS_OK;
+}

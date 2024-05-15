@@ -52,7 +52,7 @@ INLINE result_t result_err(string_t msg) { return (result_t){.ok = false, .eithe
 INLINE PRINTF(1, 2) result_t result_errf(const char* format, ...) {
   return result_err(VA_ARGS_FWD(format, string_vnewf(format, args)));
 }
-#define RESULT_UNWRAP(r)                                         \
+#define RESULT_UNWRAP(r)                                    \
   ({                                                        \
     result_t __result = (r);                                \
     if (!__result.ok) return status_err(__result.either.e); \
@@ -152,7 +152,7 @@ STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e);
 
 #define REGISTER_WORD(w, n)                                                                        \
   STATUS_T w_##n(interpreter_t* inter, stack_t* stack);                                            \
-  CONSTRUCTOR void w_##n##_register() {                                                            \
+  CONSTRUCTOR void __register_w_##n() {                                                          \
     entry_vector_add(&global_dict, (dict_entry_t){string_newf(w), array_new_scalar_t_ffi(w_##n)}); \
   }
 

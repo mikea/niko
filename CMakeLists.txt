@@ -5,8 +5,10 @@ project(niko VERSION 0.1 DESCRIPTION "niko programming language" LANGUAGES C)
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED)
 
 add_compile_options(
+  -DLAPACK_ILP64
   -mavx2
   -std=gnu2x 
   -mmemset-strategy=vector_loop:-1:noalign
@@ -30,7 +32,7 @@ add_custom_command(
 add_executable(niko 
   src/main.c src/words.c src/print.c src/blas.c
   ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
-target_link_libraries(niko m blas)
+target_link_libraries(niko m blas lapack)
 
 
 execute_process(

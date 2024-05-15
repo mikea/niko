@@ -26,6 +26,7 @@
 |`ones`|`( s -> x )`|creates array with shape `s` filled with ones
 |`index`|`( s -> x )`|creates array with shape `s` filled values from `0` to the length-1
 |`reshape`|`( x s -> y)`|reshapes `x` according to the shape `s` repeating or truncating if necessary
+|`pascal`|`( n -> x )`|creates `n*n` pascal matrix
 
 
 ## Array Introspection
@@ -65,3 +66,13 @@
 ### `.`
 
 `x ->`
+
+## BLAS/LAPACK
+
+### Low-level words
+
+|Word|Signature|Description|
+|---|---|---|
+|`blas_gemm`|`( x y -> x * y )`|matrix multiplication
+|`lapack_getrf`|`( x -> x ipiv info )`|matrix factorization
+|`lapack_getri`|`( x ipiv -> x )`|matrix inversion

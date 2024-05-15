@@ -181,6 +181,13 @@ INLINE array_t* array_new_slice(array_t* x, size_t n, shape_t s, const void* p) 
   memcpy(y + 1, s.d, dims_sizeof(s.r));
   return y;
 }
+INLINE array_t* array_new_copy(const array_t* a) { return array_new(a->t, a->n, array_shape(a), array_data(a)); }
+INLINE array_t* array_cow(array_t* a) {
+  if (a->rc == 1) return (array_t*)a;
+  array_t* y = array_new_copy(a);
+  array_dec_ref(a);
+  return y;
+}
 
 INLINE bool array_is_scalar(const array_t* a) { return a->r == 0; }
 INLINE array_t* array_new_scalar(type_t t, const void* x) { return array_new(t, 1, shape_scalar(), x); }
