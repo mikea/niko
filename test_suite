@@ -319,3 +319,7 @@ ERROR: stack underflow: 1 value expected
 3
 2
 1
+## blas
+# blas_gemm
+> [ 2 4 ] index 1. + [ 4 3 ] index 1. + blas_gemm .
+[ [ 70. 80. 90. ] [ 158. 184. 210. ] ]

@@ -2,7 +2,7 @@
   pkgs.mkShell {
     nativeBuildInputs = with pkgs.buildPackages; [ 
         # code dependencies
-        gcc13 re2c glibc
+        gcc13 re2c glibc openblas
         # build dependencies
         watchexec just cmake
         # tools

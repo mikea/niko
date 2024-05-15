@@ -4,6 +4,8 @@ project(niko VERSION 0.1 DESCRIPTION "niko programming language" LANGUAGES C)
 
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
+find_package(BLAS REQUIRED)
+
 add_compile_options(
   -mavx2
   -std=gnu2x 
@@ -25,8 +27,10 @@ add_custom_command(
   VERBATIM
 )
 
-add_executable(niko src/main.c src/words.c src/print.c ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
-target_link_libraries(niko m)
+add_executable(niko 
+  src/main.c src/words.c src/print.c src/blas.c
+  ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
+target_link_libraries(niko m blas)
 
 
 execute_process(
