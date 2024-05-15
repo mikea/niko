@@ -20,9 +20,6 @@ jobs:
       run: |
         sudo apt-get install just re2c libopenblas64-dev liblapacke64-dev libopenblas-dev liblapacke-dev valgrind
 
-    - name: Valgrind
-      run: just valgrind
-
     - name: Debug
       run: just test
 
@@ -31,3 +28,7 @@ jobs:
 
     - name: Verify Clean Git Tree
       run: git diff --exit-code
+
+    - name: Valgrind
+      run: just valgrind
+
