@@ -32,7 +32,7 @@ add_custom_command(
 add_executable(niko 
   src/main.c src/words.c src/print.c src/blas.c
   ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
-target_link_libraries(niko m blas lapack lapacke)
+target_link_libraries(niko m blas64 lapack64 lapacke64)
 
 
 execute_process(
