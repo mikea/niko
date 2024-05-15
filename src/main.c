@@ -194,7 +194,8 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
           STATUS_OK;
         };
         case MODE_COMPILE: {
-          NOT_IMPLEMENTED;
+          stack_push(inter->comp_stack, array_new_scalar_t_f64(t.val.d));
+          STATUS_OK;
         }
       }
       UNREACHABLE;
@@ -209,6 +210,7 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
           STATUS_OK;
         };
         case MODE_COMPILE: {
+          DBG("%pS", &t.text);
           NOT_IMPLEMENTED;
         }
       }
