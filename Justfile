@@ -51,7 +51,6 @@ _test:
 _build BUILD_TYPE:
     mkdir -p bin build/{{BUILD_TYPE}}
     rm -rf bin/niko
-    export LDFLAGS="-lfoo" 
     cmake -B build/{{BUILD_TYPE}} -DCMAKE_BUILD_TYPE={{BUILD_TYPE}}
     cmake --build build/{{BUILD_TYPE}}
     cp build/{{BUILD_TYPE}}/niko bin/niko
