@@ -20,6 +20,9 @@ jobs:
       run: |
         sudo apt-get install just re2c libopenblas-dev liblapacke-dev
 
+    - name: Valgrind
+      run: just valgrind
+
     - name: Debug
       run: just test
 
