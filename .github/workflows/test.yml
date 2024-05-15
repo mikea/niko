@@ -8,6 +8,7 @@ on:
 
 env:
   BUILD_TYPE: Release
+  USE_LAPACK_64: ON
 
 jobs:
   build:
