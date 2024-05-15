@@ -21,10 +21,10 @@ jobs:
         sudo apt-get install just re2c libopenblas-dev liblapacke-dev
 
     - name: Debug
-      run: LDFLAGS="-llapacke" just test
+      run: just test
 
     - name: Release
-      run: LDFLAGS="-llapacke" just release
+      run: just release
 
     - name: Verify Clean Git Tree
       run: git diff --exit-code
