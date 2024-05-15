@@ -1,11 +1,20 @@
 # Niko Examples
 
-## Calculator
+## Advanced Calculator
 
 ```nk
 > 1 2 + .
 3
 ```
+
+## Temperature Convertion
+
+```nk
+> : centigrade 32 - 5 * 9. /;
+> 72 centigrade .
+
+```
+
 
 ## Arrays
 
