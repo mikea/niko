@@ -2,6 +2,17 @@
 
 #include "niko.h"
 
+// common utilities
+
+STATUS_T as_size_t(array_t* a, size_t* out) {
+  STATUS_CHECK(a->r == 0, "scalar expected");
+  STATUS_CHECK(a->t == T_I64, "int scalar expected");
+  i64 i = *array_data_t_i64(a);
+  STATUS_CHECK(i >= 0, "non-negative scalar expected");
+  *out = i;
+  STATUS_OK;
+}
+
 // stack manipulation
 
 DEF_WORD("dup", dup) {
@@ -54,8 +65,16 @@ DEF_WORD("tuck", tuck) {
   STATUS_OK;
 }
 
-// todo: pick
+DEF_WORD("pick", pick) {
+  STATUS_CHECK(stack_len(stack) > 0, "stack underflow: 1 value expected");
+  own(array_t) x = stack_pop(stack);
+  size_t n;
+  STATUS_UNWRAP(as_size_t(x, &n));
+  STATUS_CHECK(stack_len(stack) > n, "stack underflow: index %ld >= stack size %ld", n, stack_len(stack));
 
+  stack_push(stack, array_inc_ref(stack_i(stack, n)));
+  STATUS_OK;
+}
 // unary words
 
 INLINE STATUS_T thread1(interpreter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_table[T_MAX]) {
@@ -98,7 +117,7 @@ CONSTRUCTOR void reg_neg() {
   neg_table[T_F64] = neg_t_f64;
   neg_table[T_ARR] = neg_t_arr;
   array_t* a = array_new_1d(T_FFI, T_MAX, neg_table);
-  entry_vector_add(&global_dict, (dict_entry_t){string_newf("neg"), a});
+  global_dict_add_new(string_from_c("neg"), a);
 }
 
 // abs
@@ -121,7 +140,7 @@ CONSTRUCTOR void reg_abs() {
   abs_table[T_F64] = abs_t_f64;
   abs_table[T_ARR] = abs_t_arr;
   array_t* a = array_new_1d(T_FFI, T_MAX, abs_table);
-  entry_vector_add(&global_dict, (dict_entry_t){string_newf("abs"), a});
+  global_dict_add_new(string_from_c("abs"), a);
 }
 
 // sqrt, sin, et. al.
@@ -135,17 +154,17 @@ CONSTRUCTOR void reg_abs() {
     STATUS_OK;                                                                      \
   }
 
-#define GEN_FLOAT(name, op)                                                \
-  t_ffi name##_table[T_MAX];                                               \
-  GEN_FLOAT1_SPEC(name, t_f64, op)                                         \
-  GEN_FLOAT1_SPEC(name, t_i64, op)                                         \
-  GEN_THREAD1(name, name##_table)                                          \
-  CONSTRUCTOR void reg_##name() {                                          \
-    name##_table[T_I64] = name##_t_i64;                                    \
-    name##_table[T_F64] = name##_t_f64;                                    \
-    name##_table[T_ARR] = name##_t_arr;                                    \
-    array_t* a = array_new_1d(T_FFI, T_MAX, name##_table);                 \
-    entry_vector_add(&global_dict, (dict_entry_t){string_newf(#name), a}); \
+#define GEN_FLOAT(name, op)                                \
+  t_ffi name##_table[T_MAX];                               \
+  GEN_FLOAT1_SPEC(name, t_f64, op)                         \
+  GEN_FLOAT1_SPEC(name, t_i64, op)                         \
+  GEN_THREAD1(name, name##_table)                          \
+  CONSTRUCTOR void reg_##name() {                          \
+    name##_table[T_I64] = name##_t_i64;                    \
+    name##_table[T_F64] = name##_t_f64;                    \
+    name##_table[T_ARR] = name##_t_arr;                    \
+    array_t* a = array_new_1d(T_FFI, T_MAX, name##_table); \
+    global_dict_add_new(string_from_c(#name), a);          \
   }
 
 GEN_FLOAT(acos, acos)
@@ -231,21 +250,21 @@ STATUS_T w_binop(stack_t* stack, type_t t, binop_t kernel, binop_t x_scalar_kern
                    name##_kernel_##a_t##_scalar_##b_t);                                                    \
   }
 
-#define GEN_BINOP(word, name, op)                                         \
-  GEN_BINOP_SPECIALIZATION(name, t_i64, t_i64, t_i64, op)                 \
-  GEN_BINOP_SPECIALIZATION(name, t_i64, t_f64, t_f64, op)                 \
-  GEN_BINOP_SPECIALIZATION(name, t_f64, t_i64, t_f64, op)                 \
-  GEN_BINOP_SPECIALIZATION(name, t_f64, t_f64, t_f64, op)                 \
-  t_ffi name##_table[T_MAX][T_MAX] = {};                                  \
-  CONSTRUCTOR void __register_w_##name() {                                \
-    name##_table[T_I64][T_I64] = name##_t_i64_t_i64;                      \
-    name##_table[T_F64][T_I64] = name##_t_f64_t_i64;                      \
-    name##_table[T_I64][T_F64] = name##_t_i64_t_f64;                      \
-    name##_table[T_F64][T_F64] = name##_t_f64_t_f64;                      \
-    size_t dims[2] = {T_MAX, T_MAX};                                      \
-    shape_t sh = (shape_t){2, dims};                                      \
-    array_t* a = array_new(T_FFI, T_MAX * T_MAX, sh, name##_table);       \
-    entry_vector_add(&global_dict, (dict_entry_t){string_newf(word), a}); \
+#define GEN_BINOP(word, name, op)                                   \
+  GEN_BINOP_SPECIALIZATION(name, t_i64, t_i64, t_i64, op)           \
+  GEN_BINOP_SPECIALIZATION(name, t_i64, t_f64, t_f64, op)           \
+  GEN_BINOP_SPECIALIZATION(name, t_f64, t_i64, t_f64, op)           \
+  GEN_BINOP_SPECIALIZATION(name, t_f64, t_f64, t_f64, op)           \
+  t_ffi name##_table[T_MAX][T_MAX] = {};                            \
+  CONSTRUCTOR void __register_w_##name() {                          \
+    name##_table[T_I64][T_I64] = name##_t_i64_t_i64;                \
+    name##_table[T_F64][T_I64] = name##_t_f64_t_i64;                \
+    name##_table[T_I64][T_F64] = name##_t_i64_t_f64;                \
+    name##_table[T_F64][T_F64] = name##_t_f64_t_f64;                \
+    size_t dims[2] = {T_MAX, T_MAX};                                \
+    shape_t sh = (shape_t){2, dims};                                \
+    array_t* a = array_new(T_FFI, T_MAX * T_MAX, sh, name##_table); \
+    global_dict_add_new(string_from_c(word), a);                   \
   }
 
 #define PLUS_OP(a, b) (a) + (b)
@@ -348,13 +367,6 @@ DEF_WORD("fold", fold) {
     if (i > 0) STATUS_UNWRAP(interpreter_dict_entry(inter, e));
   }
 
-  STATUS_OK;
-}
-
-STATUS_T as_size_t(array_t* a, size_t* out) {
-  STATUS_CHECK(a->r == 0, "scalar expected");
-  STATUS_CHECK(a->t == T_I64, "int scalar expected");
-  *out = *array_data_t_i64(a);
   STATUS_OK;
 }
 
