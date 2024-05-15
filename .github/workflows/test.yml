@@ -19,13 +19,12 @@ jobs:
     - name: Install dependecies
       run: |
         sudo apt-get install just re2c libopenblas-dev liblapacke-dev
-        export LDFLAGS="-llapacke"
 
     - name: Debug
-      run: just test
+      run: LDFLAGS="-lfoo" just test
 
     - name: Release
-      run: just release
+      run: LDFLAGS="-llapacke" just release
 
     - name: Verify Clean Git Tree
       run: git diff --exit-code
