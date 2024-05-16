@@ -55,12 +55,13 @@
 
 ### `+`, `-`, `*`, `/`
 
-## Higher Level Operations
+## Higher Level Words
 
 |Word|Signature|Description|
 |---|---|---|
 |`fold`|`( x op' -> y )`| fold cells of rank `0` using `op`
 |`fold_rank`|`( x r op' -> y )`| fold cells of rank `r` using `op`
+|`scan`|`( x op' -> y )`| fold cells of rank `0` using `op` organizing all intermediate results in `x`'s shape
 
 ## Input/Output
 

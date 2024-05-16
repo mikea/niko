@@ -15,8 +15,10 @@ STATUS_T as_size_t(array_t* a, size_t* out) {
 
 // stack manipulation
 
+#define DUP(stack) stack_push(stack, array_move(stack_peek(stack)))
+
 DEF_WORD("dup", dup) {
-  stack_push(stack, array_move(stack_peek(stack)));
+  DUP(stack);
   STATUS_OK;
 }
 
@@ -106,7 +108,7 @@ t_ffi neg_table[T_MAX];
 
 #define GEN_NEG(t)                                                           \
   DEF_WORD_HANDLER_1_1(neg_##t) {                                            \
-    own(array_t) out = array_alloc_as(x);                                        \
+    own(array_t) out = array_alloc_as(x);                                    \
     DO(i, x->n)((t*)array_mut_data(out))[i] = -((const t*)array_data(x))[i]; \
     return result_ok(out);                                                   \
   }
@@ -120,7 +122,7 @@ CONSTRUCTOR void reg_neg() {
   neg_table[T_F64] = neg_t_f64;
   neg_table[T_ARR] = neg_t_arr;
   own(array_t) a = array_new_1d(T_FFI, T_MAX, neg_table);
-  global_dict_add_new(string_from_c("neg"), a);
+  global_dict_add_new(str_from_c("neg"), a);
 }
 
 // abs
@@ -129,7 +131,7 @@ t_ffi abs_table[T_MAX];
 
 #define GEN_ABS(t, op)                                                          \
   DEF_WORD_HANDLER_1_1(abs_##t) {                                               \
-    own(array_t) out = array_alloc_as(x);                                           \
+    own(array_t) out = array_alloc_as(x);                                       \
     DO(i, x->n)((t*)array_mut_data(out))[i] = op(((const t*)array_data(x))[i]); \
     return result_ok(out);                                                      \
   }
@@ -143,7 +145,7 @@ CONSTRUCTOR void reg_abs() {
   abs_table[T_F64] = abs_t_f64;
   abs_table[T_ARR] = abs_t_arr;
   own(array_t) a = array_new_1d(T_FFI, T_MAX, abs_table);
-  global_dict_add_new(string_from_c("abs"), a);
+  global_dict_add_new(str_from_c("abs"), a);
 }
 
 // sqrt, sin, et. al.
@@ -151,23 +153,23 @@ CONSTRUCTOR void reg_abs() {
 #define GEN_FLOAT1_SPEC(name, t, op)                                                \
   DEF_WORD_HANDLER(name##_##t) {                                                    \
     own(array_t) x = stack_pop(stack);                                              \
-    own(array_t) out = array_alloc(T_F64, x->n, array_shape(x));                        \
+    own(array_t) out = array_alloc(T_F64, x->n, array_shape(x));                    \
     DO(i, x->n)((t_f64*)array_mut_data(out))[i] = op(((const t*)array_data(x))[i]); \
     stack_push(stack, out);                                                         \
     STATUS_OK;                                                                      \
   }
 
-#define GEN_FLOAT(name, op)                                \
-  t_ffi name##_table[T_MAX];                               \
-  GEN_FLOAT1_SPEC(name, t_f64, op)                         \
-  GEN_FLOAT1_SPEC(name, t_i64, op)                         \
-  GEN_THREAD1(name, name##_table)                          \
-  CONSTRUCTOR void reg_##name() {                          \
-    name##_table[T_I64] = name##_t_i64;                    \
-    name##_table[T_F64] = name##_t_f64;                    \
-    name##_table[T_ARR] = name##_t_arr;                    \
+#define GEN_FLOAT(name, op)                                    \
+  t_ffi name##_table[T_MAX];                                   \
+  GEN_FLOAT1_SPEC(name, t_f64, op)                             \
+  GEN_FLOAT1_SPEC(name, t_i64, op)                             \
+  GEN_THREAD1(name, name##_table)                              \
+  CONSTRUCTOR void reg_##name() {                              \
+    name##_table[T_I64] = name##_t_i64;                        \
+    name##_table[T_F64] = name##_t_f64;                        \
+    name##_table[T_ARR] = name##_t_arr;                        \
     own(array_t) a = array_new_1d(T_FFI, T_MAX, name##_table); \
-    global_dict_add_new(string_from_c(#name), a);          \
+    global_dict_add_new(str_from_c(#name), a);                 \
   }
 
 GEN_FLOAT(acos, acos)
@@ -253,21 +255,21 @@ STATUS_T w_binop(stack_t* stack, type_t t, binop_t kernel, binop_t x_scalar_kern
                    name##_kernel_##a_t##_scalar_##b_t);                                                    \
   }
 
-#define GEN_BINOP(word, name, op)                                   \
-  GEN_BINOP_SPECIALIZATION(name, t_i64, t_i64, t_i64, op)           \
-  GEN_BINOP_SPECIALIZATION(name, t_i64, t_f64, t_f64, op)           \
-  GEN_BINOP_SPECIALIZATION(name, t_f64, t_i64, t_f64, op)           \
-  GEN_BINOP_SPECIALIZATION(name, t_f64, t_f64, t_f64, op)           \
-  t_ffi name##_table[T_MAX][T_MAX] = {};                            \
-  CONSTRUCTOR void __register_w_##name() {                          \
-    name##_table[T_I64][T_I64] = name##_t_i64_t_i64;                \
-    name##_table[T_F64][T_I64] = name##_t_f64_t_i64;                \
-    name##_table[T_I64][T_F64] = name##_t_i64_t_f64;                \
-    name##_table[T_F64][T_F64] = name##_t_f64_t_f64;                \
-    size_t dims[2] = {T_MAX, T_MAX};                                \
-    shape_t sh = (shape_t){2, dims};                                \
+#define GEN_BINOP(word, name, op)                                       \
+  GEN_BINOP_SPECIALIZATION(name, t_i64, t_i64, t_i64, op)               \
+  GEN_BINOP_SPECIALIZATION(name, t_i64, t_f64, t_f64, op)               \
+  GEN_BINOP_SPECIALIZATION(name, t_f64, t_i64, t_f64, op)               \
+  GEN_BINOP_SPECIALIZATION(name, t_f64, t_f64, t_f64, op)               \
+  t_ffi name##_table[T_MAX][T_MAX] = {};                                \
+  CONSTRUCTOR void __register_w_##name() {                              \
+    name##_table[T_I64][T_I64] = name##_t_i64_t_i64;                    \
+    name##_table[T_F64][T_I64] = name##_t_f64_t_i64;                    \
+    name##_table[T_I64][T_F64] = name##_t_i64_t_f64;                    \
+    name##_table[T_F64][T_F64] = name##_t_f64_t_f64;                    \
+    size_t dims[2] = {T_MAX, T_MAX};                                    \
+    shape_t sh = (shape_t){2, dims};                                    \
     own(array_t) a = array_new(T_FFI, T_MAX * T_MAX, sh, name##_table); \
-    global_dict_add_new(string_from_c(word), a);                    \
+    global_dict_add_new(str_from_c(word), a);                           \
   }
 
 #define PLUS_OP(a, b) (a) + (b)
@@ -283,7 +285,7 @@ GEN_BINOP("/", divide, DIV_OP)
 DEF_WORD_1_1("shape", shape) {
   dim_t d = x->r;
   own(array_t) y = array_alloc(T_I64, x->r, shape_1d(&d));
-  DO_MUT_ARRAY(y, t_i64, i, p)* p = array_dims(x)[i];
+  DO_MUT_ARRAY(y, t_i64, i, p) { *p = array_dims(x)[i]; }
   return result_ok(y);
 }
 DEF_WORD_1_1("len", len) { return result_ok(array_move(array_new_scalar_t_i64(x->n))); }
@@ -331,6 +333,22 @@ DEF_WORD("reshape", reshape) {
   size_t ys = type_sizeof(y->t, y->n);
   DO(i, type_sizeof(y->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)array_data(y))[i % ys]; }
   stack_push(stack, z);
+  STATUS_OK;
+}
+
+DEF_WORD("pascal", pascal) {
+  own(array_t) x = stack_pop(stack);
+  size_t n = 0;
+  STATUS_UNWRAP(as_size_t(x, &n));
+
+  dim_t dims[2] = {n, n};
+  own(array_t) y = array_alloc(T_I64, n * n, shape_create(2, dims));
+  t_i64* ptr = array_mut_data(y);
+
+  DO(i, n) ptr[i] = ptr[i * n] = 1;
+  DO(i, n) DO(j, n) if (i > 0 && j > 0) ptr[i * n + j] = ptr[i * n + j - 1] + ptr[(i - 1) * n + j];
+
+  stack_push(stack, y);
   STATUS_OK;
 }
 
@@ -404,21 +422,23 @@ DEF_WORD("fold_rank", fold_rank) {
 
 DEF_WORD("+'fold", plus_fold) { NOT_IMPLEMENTED; }
 
-DEF_WORD("pascal", pascal) {
+// scan
+
+DEF_WORD("scan", scan) {
+  STATUS_CHECK(stack_len(stack) > 1, "stack underflow: 2 values expected");
+  own(array_t) op = stack_pop(stack);
   own(array_t) x = stack_pop(stack);
-  size_t n = 0;
-  STATUS_UNWRAP(as_size_t(x, &n));
+  STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
+  dict_entry_t* e = *array_data_t_dict_entry(op);
 
-  dim_t dims[2] = {n, n};
-  own(array_t) y = array_alloc(T_I64, n * n, shape_create(2, dims));
-  t_i64* ptr = array_mut_data(y);
-
-  DO(i, n) {
-    ptr[i] = 1;
-    ptr[i * n] = 1;
+  DO(i, x->n) {
+    if (i > 0) DUP(stack);
+    own(array_t) y = array_new_scalar(x->t, array_data_i(x, i));
+    stack_push(stack, y);
+    if (i > 0) STATUS_UNWRAP(interpreter_dict_entry(inter, e));
   }
-  DO(i, n) DO(j, n) if (i > 0 && j > 0) ptr[i * n + j] = ptr[i * n + j - 1] + ptr[(i - 1) * n + j];
 
-  stack_push(stack, y);
+  own(array_t) result = RESULT_UNWRAP(concatenate(stack, array_shape(x)));
+  stack_push(stack, result);
   STATUS_OK;
 }

@@ -79,18 +79,20 @@ INLINE CONST size_t shape_len(shape_t s) {
   DO(i, s.r) y *= s.d[i];
   return y;
 }
-INLINE shape_t* shape_extend(shape_t s, dim_t sz) {
-  shape_t* r = shape_new(s.r + 1);
-  dim_t* d = (dim_t*)r->d;
-  memcpy(d + 1, s.d, dims_sizeof(s.r));
-  *d = sz;
-  return r;
+INLINE shape_t* shape_extend(shape_t outer, shape_t inner) {
+  shape_t* sh = shape_new(outer.r + inner.r);
+  memcpy((dim_t*)sh->d, outer.d, dims_sizeof(outer.r));
+  memcpy((dim_t*)sh->d + outer.r, inner.d, dims_sizeof(inner.r));
+  return sh;
 }
 INLINE shape_t shape_cell(shape_t s, size_t r) { return (shape_t){r, s.d + s.r - r}; }
+
+typedef enum { FLAG_QUOTE = 1 } flag_t;
 
 // array: (header, dims, data)
 struct array_t {
   type_t t;   // type
+  flag_t f; // flag
   size_t rc;  // ref count
   size_t n;   // number of elements
   struct array_t* owner;
@@ -100,6 +102,7 @@ struct array_t {
 };
 typedef struct array_t array_t;
 
+array_t* array_alloc(type_t t, size_t n, shape_t s);
 void array_free(array_t* a);
 
 INLINE bool __array_data_simd_aligned(type_t t, size_t n) { return n >= 2 * SIMD_REG_WIDTH_BYTES / type_sizeof(t, 1); }
@@ -126,28 +129,6 @@ INLINE array_t* __array_assert_simd_aligned(array_t* arr) {
 }
 
 INLINE void* array_mut_data(array_t* arr) { return (void*)array_data(__array_assert_mut(arr)); }
-
-INLINE array_t* array_alloc(type_t t, size_t n, shape_t s) {
-  assert(shape_len(s) == n);
-
-  array_t* a;
-
-  if (__array_data_simd_aligned(t, n)) {
-    a = malloc(sizeof(array_t) + dims_sizeof(s.r));
-    a->p = aligned_alloc(SIMD_REG_WIDTH_BYTES, SIMD_ALIGN_BYTES(type_sizeof(t, n)));
-  } else {
-    a = malloc(sizeof(array_t) + dims_sizeof(s.r) + type_sizeof(t, n));
-    a->p = (void*)(a + 1) + dims_sizeof(s.r);
-  }
-
-  a->t = t;
-  a->rc = 1;
-  a->n = n;
-  a->r = s.r;
-  a->owner = NULL;
-  memcpy(a + 1, s.d, dims_sizeof(s.r));
-  return a;
-}
 
 INLINE void array_dec_ref(array_t* arr);
 

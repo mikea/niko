@@ -102,6 +102,8 @@ INLINE array_t* stack_i(stack_t* s, size_t i) {
 }
 INLINE array_t* stack_peek(stack_t* s) { return stack_i(s, 0); }
 
+RESULT_T concatenate(stack_t* stack, shape_t sh);
+
 // dictionary
 
 struct dict_entry_t {
@@ -111,10 +113,10 @@ struct dict_entry_t {
 };
 typedef struct dict_entry_t dict_entry_t;
 
-INLINE dict_entry_t* dict_entry_new(dict_entry_t* n, string_t k, array_t* v) {
+INLINE dict_entry_t* dict_entry_new(dict_entry_t* n, str_t k, array_t* v) {
   dict_entry_t* e = malloc(sizeof(dict_entry_t));
   e->n = n;
-  e->k = k;
+  e->k = str_copy(k);
   e->v = array_inc_ref(v);
   return e;
 }
@@ -130,7 +132,7 @@ INLINE void dict_entry_free_chain(dict_entry_t* e) {
 }
 
 extern dict_entry_t* global_dict;
-INLINE void global_dict_add_new(string_t k, array_t* v) { global_dict = dict_entry_new(global_dict, k, v); }
+INLINE void global_dict_add_new(str_t k, array_t* v) { global_dict = dict_entry_new(global_dict, k, v); }
 
 // interpreter
 
@@ -139,7 +141,7 @@ struct interpreter_t {
   dict_entry_t* dict;
   stack_t* stack;
   stack_t* comp_stack;
-  dict_entry_t comp;
+  string_t comp;
   size_t arr_level;
   size_t arr_marks[256];
   FILE* out;
@@ -169,11 +171,9 @@ STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e);
   }                                                                            \
   INLINE RESULT_T n##_impl(const array_t* x)
 
-#define REGISTER_WORD(w, n)                                                           \
-  STATUS_T w_##n(interpreter_t* inter, stack_t* stack);                               \
-  CONSTRUCTOR void __register_w_##n() {                                               \
-    global_dict_add_new(string_from_c(w), array_move(array_new_scalar_t_ffi(w_##n))); \
-  }
+#define REGISTER_WORD(w, n)                             \
+  STATUS_T w_##n(interpreter_t* inter, stack_t* stack); \
+  CONSTRUCTOR void __register_w_##n() { global_dict_add_new(str_from_c(w), array_move(array_new_scalar_t_ffi(w_##n))); }
 
 #define DEF_WORD(w, n) \
   REGISTER_WORD(w, n)  \

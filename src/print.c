@@ -8,10 +8,9 @@
 // %pH - shape_t*
 // %pT - type_t*
 
-
 int p_modifier = -1;
 
-size_t print_ptr(FILE* f, type_t t, const void* ptr) {
+size_t print_ptr(FILE* f, type_t t, flag_t fl, const void* ptr) {
   switch (t) {
     case T_I64: return fprintf(f, "%ld", *(i64*)ptr);
     case T_F64: {
@@ -23,13 +22,17 @@ size_t print_ptr(FILE* f, type_t t, const void* ptr) {
     case T_C8: UNREACHABLE;
     case T_ARR: return fprintf(f, "%pA", *(array_t**)ptr);
     case T_FFI: return fprintf(f, "<native_function>");
-    case T_DICT_ENTRY: return fprintf(f, "%pS'", &((*(t_dict_entry*)ptr)->k));
+    case T_DICT_ENTRY: {
+      printf("flag: %d\n", fl);
+      if (fl & FLAG_QUOTE) return fprintf(f, "%pS'", &((*(t_dict_entry*)ptr)->k));
+      else return fprintf(f, "%pS", &((*(t_dict_entry*)ptr)->k));
+    }
   }
   UNREACHABLE;
 }
 
-size_t print_array_impl(FILE* f, type_t t, shape_t s, const void* x, size_t w) {
-  if (s.r == 0) return print_ptr(f, t, x);
+size_t print_array_impl(FILE* f, type_t t, flag_t fl, shape_t s, const void* x, size_t w) {
+  if (s.r == 0) return print_ptr(f, t, fl, x);
   size_t c = 0;
   if (s.r == 1 && t == T_C8) {
     c += fprintf(f, "\"");
@@ -46,7 +49,7 @@ size_t print_array_impl(FILE* f, type_t t, shape_t s, const void* x, size_t w) {
       c += fprintf(f, "... ");
       break;
     }
-    c += print_array_impl(f, t, sub_shape, x + stride * i, w - c - 2);
+    c += print_array_impl(f, t, fl, sub_shape, x + stride * i, w - c - 2);
     c += fprintf(f, " ");
   }
   c += fprintf(f, "]");
@@ -56,7 +59,7 @@ size_t print_array_impl(FILE* f, type_t t, shape_t s, const void* x, size_t w) {
 int printf_array(FILE* f, const struct printf_info* info, const void* const* args) {
   assert(info->user == p_modifier);  // p modifier expected
   const array_t* a = *((const array_t**)(args[0]));
-  return print_array_impl(f, a->t, array_shape(a), array_data(a), info->width ? info->width : SIZE_MAX);
+  return print_array_impl(f, a->t, a->f, array_shape(a), array_data(a), info->width ? info->width : SIZE_MAX);
 }
 
 int printf_str(FILE* f, const struct printf_info* info, const void* const* args) {
@@ -83,7 +86,6 @@ int printf_type(FILE* f, const struct printf_info* info, const void* const* args
   const type_t* t = *((const type_t**)(args[0]));
   return fprintf(f, "%s", type_name(*t));
 }
-
 
 int single_pointer_arginfo(const struct printf_info* __info, size_t n, int* argtypes, int* __size) {
   if (n) argtypes[0] = PA_POINTER;

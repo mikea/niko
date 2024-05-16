@@ -5,15 +5,12 @@
 
 dict_entry_t* global_dict = NULL;
 
-DESTRUCTOR void global_dict_free() {
-  dict_entry_free_chain(global_dict);
-}
+DESTRUCTOR void global_dict_free() { dict_entry_free_chain(global_dict); }
 
-RESULT_T concatenate(stack_t* stack, size_t len) {
-  if (!len) {
-    dim_t d = len;
-    RESULT_OK(array_move(array_alloc(T_I64, 0, shape_1d(&d))));
-  }
+RESULT_T concatenate(stack_t* stack, shape_t sh) {
+  size_t len = shape_len(sh);
+  if (!len) RESULT_OK(array_move(array_alloc(T_I64, 0, sh)));
+
   bool all_common = true;
   own(array_t) top = stack_peek(stack);
   const shape_t common_shape = array_shape(top);
@@ -26,11 +23,10 @@ RESULT_T concatenate(stack_t* stack, size_t len) {
 
   own(array_t) a;
   if (!all_common) {
-    dim_t d = len;
-    a = array_alloc(T_ARR, len, shape_1d(&d));
+    a = array_alloc(T_ARR, len, sh);
     DO(i, len) { ((array_t**)array_mut_data(a))[i] = stack_i(stack, len - i - 1); }
   } else {
-    own(shape_t) new_shape = shape_extend(common_shape, len);
+    own(shape_t) new_shape = shape_extend(sh, common_shape);
     a = array_alloc(t, shape_len(*new_shape), *new_shape);
     size_t stride = type_sizeof(t, shape_len(common_shape));
     assert(array_data_sizeof(a) == stride * len);
@@ -105,7 +101,8 @@ STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e) {
           case T_ARR: NOT_IMPLEMENTED;
           case T_FFI: NOT_IMPLEMENTED;
           case T_DICT_ENTRY: {
-            STATUS_UNWRAP(interpreter_dict_entry(inter, *array_data_t_dict_entry(*p)));
+            if ((*p)->f & FLAG_QUOTE) stack_push(inter->stack, *p);
+            else STATUS_UNWRAP(interpreter_dict_entry(inter, *array_data_t_dict_entry(*p)));
             break;
           };
         }
@@ -117,12 +114,10 @@ STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e) {
 }
 
 dict_entry_t* _interpreter_find_word(interpreter_t* inter, const str_t n) {
-  for (dict_entry_t* e = inter->dict; e; e = e->n) {
+  for (dict_entry_t* e = inter->dict; e; e = e->n)
     if (str_eq(n, string_as_str(e->k))) return e;
-  }
-  for (dict_entry_t* e = global_dict; e; e = e->n) {
+  for (dict_entry_t* e = global_dict; e; e = e->n)
     if (str_eq(n, string_as_str(e->k))) return e;
-  }
   return NULL;
 }
 
@@ -139,7 +134,8 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
       assert(inter->arr_level);  // todo: report error
       size_t mark = inter->arr_marks[--inter->arr_level];
       assert(inter->stack->l >= mark);  // todo: report error
-      own(array_t) a = RESULT_UNWRAP(concatenate(inter->stack, inter->stack->l - mark));
+      size_t n = inter->stack->l - mark;
+      own(array_t) a = RESULT_UNWRAP(concatenate(inter->stack, shape_1d(&n)));
       stack_push(inter->stack, a);
       STATUS_OK;
     }
@@ -148,17 +144,16 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
         STATUS_CHECK(inter->mode == MODE_INTERPRET, ": can be used only in interpret mode");
         inter->mode = MODE_COMPILE;
         assert(stack_is_empty(inter->comp_stack));
-        assert(inter->comp.v == NULL);
         token_t next = _interpreter_next_token(inter);
         STATUS_CHECK(next.tok == TOK_WORD, "word expected");
-        inter->comp.k = str_copy(next.text);
+        inter->comp = str_copy(next.text);
         STATUS_OK;
       } else if (str_eqc(t.text, ";")) {
         STATUS_CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
-        inter->comp.v = array_move(array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->bottom));
+        own(array_t) a = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->bottom);
         inter->comp_stack->l = 0;
-        inter->dict = dict_entry_new(inter->dict, inter->comp.k, inter->comp.v);
-        inter->comp.v = NULL;
+        inter->dict = dict_entry_new(inter->dict, string_as_str(inter->comp), a);
+        string_free(inter->comp);
         inter->mode = MODE_INTERPRET;
         STATUS_OK;
       } else {
@@ -167,7 +162,8 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
         switch (inter->mode) {
           case MODE_INTERPRET: return interpreter_dict_entry(inter, e);
           case MODE_COMPILE: {
-            stack_push(inter->comp_stack, array_move(array_new_scalar_t_dict_entry(e)));
+            own(array_t) a = array_new_scalar_t_dict_entry(e);
+            stack_push(inter->comp_stack, a);
             STATUS_OK;
           }
         }
@@ -176,26 +172,28 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
       }
     }
     case TOK_I64: {
+      own(array_t) a = array_new_scalar_t_i64(t.val.i);
       switch (inter->mode) {
         case MODE_INTERPRET: {
-          stack_push(inter->stack, array_move(array_new_scalar_t_i64(t.val.i)));
+          stack_push(inter->stack, a);
           STATUS_OK;
         };
         case MODE_COMPILE: {
-          stack_push(inter->comp_stack, array_move(array_new_scalar_t_i64(t.val.i)));
+          stack_push(inter->comp_stack, a);
           STATUS_OK;
         }
       }
       UNREACHABLE;
     }
     case TOK_F64: {
+      own(array_t) a = array_new_scalar_t_f64(t.val.d);
       switch (inter->mode) {
         case MODE_INTERPRET: {
-          stack_push(inter->stack, array_move(array_new_scalar_t_f64(t.val.d)));
+          stack_push(inter->stack, a);
           STATUS_OK;
         };
         case MODE_COMPILE: {
-          stack_push(inter->comp_stack, array_move(array_new_scalar_t_f64(t.val.d)));
+          stack_push(inter->comp_stack, a);
           STATUS_OK;
         }
       }
@@ -221,15 +219,19 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
     case TOK_QUOTE: {
       dict_entry_t* e = _interpreter_find_word(inter, t.val.s);
       STATUS_CHECK(e, "unknown word '%pS'", &t.text);
+      own(array_t) a = array_new_scalar_t_dict_entry(e);
+      a->f |= FLAG_QUOTE;
       switch (inter->mode) {
         case MODE_INTERPRET: {
-          stack_push(inter->stack, array_move(array_new_scalar_t_dict_entry(e)));
+          stack_push(inter->stack, a);
           STATUS_OK;
         };
         case MODE_COMPILE: {
-          NOT_IMPLEMENTED;
+          stack_push(inter->comp_stack, a);
+          STATUS_OK;
         }
       }
+      UNREACHABLE;
     }
   }
   UNREACHABLE;
