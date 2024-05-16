@@ -16,13 +16,13 @@ STATUS_T as_size_t(array_t* a, size_t* out) {
 // stack manipulation
 
 DEF_WORD("dup", dup) {
-  stack_push(stack, array_inc_ref(stack_peek(stack)));
+  stack_push(stack, array_move(stack_peek(stack)));
   STATUS_OK;
 }
 
 DEF_WORD("swap", swap) {
-  array_t* a = stack_pop(stack);
-  array_t* b = stack_pop(stack);
+  own(array_t) a = stack_pop(stack);
+  own(array_t) b = stack_pop(stack);
   stack_push(stack, a);
   stack_push(stack, b);
   STATUS_OK;
@@ -34,22 +34,22 @@ DEF_WORD("drop", drop) {
 }
 
 DEF_WORD("nip", nip) {
-  array_t* a = stack_pop(stack);
+  own(array_t) a = stack_pop(stack);
   stack_drop(stack);
   stack_push(stack, a);
   STATUS_OK;
 }
 
 DEF_WORD("over", over) {
-  array_t* a = stack_i(stack, 1);
-  stack_push(stack, array_inc_ref(a));
+  own(array_t) a = stack_i(stack, 1);
+  stack_push(stack, a);
   STATUS_OK;
 }
 
 DEF_WORD("rot", rot) {
-  array_t* a = stack_pop(stack);
-  array_t* b = stack_pop(stack);
-  array_t* c = stack_pop(stack);
+  own(array_t) a = stack_pop(stack);
+  own(array_t) b = stack_pop(stack);
+  own(array_t) c = stack_pop(stack);
   stack_push(stack, b);
   stack_push(stack, a);
   stack_push(stack, c);
@@ -57,9 +57,9 @@ DEF_WORD("rot", rot) {
 }
 
 DEF_WORD("tuck", tuck) {
-  array_t* a = stack_pop(stack);
-  array_t* b = stack_pop(stack);
-  stack_push(stack, array_inc_ref(a));
+  own(array_t) a = stack_pop(stack);
+  own(array_t) b = stack_pop(stack);
+  stack_push(stack, a);
   stack_push(stack, b);
   stack_push(stack, a);
   STATUS_OK;
@@ -72,20 +72,20 @@ DEF_WORD("pick", pick) {
   STATUS_UNWRAP(as_size_t(x, &n));
   STATUS_CHECK(stack_len(stack) > n, "stack underflow: index %ld >= stack size %ld", n, stack_len(stack));
 
-  stack_push(stack, array_inc_ref(stack_i(stack, n)));
+  stack_push(stack, array_move(stack_i(stack, n)));
   STATUS_OK;
 }
 // unary words
 
 INLINE STATUS_T thread1(interpreter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_table[T_MAX]) {
   assert(x->t == T_ARR);
-  array_t* out = array_alloc_as(x);
+  own(array_t) out = array_alloc_as(x);
 
   array_t* const* src = array_data_t_arr(x);
   array_t** dst = array_mut_data_t_arr(out);
   DO(i, x->n) {
-    stack_push(stack, array_inc_ref(src[i]));
-    t_ffi ffi = ffi_table[stack_peek(stack)->t];
+    stack_push(stack, src[i]);
+    t_ffi ffi = ffi_table[src[i]->t];
     assert(ffi);
     STATUS_UNWRAP(ffi(inter, stack));
     dst[i] = stack_pop(stack);
@@ -106,7 +106,7 @@ t_ffi neg_table[T_MAX];
 
 #define GEN_NEG(t)                                                           \
   DEF_WORD_HANDLER_1_1(neg_##t) {                                            \
-    array_t* out = array_alloc_as(x);                                        \
+    own(array_t) out = array_alloc_as(x);                                        \
     DO(i, x->n)((t*)array_mut_data(out))[i] = -((const t*)array_data(x))[i]; \
     return result_ok(out);                                                   \
   }
@@ -119,7 +119,7 @@ CONSTRUCTOR void reg_neg() {
   neg_table[T_I64] = neg_t_i64;
   neg_table[T_F64] = neg_t_f64;
   neg_table[T_ARR] = neg_t_arr;
-  array_t* a = array_new_1d(T_FFI, T_MAX, neg_table);
+  own(array_t) a = array_new_1d(T_FFI, T_MAX, neg_table);
   global_dict_add_new(string_from_c("neg"), a);
 }
 
@@ -129,7 +129,7 @@ t_ffi abs_table[T_MAX];
 
 #define GEN_ABS(t, op)                                                          \
   DEF_WORD_HANDLER_1_1(abs_##t) {                                               \
-    array_t* out = array_alloc_as(x);                                           \
+    own(array_t) out = array_alloc_as(x);                                           \
     DO(i, x->n)((t*)array_mut_data(out))[i] = op(((const t*)array_data(x))[i]); \
     return result_ok(out);                                                      \
   }
@@ -142,7 +142,7 @@ CONSTRUCTOR void reg_abs() {
   abs_table[T_I64] = abs_t_i64;
   abs_table[T_F64] = abs_t_f64;
   abs_table[T_ARR] = abs_t_arr;
-  array_t* a = array_new_1d(T_FFI, T_MAX, abs_table);
+  own(array_t) a = array_new_1d(T_FFI, T_MAX, abs_table);
   global_dict_add_new(string_from_c("abs"), a);
 }
 
@@ -151,7 +151,7 @@ CONSTRUCTOR void reg_abs() {
 #define GEN_FLOAT1_SPEC(name, t, op)                                                \
   DEF_WORD_HANDLER(name##_##t) {                                                    \
     own(array_t) x = stack_pop(stack);                                              \
-    array_t* out = array_alloc(T_F64, x->n, array_shape(x));                        \
+    own(array_t) out = array_alloc(T_F64, x->n, array_shape(x));                        \
     DO(i, x->n)((t_f64*)array_mut_data(out))[i] = op(((const t*)array_data(x))[i]); \
     stack_push(stack, out);                                                         \
     STATUS_OK;                                                                      \
@@ -166,7 +166,7 @@ CONSTRUCTOR void reg_abs() {
     name##_table[T_I64] = name##_t_i64;                    \
     name##_table[T_F64] = name##_t_f64;                    \
     name##_table[T_ARR] = name##_t_arr;                    \
-    array_t* a = array_new_1d(T_FFI, T_MAX, name##_table); \
+    own(array_t) a = array_new_1d(T_FFI, T_MAX, name##_table); \
     global_dict_add_new(string_from_c(#name), a);          \
   }
 
@@ -227,7 +227,7 @@ STATUS_T w_binop(stack_t* stack, type_t t, binop_t kernel, binop_t x_scalar_kern
   }
 
   if (op == NULL) return status_errf("unsupported types");
-  array_t* out = array_alloc(t, n, s);
+  own(array_t) out = array_alloc(t, n, s);
   op(out->n, array_data(x), array_data(y), array_mut_data(out));
   stack_push(stack, out);
   STATUS_OK;
@@ -266,7 +266,7 @@ STATUS_T w_binop(stack_t* stack, type_t t, binop_t kernel, binop_t x_scalar_kern
     name##_table[T_F64][T_F64] = name##_t_f64_t_f64;                \
     size_t dims[2] = {T_MAX, T_MAX};                                \
     shape_t sh = (shape_t){2, dims};                                \
-    array_t* a = array_new(T_FFI, T_MAX * T_MAX, sh, name##_table); \
+    own(array_t) a = array_new(T_FFI, T_MAX * T_MAX, sh, name##_table); \
     global_dict_add_new(string_from_c(word), a);                    \
   }
 
@@ -282,11 +282,11 @@ GEN_BINOP("/", divide, DIV_OP)
 
 DEF_WORD_1_1("shape", shape) {
   dim_t d = x->r;
-  array_t* y = array_alloc(T_I64, x->r, shape_1d(&d));
-  DO_ARRAY(y, t_i64, i, p)* p = array_dims(x)[i];
+  own(array_t) y = array_alloc(T_I64, x->r, shape_1d(&d));
+  DO_MUT_ARRAY(y, t_i64, i, p)* p = array_dims(x)[i];
   return result_ok(y);
 }
-DEF_WORD_1_1("len", len) { return result_ok(array_new_scalar_t_i64(x->n)); }
+DEF_WORD_1_1("len", len) { return result_ok(array_move(array_new_scalar_t_i64(x->n))); }
 
 // creating arrays
 
@@ -303,22 +303,22 @@ shape_t create_shape(const array_t* x) {
 
 DEF_WORD_1_1("zeros", zeros) {
   shape_t s = create_shape(x);
-  array_t* y = array_alloc(T_I64, shape_len(s), s);
-  DO_ARRAY(y, t_i64, i, ptr)(*ptr) = 0;
+  own(array_t) y = array_alloc(T_I64, shape_len(s), s);
+  DO_MUT_ARRAY(y, t_i64, i, ptr)(*ptr) = 0;
   return result_ok(y);
 }
 
 DEF_WORD_1_1("ones", ones) {
   shape_t s = create_shape(x);
-  array_t* y = array_alloc(T_I64, shape_len(s), s);
-  DO_ARRAY(y, t_i64, i, ptr)(*ptr) = 1;
+  own(array_t) y = array_alloc(T_I64, shape_len(s), s);
+  DO_MUT_ARRAY(y, t_i64, i, ptr)(*ptr) = 1;
   return result_ok(y);
 }
 
 DEF_WORD_1_1("index", index) {
   shape_t s = create_shape(x);
-  array_t* y = array_alloc(T_I64, shape_len(s), s);
-  DO_ARRAY(y, t_i64, i, ptr)(*ptr) = i;
+  own(array_t) y = array_alloc(T_I64, shape_len(s), s);
+  DO_MUT_ARRAY(y, t_i64, i, ptr)(*ptr) = i;
   return result_ok(y);
 }
 
@@ -327,7 +327,7 @@ DEF_WORD("reshape", reshape) {
   own(array_t) x = stack_pop(stack);
   own(array_t) y = stack_pop(stack);
   shape_t s = create_shape(x);
-  array_t* z = array_alloc(y->t, shape_len(s), s);
+  own(array_t) z = array_alloc(y->t, shape_len(s), s);
   size_t ys = type_sizeof(y->t, y->n);
   DO(i, type_sizeof(y->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)array_data(y))[i % ys]; }
   stack_push(stack, z);
@@ -365,7 +365,7 @@ DEF_WORD("fold", fold) {
   dict_entry_t* e = *array_data_t_dict_entry(op);
 
   DO(i, x->n) {
-    array_t* y = array_new_scalar(x->t, array_data_i(x, i));
+    own(array_t) y = array_new_scalar(x->t, array_data_i(x, i));
     stack_push(stack, y);
     if (i > 0) STATUS_UNWRAP(interpreter_dict_entry(inter, e));
   }
@@ -394,7 +394,7 @@ DEF_WORD("fold_rank", fold_rank) {
 
   const void* ptr = array_data(x);
   DO(i, x->n / l) {
-    array_t* y = array_new_slice(x, l, cell, ptr + stride * i);
+    own(array_t) y = array_new_slice(x, l, cell, ptr + stride * i);
     stack_push(stack, y);
     if (i > 0) STATUS_UNWRAP(interpreter_dict_entry(inter, e));
   }
@@ -410,7 +410,7 @@ DEF_WORD("pascal", pascal) {
   STATUS_UNWRAP(as_size_t(x, &n));
 
   dim_t dims[2] = {n, n};
-  array_t* y = array_alloc(T_I64, n * n, shape_create(2, dims));
+  own(array_t) y = array_alloc(T_I64, n * n, shape_create(2, dims));
   t_i64* ptr = array_mut_data(y);
 
   DO(i, n) {

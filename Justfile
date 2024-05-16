@@ -18,7 +18,7 @@ valgrind: build
     valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t test_suite -v
 
 valgrind-expr EXPR="10000000 zeros": build
-    valgrind --leak-check=full --track-origins=yes --show-reachable=yes bin/niko -e "{{EXPR}}"
+    valgrind --leak-check=full --track-origins=yes --show-reachable=yes  --suppressions=default.supp bin/niko -e "{{EXPR}}"
 
 callgrind EXPR="10000000 zeros": release
     rm -f callgrind.out.* cachegrind.out.*

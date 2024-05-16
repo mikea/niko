@@ -12,29 +12,30 @@ DESTRUCTOR void global_dict_free() {
 RESULT_T concatenate(stack_t* stack, size_t len) {
   if (!len) {
     dim_t d = len;
-    RESULT_OK(array_alloc(T_I64, 0, shape_1d(&d)));
+    RESULT_OK(array_move(array_alloc(T_I64, 0, shape_1d(&d))));
   }
   bool all_common = true;
-  const shape_t common_shape = array_shape(stack_peek(stack));
-  const type_t t = stack_peek(stack)->t;
+  own(array_t) top = stack_peek(stack);
+  const shape_t common_shape = array_shape(top);
+  const type_t t = top->t;
   DO(i, len) {
-    array_t* e = stack_i(stack, i);
+    own(array_t) e = stack_i(stack, i);
     all_common &= e->t == t;
     all_common &= shape_eq(common_shape, array_shape(e));
   }
 
-  array_t* a;
+  own(array_t) a;
   if (!all_common) {
     dim_t d = len;
     a = array_alloc(T_ARR, len, shape_1d(&d));
-    DO(i, len) { ((array_t**)array_mut_data(a))[i] = array_inc_ref(stack_i(stack, len - i - 1)); }
+    DO(i, len) { ((array_t**)array_mut_data(a))[i] = stack_i(stack, len - i - 1); }
   } else {
     own(shape_t) new_shape = shape_extend(common_shape, len);
     a = array_alloc(t, shape_len(*new_shape), *new_shape);
     size_t stride = type_sizeof(t, shape_len(common_shape));
     assert(array_data_sizeof(a) == stride * len);
     DO(i, len) {
-      array_t* e = stack_i(stack, len - i - 1);
+      own(array_t) e = stack_i(stack, len - i - 1);
       assert(array_data_sizeof(e) == stride);
       memcpy(array_mut_data(a) + i * stride, array_data(e), stride);
     }
@@ -70,21 +71,21 @@ STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e) {
 
       switch (a->r) {
         case 0: {
-          f = *(t_ffi*)array_data(a);
+          f = *array_data_t_ffi(a);
           STATUS_CHECK(f, "not implemented");
           return f(inter, inter->stack);
         }
         case 1: {
           STATUS_CHECK(stack_len(inter->stack) >= 1, "stack underflow: 1 value expected");
-          array_t* x = stack_peek(inter->stack);
-          f = ((t_ffi*)array_data(a))[x->t];
+          own(array_t) x = stack_peek(inter->stack);
+          f = (array_data_t_ffi(a))[x->t];
           STATUS_CHECK(f, "%pT is not supported", &x->t);
           return f(inter, inter->stack);
         }
         case 2: {
           STATUS_CHECK(stack_len(inter->stack) >= 2, "stack underflow: 2 value expected");
-          array_t* y = stack_i(inter->stack, 0);
-          array_t* x = stack_i(inter->stack, 1);
+          own(array_t) y = stack_i(inter->stack, 0);
+          own(array_t) x = stack_i(inter->stack, 1);
           f = ((t_ffi(*)[T_MAX])array_data(a))[x->t][y->t];
           STATUS_CHECK(f, "%pT %pT are not supported", &x->t, &y->t);
           return f(inter, inter->stack);
@@ -98,7 +99,7 @@ STATUS_T interpreter_dict_entry(interpreter_t* inter, dict_entry_t* e) {
           case T_C8:
           case T_I64:
           case T_F64: {
-            stack_push(inter->stack, array_inc_ref(*p));
+            stack_push(inter->stack, *p);
             break;
           }
           case T_ARR: NOT_IMPLEMENTED;
@@ -138,7 +139,7 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
       assert(inter->arr_level);  // todo: report error
       size_t mark = inter->arr_marks[--inter->arr_level];
       assert(inter->stack->l >= mark);  // todo: report error
-      array_t* a = RESULT_UNWRAP(concatenate(inter->stack, inter->stack->l - mark));
+      own(array_t) a = RESULT_UNWRAP(concatenate(inter->stack, inter->stack->l - mark));
       stack_push(inter->stack, a);
       STATUS_OK;
     }
@@ -154,7 +155,7 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
         STATUS_OK;
       } else if (str_eqc(t.text, ";")) {
         STATUS_CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
-        inter->comp.v = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->bottom);
+        inter->comp.v = array_move(array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->bottom));
         inter->comp_stack->l = 0;
         inter->dict = dict_entry_new(inter->dict, inter->comp.k, inter->comp.v);
         inter->comp.v = NULL;
@@ -166,7 +167,7 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
         switch (inter->mode) {
           case MODE_INTERPRET: return interpreter_dict_entry(inter, e);
           case MODE_COMPILE: {
-            stack_push(inter->comp_stack, array_new_scalar_t_dict_entry(e));
+            stack_push(inter->comp_stack, array_move(array_new_scalar_t_dict_entry(e)));
             STATUS_OK;
           }
         }
@@ -177,11 +178,11 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
     case TOK_I64: {
       switch (inter->mode) {
         case MODE_INTERPRET: {
-          stack_push(inter->stack, array_new_scalar_t_i64(t.val.i));
+          stack_push(inter->stack, array_move(array_new_scalar_t_i64(t.val.i)));
           STATUS_OK;
         };
         case MODE_COMPILE: {
-          stack_push(inter->comp_stack, array_new_scalar_t_i64(t.val.i));
+          stack_push(inter->comp_stack, array_move(array_new_scalar_t_i64(t.val.i)));
           STATUS_OK;
         }
       }
@@ -190,11 +191,11 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
     case TOK_F64: {
       switch (inter->mode) {
         case MODE_INTERPRET: {
-          stack_push(inter->stack, array_new_scalar_t_f64(t.val.d));
+          stack_push(inter->stack, array_move(array_new_scalar_t_f64(t.val.d)));
           STATUS_OK;
         };
         case MODE_COMPILE: {
-          stack_push(inter->comp_stack, array_new_scalar_t_f64(t.val.d));
+          stack_push(inter->comp_stack, array_move(array_new_scalar_t_f64(t.val.d)));
           STATUS_OK;
         }
       }
@@ -206,7 +207,7 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
 
       switch (inter->mode) {
         case MODE_INTERPRET: {
-          stack_push(inter->stack, array_new_t_c8(l, shape_1d(&d), t.val.s.p));
+          stack_push(inter->stack, array_move(array_new_t_c8(l, shape_1d(&d), t.val.s.p)));
           STATUS_OK;
         };
         case MODE_COMPILE: {
@@ -222,7 +223,7 @@ STATUS_T interpreter_token(interpreter_t* inter, token_t t) {
       STATUS_CHECK(e, "unknown word '%pS'", &t.text);
       switch (inter->mode) {
         case MODE_INTERPRET: {
-          stack_push(inter->stack, array_new_scalar_t_dict_entry(e));
+          stack_push(inter->stack, array_move(array_new_scalar_t_dict_entry(e)));
           STATUS_OK;
         };
         case MODE_COMPILE: {

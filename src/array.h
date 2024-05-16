@@ -151,13 +151,18 @@ INLINE array_t* array_alloc(type_t t, size_t n, shape_t s) {
 
 INLINE void array_dec_ref(array_t* arr);
 
-
 INLINE array_t* array_inc_ref(array_t* arr) {
   arr->rc++;
   return arr;
 }
 INLINE void array_dec_ref(array_t* arr) {
+  assert(arr->rc > 0);
   if (!--arr->rc) array_free(arr);
+}
+INLINE array_t* array_move(array_t* arr) {
+  assert(arr->rc > 0);
+  arr->rc--;
+  return arr;
 }
 DEF_CLEANUP(array_t, array_dec_ref);
 
@@ -213,10 +218,11 @@ TYPE_FOREACH(__DEF_TYPE_HELPER)
 
 TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 
-#define __DO_ARRAY_IMPL(a, t, i, p, u)                          \
-  for (bool u##b = 1; u##b; u##b = 0)                           \
-    for (t* restrict p = (t*)array_mut_data(a); u##b; u##b = 0) \
+#define __DO_ARRAY_IMPL(a, i, p, u, p_decl) \
+  for (bool u##b = 1; u##b; u##b = 0)          \
+    for (p_decl; u##b; u##b = 0)               \
       for (size_t i = 0, u##n = a->n; i < u##n && u##b; i++, p++)
 
-#define _DO_ARRAY_IMPL(a, t, i, p, u) __DO_ARRAY_IMPL(a, t, i, p, u)
-#define DO_ARRAY(a, t, i, p) _DO_ARRAY_IMPL(a, t, i, p, UNIQUE(__))
+#define _DO_ARRAY_IMPL(a, i, p, u, p_decl) __DO_ARRAY_IMPL(a, i, p, u, p_decl)
+#define DO_MUT_ARRAY(a, t, i, p) _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), t* restrict p = (t*)array_mut_data(a))
+#define DO_ARRAY(a, t, i, p) _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), const t* restrict p = (const t*)array_data(a))
