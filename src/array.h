@@ -23,9 +23,9 @@ struct array_t;
 typedef struct array_t* t_arr;
 #define t_arr_enum T_ARR
 
-struct interpreter_t;
+struct inter_t;
 struct stack_t;
-typedef STATUS_T (*t_ffi)(struct interpreter_t* inter, struct stack_t* s);
+typedef STATUS_T (*t_ffi)(struct inter_t* inter, struct stack_t* s);
 #define t_ffi_enum T_FFI
 
 struct dict_entry_t;

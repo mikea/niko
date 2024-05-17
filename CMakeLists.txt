@@ -15,22 +15,17 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-inline-small-functions -Og"
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -g")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-add_custom_command(
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lexer.c
-  COMMAND re2c -i --case-ranges -o ${CMAKE_CURRENT_BINARY_DIR}/lexer.c ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.re
-  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.re
-  COMMENT "Generating lexer.c"
-  VERBATIM
-)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 option(USE_LAPACK_64 "Use LAPACK 64-bit library (needed for ubuntu)" OFF)
 
 add_executable(niko 
-  src/main.c src/words.c src/print.c src/blas.c src/array.c
-  ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
+  src/main.c src/words.c src/print.c src/blas.c src/array.c src/inter.c
+  ${CMAKE_CURRENT_BINARY_DIR}/lexer.c
+  ${CMAKE_CURRENT_BINARY_DIR}/prelude.h)
 target_link_libraries(niko m)
 
+# configure timestamp
 execute_process(
   COMMAND git describe --always --dirty
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -52,3 +47,19 @@ if (DEFINED ENV{USE_LAPACK_64})
 else()
   target_link_libraries(niko blas lapack lapacke)
 endif()
+
+# generate lexer
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lexer.c
+  COMMAND re2c -i --case-ranges -o ${CMAKE_CURRENT_BINARY_DIR}/lexer.c ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.re
+  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.re
+  COMMENT "Generating lexer.c"
+  VERBATIM
+)
+
+# embed prelude.nk
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/prelude.h
+  COMMAND xxd -n __prelude_nk -i ${CMAKE_CURRENT_SOURCE_DIR}/src/prelude.nk > ${CMAKE_CURRENT_BINARY_DIR}/prelude.h
+  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/prelude.nk
+)

@@ -32,10 +32,20 @@ INLINE void status_print_error(status_t s) {
 
 #define STATUS_OK return status_ok()
 
-#define STATUS_UNWRAP(expr)                                \
+#define STATUS_UNWRAP(expr)                           \
   do {                                                \
     status_t __status__ = (expr);                     \
     if (status_is_err(__status__)) return __status__; \
   } while (0)
 
-#define STATUS_CHECK(cond, ...) if (!(cond)) return status_errf(__VA_ARGS__)
+#define STATUS_CHECK(cond, ...) \
+  if (!(cond)) return status_errf(__VA_ARGS__)
+
+#define STATUS_EXPECT(expr)           \
+  do {                                \
+    status_t __status__ = (expr);     \
+    if (status_is_err(__status__)) {  \
+      status_print_error(__status__); \
+      abort();                        \
+    };                                \
+  } while (0)

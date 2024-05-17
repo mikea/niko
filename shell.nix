@@ -2,7 +2,7 @@
   pkgs.mkShell {
     nativeBuildInputs = with pkgs.buildPackages; [ 
         # tools
-        watchexec just cmake valgrind rlwrap
+        watchexec just cmake valgrind rlwrap xxd ninja
         # code dependencies
         gcc13 re2c glibc openblas
     ];

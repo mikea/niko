@@ -2,10 +2,12 @@
 
 #include <assert.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
+typedef unsigned char byte;
 typedef int64_t i64;
 typedef double f64;
 static_assert(sizeof(f64) == sizeof(i64));
@@ -120,5 +122,5 @@ DEF_CLEANUP(FILE, fclose);
 // LOOPS
 
 #define DO(var, l) for (size_t var = 0, __limit = l; var < __limit; var++)
-#define DO_BLOCK(var, l, block) DO(var, l) { block; }
-
+#define DO_BLOCK(var, l, block) \
+  DO(var, l) { block; }
