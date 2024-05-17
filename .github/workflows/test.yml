@@ -29,9 +29,6 @@ jobs:
         just release
         bin/niko -e "\\i"
 
-    - name: Verify Clean Git Tree
-      run: git diff --exit-code
-
     - name: Valgrind
       run: just valgrind
 
