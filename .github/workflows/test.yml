@@ -25,7 +25,9 @@ jobs:
       run: just test
 
     - name: Release
-      run: just release
+      run: |
+        just release
+        bin/niko -e "\\i"
 
     - name: Verify Clean Git Tree
       run: git diff --exit-code
