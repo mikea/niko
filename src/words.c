@@ -352,19 +352,10 @@ DEF_WORD("pascal", pascal) {
   STATUS_OK;
 }
 
-DEF_WORD(".", dot) {
-  STATUS_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
-  own(array_t) x = stack_pop(stack);
-  fprintf(inter->out, "%pA\n", x);
-  STATUS_OK;
-}
-
 DEF_WORD("exit", exit) {
   fprintf(inter->out, "bye\n");
   exit(0);
 }
-
-DEF_WORD("load_csv", load_csv) { STATUS_OK; }
 
 // repl
 
@@ -441,4 +432,29 @@ DEF_WORD("scan", scan) {
   own(array_t) result = RESULT_UNWRAP(concatenate(stack, array_shape(x)));
   stack_push(stack, result);
   STATUS_OK;
+}
+
+// io
+
+DEF_WORD(".", dot) {
+  STATUS_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
+  own(array_t) x = stack_pop(stack);
+  fprintf(inter->out, "%pA\n", x);
+  STATUS_OK;
+}
+
+DEF_WORD_1_1("load_text", load_text) {
+  RESULT_CHECK(x->t == T_C8, "c8 array expected");
+  RESULT_CHECK(x->r >= 1, "rank >= 1 expected");
+  str_t name = str_new_len(array_data_t_c8(x), x->n);
+  own(char) c_name = str_toc(name);
+  own(FILE) file = fopen(c_name, "r");
+  RESULT_CHECK(file, "failed to open file %s", c_name);
+  RESULT_CHECK(!fseek(file, 0, SEEK_END), "failed to seek file");
+  size_t n = ftell(file);
+  own(array_t) y = array_alloc(T_C8, n, shape_1d(&n));
+  rewind(file);
+  size_t read = fread(array_mut_data(y), 1, n, file);
+  RESULT_CHECK(n == read, "truncated read");
+  RESULT_OK(y);
 }

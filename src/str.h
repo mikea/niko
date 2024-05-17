@@ -12,6 +12,7 @@ typedef struct {
 
 INLINE str_t str_empty() { return (str_t){0, NULL}; }
 INLINE str_t str_new(const char* b, const char* e) { return (str_t){e - b, b}; }
+INLINE str_t str_new_len(const char* b, size_t l) { return (str_t){l, b}; }
 INLINE str_t str_from_c(const char* c) { return (str_t){strlen(c), c}; }
 INLINE size_t str_len(const str_t s) { return s.l; }
 INLINE bool str_is_empty(const str_t s) { return !s.l; }

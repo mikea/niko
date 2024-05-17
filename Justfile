@@ -7,7 +7,7 @@ build: (_build "Debug")
 release: (_build "Release") _test _docs
 
 run: test
-    bin/niko
+    rlwrap bin/niko
 
 test: build _test
 

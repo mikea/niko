@@ -34,7 +34,6 @@ static_assert(sizeof(f64) == sizeof(i64));
     assert(false);           \
     abort();                 \
   } while (0)
-#define DO(var, l) for (size_t var = 0, __l = l; var < __l; var++)
 #define DBG(...)                                   \
   do {                                             \
     fprintf(stderr, "%s:%d ", __FILE__, __LINE__); \
@@ -117,3 +116,9 @@ DEF_CLEANUP(FILE, fclose);
 
 #define __APPLY__(M, F, ...) M(F, __VA_ARGS__)
 #define APPLY(F, ...) __APPLY__(PASTE(__APPLY__, NARGS(__VA_ARGS__)), F, __VA_ARGS__)
+
+// LOOPS
+
+#define DO(var, l) for (size_t var = 0, __limit = l; var < __limit; var++)
+#define DO_BLOCK(var, l, block) DO(var, l) { block; }
+

@@ -61,6 +61,8 @@ INLINE PRINTF(1, 2) result_t result_errf(const char* format, ...) {
 
 #define RESULT_OK(a) return result_ok(a)
 
+#define RESULT_CHECK(cond, ...) if (!(cond)) return result_errf(__VA_ARGS__)
+
 // stack
 
 typedef struct stack_t stack_t;
