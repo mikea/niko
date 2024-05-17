@@ -2,11 +2,15 @@
 
 ## Development Aids
 
+Words that starts from '\' are indended to be used during development
+(or debugging). You should rarely need to use them outside of repl.
+
 |Word|Signature|Description|
 |---|---|---|
 |`\c`|`( ... -> )`|clears the stack
 |`\i`|`( -> )`|prints info about current `niko` status
 |`\mem`|`( -> )`|prints detailed memory usage information
+|`\s`|`( -> )`|prints every stack item
 
 
 ## Stack Manipulation

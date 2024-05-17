@@ -1,7 +1,7 @@
 #pragma once
 
-#include "status.h"
 #include "array.h"
+#include "status.h"
 
 // token
 typedef struct {
@@ -49,7 +49,8 @@ INLINE PRINTF(1, 2) result_t result_errf(const char* format, ...) {
 
 #define RESULT_OK(a) return result_ok(a)
 
-#define RESULT_CHECK(cond, ...) if (!(cond)) return result_errf(__VA_ARGS__)
+#define RESULT_CHECK(cond, ...) \
+  if (!(cond)) return result_errf(__VA_ARGS__)
 
 // stack
 
@@ -86,15 +87,15 @@ INLINE stack_t* stack_assert_not_empty(stack_t* stack) {
 }
 INLINE array_t* stack_pop(stack_t* stack) { return stack_assert_not_empty(stack)->bottom[--stack->l]; }
 INLINE void stack_drop(stack_t* s) { array_dec_ref(stack_pop(s)); }
-INLINE array_t* stack_i(stack_t* s, size_t i) {
+INLINE borrow(array_t) stack_peek(stack_t* s, size_t i) {
   assert(i < s->l);
-  return array_inc_ref(s->bottom[s->l - i - 1]);
+  return s->bottom[s->l - i - 1];
 }
-INLINE array_t* stack_peek(stack_t* s) { return stack_i(s, 0); }
+INLINE array_t* stack_i(stack_t* s, size_t i) { return array_inc_ref(stack_peek(s, i)); }
 
 RESULT_T concatenate(stack_t* stack, shape_t sh);
 
-// dictionary 
+// dictionary
 
 struct dict_entry_t {
   struct dict_entry_t* n;

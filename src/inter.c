@@ -25,7 +25,7 @@ RESULT_T concatenate(stack_t* stack, shape_t sh) {
   if (!len) RESULT_OK(array_move(array_alloc(T_I64, 0, sh)));
 
   bool all_common = true;
-  own(array_t) top = stack_peek(stack);
+  borrow(array_t) top = stack_peek(stack, 0);
   const shape_t common_shape = array_shape(top);
   const type_t t = top->t;
   DO(i, len) {
@@ -71,15 +71,15 @@ STATUS_T inter_dict_entry(inter_t* inter, dict_entry_t* e) {
         }
         case 1: {
           STATUS_CHECK(stack_len(inter->stack) >= 1, "stack underflow: 1 value expected");
-          own(array_t) x = stack_peek(inter->stack);
+          borrow(array_t) x = stack_peek(inter->stack, 0);
           f = (array_data_t_ffi(a))[x->t];
           STATUS_CHECK(f, "%pT is not supported", &x->t);
           return f(inter, inter->stack);
         }
         case 2: {
           STATUS_CHECK(stack_len(inter->stack) >= 2, "stack underflow: 2 value expected");
-          own(array_t) y = stack_i(inter->stack, 0);
-          own(array_t) x = stack_i(inter->stack, 1);
+          borrow(array_t) y = stack_peek(inter->stack, 0);
+          borrow(array_t) x = stack_peek(inter->stack, 1);
           f = ((t_ffi(*)[T_MAX])array_data(a))[x->t][y->t];
           STATUS_CHECK(f, "%pT %pT are not supported", &x->t, &y->t);
           return f(inter, inter->stack);

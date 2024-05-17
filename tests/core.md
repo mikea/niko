@@ -265,8 +265,6 @@ ERROR: stack underflow: index 5 >= stack size 0
 [ 0 2 4 6 8 10 12 14 16 18 ]
 > [ 2 3 ] index dup + .
 [ [ 0 2 4 ] [ 6 8 10 ] ]
-> [ 2 3 ] index [ 3 2 ] index + .
-[ [ 0 2 4 ] [ 6 8 10 ] ]
 > 10 index 2 + .
 [ 2 3 4 5 6 7 8 9 10 11 ]
 > 2 10 index + .
@@ -283,12 +281,38 @@ ERROR: stack underflow: index 5 >= stack size 0
 [ 6. 7. ]
 > 4. [ 2. 3. ] + .
 [ 6. 7. ]
+```
+
+subcells:
+```nkt
+> [ 2 3 4 ] index .
+[ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
+> [ 2 3 4 ] index 1 + .
+[ [ [ 1 2 3 4 ] [ 5 6 7 8 ] [ 9 10 11 12 ] ] [ [ 13 14 15 16 ] [ 17 18 19 20 ] [ 21 22 23 24 ] ] ]
+> [ 2 3 4 ] index [ 1 2 3 4 ] + .
+[ [ [ 1 3 5 7 ] [ 5 7 9 11 ] [ 9 11 13 15 ] ] [ [ 13 15 17 19 ] [ 17 19 21 23 ] [ 21 23 25 27 ] ] ]
+> [ 2 3 4 ] index [ [ 1 1 1 1 ] [ 2 2 2 2 ] [ 3 3 3 3 ] ] + .
+[ [ [ 1 2 3 4 ] [ 6 7 8 9 ] [ 11 12 13 14 ] ] [ [ 13 14 15 16 ] [ 18 19 20 21 ] [ 23 24 25 26 ] ] ]
+```
+
+type conversion:
+```nkt
 > 1 2. + .
 3.
 > 1. 2 + .
 3.
+```
+
+error handling:
+
+```nkt
+> [ 2 3 4 ] index [ 1 1 ] +
+ERROR: array shapes are incompatible: (2, 3, 4) vs (2)
+> [ 2 3 4 ] index dup [ 4 3 2 ] reshape + .
+ERROR: array shapes are incompatible: (2, 3, 4) vs (4, 3, 2)
 > "abc" 2 +
 ERROR: c8 i64 are not supported
+> \s
 ```
 ## *
 ```nkt
@@ -376,6 +400,14 @@ ERROR: unknown word '1999912+'
 ```nkt
 > 10 index \c .
 ERROR: stack underflow: 1 value expected
+```
+## \s
+```nkt
+> \s
+> 1 2 3 \s
+0: 3
+1: 2
+2: 1
 ```
 # blas
 ## blas_gemm

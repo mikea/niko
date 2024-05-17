@@ -3,8 +3,14 @@ alias w := watch
 watch +WATCH_TARGET='test':
     watchexec -rc -w . --ignore *.results -- just {{WATCH_TARGET}}
 
-build: (_build "Debug")
-release: (_build "Release") _test
+build BUILD_TYPE="Debug":
+    mkdir -p bin build/{{BUILD_TYPE}}
+    rm -rf bin/niko
+    cmake -B build/{{BUILD_TYPE}} -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} -G Ninja
+    cmake --build build/{{BUILD_TYPE}}
+    cp build/{{BUILD_TYPE}}/niko bin/niko
+
+release: (build "Release") _test
 
 run: test
     rlwrap bin/niko
@@ -48,14 +54,6 @@ _test:
     bin/niko -t tests/prelude.md
     bin/niko -t docs/examples.md
     bin/niko -t docs/reference.md
-
-[private]
-_build BUILD_TYPE:
-    mkdir -p bin build/{{BUILD_TYPE}}
-    rm -rf bin/niko
-    cmake -B build/{{BUILD_TYPE}} -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} -G Ninja
-    cmake --build build/{{BUILD_TYPE}}
-    cp build/{{BUILD_TYPE}}/niko bin/niko
 
 [private]
 _benchmarks:

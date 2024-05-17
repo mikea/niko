@@ -87,12 +87,21 @@ INLINE shape_t* shape_extend(shape_t outer, shape_t inner) {
 }
 INLINE shape_t shape_cell(shape_t s, size_t r) { return (shape_t){r, s.d + s.r - r}; }
 
+INLINE bool shape_is_cell(shape_t outer, shape_t inner) {
+  return outer.r >= inner.r && !memcmp(outer.d + (outer.r - inner.r), inner.d, dims_sizeof(inner.r));
+}
+INLINE bool shapes_are_compatible(shape_t s1, shape_t s2) { return shape_is_cell(s1, s2) || shape_is_cell(s2, s1); }
+INLINE shape_t shape_max(shape_t s1, shape_t s2) {
+  assert(shapes_are_compatible(s1, s2));
+  return s1.r >= s2.r ? s1 : s2;
+}
+
 typedef enum { FLAG_QUOTE = 1 } flag_t;
 
 // array: (header, dims, data)
 struct array_t {
   type_t t;   // type
-  flag_t f; // flag
+  flag_t f;   // flag
   size_t rc;  // ref count
   size_t n;   // number of elements
   struct array_t* owner;
@@ -105,6 +114,7 @@ typedef struct array_t array_t;
 array_t* array_alloc(type_t t, size_t n, shape_t s);
 void array_free(array_t* a);
 
+INLINE array_t* array_alloc_shape(type_t t, shape_t s) { return array_alloc(t, shape_len(s), s); }
 INLINE bool __array_data_simd_aligned(type_t t, size_t n) { return n >= 2 * SIMD_REG_WIDTH_BYTES / type_sizeof(t, 1); }
 INLINE bool array_data_simd_aligned(const array_t* a) { return __array_data_simd_aligned(a->t, a->n); }
 
@@ -200,8 +210,8 @@ TYPE_FOREACH(__DEF_TYPE_HELPER)
 TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 
 #define __DO_ARRAY_IMPL(a, i, p, u, p_decl) \
-  for (bool u##b = 1; u##b; u##b = 0)          \
-    for (p_decl; u##b; u##b = 0)               \
+  for (bool u##b = 1; u##b; u##b = 0)       \
+    for (p_decl; u##b; u##b = 0)            \
       for (size_t i = 0, u##n = a->n; i < u##n && u##b; i++, p++)
 
 #define _DO_ARRAY_IMPL(a, i, p, u, p_decl) __DO_ARRAY_IMPL(a, i, p, u, p_decl)

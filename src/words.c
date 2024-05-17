@@ -1,5 +1,5 @@
-#include <math.h>
 #include <jemalloc/jemalloc.h>
+#include <math.h>
 
 #include "niko.h"
 
@@ -14,9 +14,9 @@ STATUS_T as_size_t(array_t* a, size_t* out) {
   STATUS_OK;
 }
 
-// stack manipulation
+#pragma region stack
 
-#define DUP(stack) stack_push(stack, array_move(stack_peek(stack)))
+#define DUP(stack) stack_push(stack, stack_peek(stack, 0))
 
 DEF_WORD("dup", dup) {
   DUP(stack);
@@ -78,7 +78,8 @@ DEF_WORD("pick", pick) {
   stack_push(stack, array_move(stack_i(stack, n)));
   STATUS_OK;
 }
-// unary words
+
+#pragma endregion stack
 
 INLINE STATUS_T thread1(inter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_table[T_MAX]) {
   assert(x->t == T_ARR);
@@ -102,6 +103,8 @@ INLINE STATUS_T thread1(inter_t* inter, stack_t* stack, const array_t* x, t_ffi 
     own(array_t) x = stack_pop(stack);    \
     return thread1(inter, stack, x, ffi); \
   }
+
+#pragma region math
 
 // neg
 
@@ -201,60 +204,46 @@ GEN_FLOAT(sqrt, sqrt)
 GEN_FLOAT(tan, tan)
 GEN_FLOAT(tanh, tanh)
 
-// binops
+#pragma endregion math
 
-typedef void (*binop_t)(size_t n, const void* restrict x, const void* restrict y, void* restrict out);
+#pragma region binops
 
-STATUS_T w_binop(stack_t* stack, type_t t, binop_t kernel, binop_t x_scalar_kernel, binop_t y_scalar_kernel) {
+typedef void (*binop_kernel_t)(const void* restrict x,
+                               size_t x_n,
+                               const void* restrict y,
+                               size_t y_n,
+                               void* restrict out,
+                               size_t out_n);
+
+STATUS_T w_binop(stack_t* stack, type_t t, binop_kernel_t kernel) {
+  shape_t ys = array_shape(stack_peek(stack, 0));
+  shape_t xs = array_shape(stack_peek(stack, 1));
+  STATUS_CHECK(shapes_are_compatible(xs, ys), "array shapes are incompatible: %pH vs %pH", &xs, &ys);
+
   own(array_t) y = stack_pop(stack);
   own(array_t) x = stack_pop(stack);
 
-  binop_t op;
-  shape_t s;
-  size_t n;
-
-  if (array_is_scalar(x)) {
-    op = x_scalar_kernel;
-    n = y->n;
-    s = array_shape(y);
-  } else if (array_is_scalar(y)) {
-    op = y_scalar_kernel;
-    n = x->n;
-    s = array_shape(x);
-  } else if (x->n == y->n) {
-    op = kernel;
-    n = x->n;
-    s = array_shape(x);
-  } else {
-    return status_errf("array shape doesn't match");
-  }
-
-  if (op == NULL) return status_errf("unsupported types");
-  own(array_t) out = array_alloc(t, n, s);
-  op(out->n, array_data(x), array_data(y), array_mut_data(out));
+  own(array_t) out = array_alloc_shape(t, shape_max(xs, ys));
+  kernel(array_data(x), x->n, array_data(y), y->n, array_mut_data(out), out->n);
   stack_push(stack, out);
   STATUS_OK;
 }
 
-#define GEN_BINOP_KERNEL(name, a_t, b_t, y_t, expr)                                                   \
-  void name(size_t n, const void* restrict a_ptr, const void* restrict b_ptr, void* restrict y_ptr) { \
-    y_t* restrict y = y_ptr;                                                                          \
-    const a_t* restrict a = a_ptr;                                                                    \
-    const b_t* restrict b = b_ptr;                                                                    \
-    DO(i, n) y[i] = (expr);                                                                           \
+#define GEN_BINOP_KERNEL(name, a_t, b_t, y_t, op)                                                                 \
+  void name(const void* restrict a_ptr, size_t a_n, const void* restrict b_ptr, size_t b_n, void* restrict y_ptr, \
+            size_t y_n) {                                                                                         \
+    y_t* restrict y = y_ptr;                                                                                      \
+    const a_t* restrict a = a_ptr;                                                                                \
+    const b_t* restrict b = b_ptr;                                                                                \
+    if (y_n == a_n && y_n == b_n) DO(i, y_n) y[i] = op(a[i], b[i]);                                               \
+    else if (a_n == 1 && y_n == b_n) DO(i, y_n) y[i] = op(a[0], b[i]);                                            \
+    else if (b_n == 1 && y_n == a_n) DO(i, y_n) y[i] = op(a[i], b[0]);                                            \
+    else DO(i, y_n) y[i] = op(a[i % a_n], b[i % b_n]);                                                            \
   }
 
-#define GEN_BINOP_KERNELS(name, a_t, b_t, y_t, op)                                 \
-  GEN_BINOP_KERNEL(name##_##a_t##_##b_t, a_t, b_t, y_t, op((a[i]), (b[i])))        \
-  GEN_BINOP_KERNEL(name##_scalar_##a_t##_##b_t, a_t, b_t, y_t, op((a[0]), (b[i]))) \
-  GEN_BINOP_KERNEL(name##_##a_t##_scalar_##b_t, a_t, b_t, y_t, op((a[i]), (b[0])))
-
-#define GEN_BINOP_SPECIALIZATION(name, a_t, b_t, y_t, op)                                                  \
-  GEN_BINOP_KERNELS(name##_kernel, a_t, b_t, y_t, op)                                                      \
-  DEF_WORD_HANDLER(name##_##a_t##_##b_t) {                                                                 \
-    return w_binop(stack, TYPE_ENUM(y_t), name##_kernel_##a_t##_##b_t, name##_kernel_scalar_##a_t##_##b_t, \
-                   name##_kernel_##a_t##_scalar_##b_t);                                                    \
-  }
+#define GEN_BINOP_SPECIALIZATION(name, a_t, b_t, y_t, op)          \
+  GEN_BINOP_KERNEL(name##_kernel_##a_t##_##b_t, a_t, b_t, y_t, op) \
+  DEF_WORD_HANDLER(name##_##a_t##_##b_t) { return w_binop(stack, TYPE_ENUM(y_t), name##_kernel_##a_t##_##b_t); }
 
 #define GEN_BINOP(word, name, op)                                       \
   GEN_BINOP_SPECIALIZATION(name, t_i64, t_i64, t_i64, op)               \
@@ -282,6 +271,8 @@ GEN_BINOP("+", plus, PLUS_OP)
 GEN_BINOP("*", mul, MUL_OP)
 GEN_BINOP("-", minus, MINUS_OP)
 GEN_BINOP("/", divide, DIV_OP)
+
+#pragma endregion binops
 
 DEF_WORD_1_1("shape", shape) {
   dim_t d = x->r;
@@ -348,6 +339,8 @@ DEF_WORD("exit", exit) {
 
 DEF_WORD("\\c", slash_clear) {
   stack_clear(stack);
+  inter->arr_level = 0;
+  inter->mode = MODE_INTERPRET;
   STATUS_OK;
 }
 
@@ -367,6 +360,12 @@ DEF_WORD("\\mem", slash_mem) {
   malloc_stats_print(NULL, NULL, NULL);
   STATUS_OK;
 }
+
+DEF_WORD("\\s", slash_stack) {
+  DO(i, stack_len(stack)) fprintf(inter->out, "%ld: %pA\n", i, stack_peek(stack, i));
+  STATUS_OK;
+}
+
 // fold
 
 DEF_WORD("fold_rank", fold_rank) {

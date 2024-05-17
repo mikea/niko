@@ -75,12 +75,13 @@ STATUS_T test(inter_t* inter, const char* fname, bool v) {
     } else if (in_nkt) {
       if (str_starts_with(l, code_end)) {
         if (rest_out && *rest_out)
-          fprintf(stderr, "ERROR %s:%ld : umatched output: '%s'\n", fname, in_line_no, rest_out);
+          fprintf(stderr, "ERROR %s:%ld : unmatched output: '%s'\n", fname, in_line_no, rest_out);
+        rest_out = NULL;
         in_nkt = false;
       } else if (*line == '>') {
         if (v) fprintf(stderr, "%s", line);
         if (rest_out && *rest_out)
-          fprintf(stderr, "ERROR %s:%ld : umatched output: '%s'\n", fname, in_line_no, rest_out);
+          fprintf(stderr, "ERROR %s:%ld : unmatched output: '%s'\n", fname, in_line_no, rest_out);
         if (out) free(out);
         in_line_no = line_no;
         inter_line_capture_out(inter, line + 1, &out, &out_size);
