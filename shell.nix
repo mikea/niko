@@ -3,8 +3,8 @@
     nativeBuildInputs = with pkgs.buildPackages; [ 
         # tools
         watchexec just cmake valgrind rlwrap xxd ninja
-        # code dependencies
-        gcc13 re2c glibc openblas
+        # build time code dependencies
+        gcc13 re2c glibc openblas jemalloc
     ];
     # to compare performance
     packages = [

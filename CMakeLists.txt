@@ -24,6 +24,7 @@ add_executable(niko
   ${CMAKE_CURRENT_BINARY_DIR}/lexer.c
   ${CMAKE_CURRENT_BINARY_DIR}/prelude.h)
 target_link_libraries(niko m)
+target_link_libraries(niko jemalloc)
 
 # configure timestamp
 execute_process(

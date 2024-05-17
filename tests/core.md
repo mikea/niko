@@ -426,9 +426,9 @@ ERROR: stack underflow: 1 value expected
 ```
 ## load_text
 ```nkt
-> "test/a.txt" load_text .
+> "tests/a.txt" load_text .
 "a"
-> "test/b.txt" load_text .
+> "tests/b.txt" load_text .
 "b
 b
 "

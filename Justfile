@@ -15,7 +15,8 @@ clean:
     rm -rf bin build callgrind.out.* perf.data perf.data.old vgcore.*
 
 valgrind: build
-    valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t test_suite -v
+    valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t tests/core.md -v
+    valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t tests/prelude.md -v
 
 valgrind-expr EXPR="10000000 zeros": build
     valgrind --leak-check=full --track-origins=yes --show-reachable=yes  --suppressions=default.supp bin/niko -e "{{EXPR}}"
@@ -43,8 +44,8 @@ stat EXPR="10000000 zeros": release
 
 [private]
 _test:
-    bin/niko -z -t test/core.md
-    bin/niko -t test/prelude.md
+    bin/niko -z -t tests/core.md
+    bin/niko -t tests/prelude.md
     bin/niko -t docs/examples.md
     bin/niko -t docs/reference.md
 

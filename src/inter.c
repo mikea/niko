@@ -266,5 +266,9 @@ void inter_load_prelude() {
   own(char) c_prelude = str_toc(prelude);
   own(inter_t) inter = inter_new();
   STATUS_EXPECT(inter_line(inter, c_prelude));
-  for (dict_entry_t* e = inter->dict; e; e = e->n) global_dict_add_new(string_as_str(e->k), e->v);
+  dict_entry_t* last = inter->dict;
+  while (last->n != NULL) last = last->n;
+  last->n = global_dict;
+  global_dict = inter->dict;
+  inter->dict = NULL;
 }
