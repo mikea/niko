@@ -1,4 +1,5 @@
 #include <math.h>
+#include <jemalloc/jemalloc.h>
 
 #include "niko.h"
 
@@ -350,6 +351,22 @@ DEF_WORD("\\c", slash_clear) {
   STATUS_OK;
 }
 
+DEF_WORD("\\i", slash_info) {
+  printf(VERSION_STRING "\n");
+  printf("  %-20s %10ld entries\n", "stack size:", stack_len(stack));
+  {
+    size_t allocated;
+    size_t sz = sizeof(allocated);
+    STATUS_CHECK(mallctl("stats.allocated", &allocated, &sz, NULL, 0) == 0, "failed to query heap size");
+    printf("  %-20s %10ld bytes\n", "allocated mem:", allocated);
+  }
+  STATUS_OK;
+}
+
+DEF_WORD("\\mem", slash_mem) {
+  malloc_stats_print(NULL, NULL, NULL);
+  STATUS_OK;
+}
 // fold
 
 DEF_WORD("fold_rank", fold_rank) {

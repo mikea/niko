@@ -5,13 +5,6 @@
 
 // repl
 
-#ifndef GIT_DESCRIBE
-#define GIT_DESCRIBE "unknown"
-#endif
-#ifndef COMPILE_TIME
-#define COMPILE_TIME "unknown"
-#endif
-
 INLINE void stack_print_repl(stack_t* stack) {
   DO(i, stack->l) {
     if (i > 0) printf(" ");
@@ -25,7 +18,7 @@ STATUS_T repl(inter_t* inter) {
 
   bool prompt = isatty(STDIN_FILENO);
 
-  if (prompt) printf("niko %s (%s)\n", GIT_DESCRIBE, COMPILE_TIME);
+  if (prompt) printf(VERSION_STRING "\n");
 
   while (true) {
     if (prompt) {

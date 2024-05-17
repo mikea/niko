@@ -5,6 +5,9 @@
 |Word|Signature|Description|
 |---|---|---|
 |`\c`|`( ... -> )`|clears the stack
+|`\i`|`( -> )`|prints info about current `niko` status
+|`\mem`|`( -> )`|prints detailed memory usage information
+
 
 ## Stack Manipulation
 
@@ -62,6 +65,7 @@
 |`fold`|`( x op' -> y )`| fold cells of rank `0` using `op`
 |`fold_rank`|`( x r op' -> y )`| fold cells of rank `r` using `op`
 |`scan`|`( x op' -> y )`| fold cells of rank `0` using `op` organizing all intermediate results in `x`'s shape
+|`scan_rank`|`( x r op' -> y )`| fold cells of rank `r` using `op` organizing all intermediate results in `x`'s shape
 
 ## Input/Output
 
