@@ -1,10 +1,10 @@
 alias w := watch
 
-watch +WATCH_TARGET='build':
+watch +WATCH_TARGET='test':
     watchexec -rc -w . --ignore *.results -- just {{WATCH_TARGET}}
 
 build: (_build "Debug")
-release: (_build "Release") _test _docs
+release: (_build "Release") _test
 
 run: test
     rlwrap bin/niko
@@ -12,7 +12,7 @@ run: test
 test: build _test
 
 clean:
-    rm -rf bin build callgrind.out.* perf.data perf.data.old
+    rm -rf bin build callgrind.out.* perf.data perf.data.old vgcore.*
 
 valgrind: build
     valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t test_suite -v
@@ -41,11 +41,12 @@ stat EXPR="10000000 zeros": release
 #     clang-format -i build/words.c
 #     gcc {{RELEASE_CFLAGS}} -fopt-info-vec-missed -c -o build/words.o build/words.c
 
-docs: test _docs
-
 [private]
 _test:
-    bin/niko -t test_suite
+    bin/niko -z -t test/core.md
+    bin/niko -t test/prelude.md
+    bin/niko -t docs/examples.md
+    bin/niko -t docs/reference.md
 
 [private]
 _build BUILD_TYPE:
@@ -56,9 +57,6 @@ _build BUILD_TYPE:
     cp build/{{BUILD_TYPE}}/niko bin/niko
 
 [private]
-_docs:
-    bin/niko -m docs/examples.md
-
 _benchmarks:
     while IFS= read -r line; do echo "> $line"; \
         perf stat -- build/Release/niko -e "$line" 2>&1 ; \

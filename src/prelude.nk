@@ -2,3 +2,5 @@
 : ones 1 swap reshape ;
 : fold 0 swap fold_rank ;
 : scan 0 swap scan_rank ;
+: sum +' fold ;
+: sums +' scan ;

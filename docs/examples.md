@@ -2,14 +2,14 @@
 
 ## Advanced Calculator
 
-```nk
+```nkt
 > 1 2 + .
 3
 ```
 
 ## Temperature Convertion
 
-```nk
+```nkt
 > : celcius 32 - 5 * 9. / ;
 > : fahrenheit 9 * 5. / 32 + ;
 > 72 celcius .
@@ -27,7 +27,7 @@
 
 ## Arrays
 
-```nk
+```nkt
 >  [ 1 2 3 ] dup + .
 [ 2 4 6 ]
 > [ 1 100 ] [ 2 3 ] reshape .

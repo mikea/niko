@@ -64,88 +64,56 @@ STATUS_T test(inter_t* inter, const char* fname, bool v) {
   char* rest_out = NULL;
   size_t in_line_no = 0;
 
-  while ((read = getline(&line, &len, file)) != -1) {
-    line_no++;
-    if (read == 0 || *line == '#') continue;
-
-    if (*line == '>') {
-      if (v) fprintf(stderr, "%s", line);
-      if (rest_out && *rest_out) fprintf(stderr, "ERROR %s:%ld : umatched output: '%s'\n", fname, in_line_no, rest_out);
-      if (out) free(out);
-      in_line_no = line_no;
-      inter_line_capture_out(inter, line + 1, &out, &out_size);
-      stack_clear(inter->stack);
-      rest_out = out;
-      continue;
-    }
-
-    if (memcmp(line, rest_out, read)) {
-      fprintf(stderr, "ERROR %s:%ld : mismatched output, expected: '%s' actual: '%s' \n", fname, in_line_no, line,
-              rest_out);
-      rest_out = NULL;
-    } else {
-      rest_out += read;
-    }
-  }
-
-  if (rest_out && *rest_out) fprintf(stderr, "ERROR %s:%ld : umatched output: '%s'\n", fname, in_line_no, rest_out);
-
-  STATUS_OK;
-}
-
-STATUS_T markdown(inter_t* inter, const char* fname) {
-  own(FILE) file = fopen(fname, "r");
-  STATUS_CHECK(file, "can't open file: %s", fname);
-
-  char tmp_template[] = "/tmp/niko-XXXXXX";
-  int temp_fd = mkstemp(tmp_template);
-  STATUS_CHECK(temp_fd, "can't create temp file");
-  own(FILE) temp = fdopen(temp_fd, "w");
-
-  const str_t code_start = str_from_c("```nk\n");
+  const str_t nkt_start = str_from_c("```nkt\n");
+  const str_t nk_start = str_from_c("```nk\n");
   const str_t code_end = str_from_c("```");
 
-  size_t len = 0;
-  own(char) line = NULL;
-
-  size_t read;
-  size_t line_no = 0;
-
-  own(char) out = NULL;
-  size_t out_size;
-
-  bool in_code = false;
+  bool in_nk = false;
+  bool in_nkt = false;
 
   while ((read = getline(&line, &len, file)) != -1) {
     line_no++;
+    if (read == 0) continue;
+
     str_t l = str_from_c(line);
 
-    if (in_code) {
+    if (in_nk) {
+      NOT_IMPLEMENTED;
+    } else if (in_nkt) {
       if (str_starts_with(l, code_end)) {
-        fprintf(temp, "%pS", &l);
-        in_code = false;
-      } else if (*l.p == '>') {
-        fprintf(temp, "%pS", &l);
-        inter_line_capture_out(inter, l.p + 1, &out, &out_size);
-        fprintf(temp, "%s", out);
+        if (rest_out && *rest_out)
+          fprintf(stderr, "ERROR %s:%ld : umatched output: '%s'\n", fname, in_line_no, rest_out);
+        in_nkt = false;
+      } else if (*line == '>') {
+        if (v) fprintf(stderr, "%s", line);
+        if (rest_out && *rest_out)
+          fprintf(stderr, "ERROR %s:%ld : umatched output: '%s'\n", fname, in_line_no, rest_out);
+        if (out) free(out);
+        in_line_no = line_no;
+        inter_line_capture_out(inter, line + 1, &out, &out_size);
+        stack_clear(inter->stack);
+        rest_out = out;
+        continue;
+      } else if (memcmp(line, rest_out, read)) {
+        fprintf(stderr, "ERROR %s:%ld : mismatched output, expected: '%s' actual: '%s' \n", fname, in_line_no, line,
+                rest_out);
+        rest_out = NULL;
       } else {
-      };
+        rest_out += read;
+      }
     } else {
-      fprintf(temp, "%pS", &l);
-      if (str_ends_with(l, code_start)) in_code = true;
+      if (str_ends_with(l, nkt_start)) in_nkt = true;
+      else if (str_ends_with(l, nk_start)) in_nk = true;
     }
   }
 
-  FILE_cleanup(&file);
-  FILE_cleanup(&temp);
-  STATUS_CHECK(!rename(tmp_template, fname), "rename error");
   STATUS_OK;
 }
 
 // main
 
 int main(int argc, char* argv[]) {
-  char *t = NULL, *e = NULL, *m = NULL;
+  char *t = NULL, *e = NULL;
   bool v = false;
   bool z = false;
 
@@ -155,7 +123,6 @@ int main(int argc, char* argv[]) {
       case 't': t = optarg; break;
       case 'v': v = true; break;
       case 'e': e = optarg; break;
-      case 'm': m = optarg; break;
       case 'z': z = true; break;
       case 'h':
       default:
@@ -169,7 +136,6 @@ int main(int argc, char* argv[]) {
 
   status_t s;
   if (t) s = test(inter, t, v);
-  else if (m) s = markdown(inter, m);
   else if (e) s = inter_line(inter, e);
   else s = repl(inter);
 
