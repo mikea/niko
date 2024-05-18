@@ -76,3 +76,32 @@
 [ [ 1. 2. 3. ] [ 4 5 6 ] ]
 [ 2 ]
 ```
+
+# Word Definition
+
+```nkt
+> : test_1 1 ; test_1 .
+1
+> 10 index test_1 + .
+[ 1 2 3 4 5 6 7 8 9 10 ]
+> : test_1+ test_1 + ; 10 index test_1+ .
+[ 1 2 3 4 5 6 7 8 9 10 ]
+> 10 index test_1+ .
+[ 1 2 3 4 5 6 7 8 9 10 ]
+> : 100+ 100 + ; 10 index 100+ .
+[ 100 101 102 103 104 105 106 107 108 109 ]
+> : centigrade 32 - 5 * 9. / ; 72 centigrade .
+22.2222222222222
+> : test_sum 0 +' fold_rank ;
+> 10 index test_sum .
+45
+> : test_sums 0 +' scan_rank ; 
+> 10 index test_sums .
+[ 0 1 3 6 10 15 21 28 36 45 ]
+```
+
+# error handling
+```nkt
+> 1999912+
+ERROR: unknown word '1999912+'
+```
