@@ -44,7 +44,7 @@ dup 2 * rot swap / - (x x^2/2x  )
 1.41666666666667
 > 1. 3 sqrt2_step' power .
 1.41421568627451
-> 1. 100 sqrt2_step' power .
+> 1. 10 sqrt2_step' power .
 1.41421356237309
 ```
 

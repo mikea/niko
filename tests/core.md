@@ -308,6 +308,15 @@ ERROR: c8 i64 are not supported
 [ 1024 2048 ]
 ```
 
+## trace
+
+```nkt
+> 1 10 2*' trace .
+[ 2 4 8 16 32 64 128 256 512 1024 ]
+> 1 [ 3 3 ] 2*' trace .
+[ [ 2 4 8 ] [ 16 32 64 ] [ 128 256 512 ] ]
+```
+
 # defining new words
 ```nkt
 > : test_1 1 ; test_1 .

@@ -335,7 +335,7 @@ DEF_WORD("exit", exit) {
   exit(0);
 }
 
-// repl
+#pragma region slash_words
 
 DEF_WORD("\\c", slash_clear) {
   stack_clear(stack);
@@ -366,7 +366,9 @@ DEF_WORD("\\s", slash_stack) {
   STATUS_OK;
 }
 
-// fold
+#pragma endregion slash_words
+
+#pragma region adverbs
 
 DEF_WORD("fold_rank", fold_rank) {
   STATUS_CHECK(stack_len(stack) > 2, "stack underflow: 3 values expected");
@@ -398,8 +400,6 @@ DEF_WORD("fold_rank", fold_rank) {
 }
 
 DEF_WORD("+'fold", plus_fold) { NOT_IMPLEMENTED; }
-
-// scan
 
 DEF_WORD("scan_rank", scan_rank) {
   STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
@@ -433,8 +433,6 @@ DEF_WORD("scan_rank", scan_rank) {
   STATUS_OK;
 }
 
-// power
-
 DEF_WORD("power", power) {
   STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
 
@@ -454,7 +452,30 @@ DEF_WORD("power", power) {
   STATUS_OK;
 }
 
-// io
+DEF_WORD("trace", trace) {
+  STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
+
+  STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
+  own(array_t) op = stack_pop(stack);
+  STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
+  dict_entry_t* e = *array_data_t_dict_entry(op);
+
+  own(array_t) y = stack_pop(stack);
+  shape_t s = create_shape(y);
+
+  DO(i, shape_len(s)) {
+    if (i > 0) DUP(stack);
+    STATUS_UNWRAP(inter_dict_entry(inter, e));
+  }
+
+  own(array_t) result = RESULT_UNWRAP(concatenate(stack, s));
+  stack_push(stack, result);
+  STATUS_OK;
+}
+
+#pragma endregion adverbs
+
+#pragma region io
 
 DEF_WORD(".", dot) {
   STATUS_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
@@ -478,3 +499,5 @@ DEF_WORD_1_1("load_text", load_text) {
   RESULT_CHECK(n == read, "truncated read");
   RESULT_OK(y);
 }
+
+#pragma endregion io
