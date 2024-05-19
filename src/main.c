@@ -71,7 +71,13 @@ STATUS_T test(inter_t* inter, const char* fname, bool v) {
     str_t l = str_from_c(line);
 
     if (in_nk) {
-      NOT_IMPLEMENTED;
+      if (str_starts_with(l, code_end)) {
+        in_nk = false;
+      } else {
+        if (out) free(out);
+        inter_line_capture_out(inter, line, &out, &out_size);
+        if (out_size > 0) fprintf(stderr, "ERROR %s:%ld : unexpected output: '%s'\n", fname, line_no, out);
+      }
     } else if (in_nkt) {
       if (str_starts_with(l, code_end)) {
         if (rest_out && *rest_out)

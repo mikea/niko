@@ -297,8 +297,11 @@ ERROR: c8 i64 are not supported
 ```
 ## power
 
+```nk
+: 2* 2 * ;
+```
+
 ```nkt
-> : 2* 2 * ;
 > 1 10 2*' power .
 1024
 > [ 1 2 ] 10 2*' power .
