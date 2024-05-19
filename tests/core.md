@@ -295,6 +295,15 @@ ERROR: c8 i64 are not supported
 > [ 2 3 4 ] index 3 +' scan_rank .
 [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
 ```
+## power
+
+```nkt
+> : 2* 2 * ;
+> 1 10 2*' power .
+1024
+> [ 1 2 ] 10 2*' power .
+[ 1024 2048 ]
+```
 
 # defining new words
 ```nkt

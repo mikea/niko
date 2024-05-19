@@ -402,7 +402,7 @@ DEF_WORD("+'fold", plus_fold) { NOT_IMPLEMENTED; }
 // scan
 
 DEF_WORD("scan_rank", scan_rank) {
-  STATUS_CHECK(stack_len(stack) > 2, "stack underflow: 3 values expected");
+  STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   own(array_t) op = stack_pop(stack);
   STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
   dict_entry_t* e = *array_data_t_dict_entry(op);
@@ -430,6 +430,27 @@ DEF_WORD("scan_rank", scan_rank) {
 
   own(array_t) result = RESULT_UNWRAP(concatenate(stack, array_shape(x)));
   stack_push(stack, result);
+  STATUS_OK;
+}
+
+// power
+
+DEF_WORD("power", power) {
+  STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
+
+  STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
+  own(array_t) op = stack_pop(stack);
+  STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
+  dict_entry_t* e = *array_data_t_dict_entry(op);
+
+  own(array_t) y = stack_pop(stack);
+  STATUS_CHECK(y->r == 0, "scalar expected");
+  STATUS_CHECK(y->t == T_I64, "int scalar expected");
+  size_t n = 0;
+  STATUS_UNWRAP(as_size_t(y, &n));
+
+  DO(i, n) { STATUS_UNWRAP(inter_dict_entry(inter, e)); }
+
   STATUS_OK;
 }
 
