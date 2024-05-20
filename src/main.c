@@ -12,7 +12,7 @@ INLINE void stack_print_repl(stack_t* stack) {
   }
 }
 
-STATUS_T repl(inter_t* inter) {
+void repl(inter_t* inter) {
   size_t input_size = 0;
   own(char) input = NULL;
 
@@ -30,21 +30,20 @@ STATUS_T repl(inter_t* inter) {
       }
     }
 
-    if (getline(&input, &input_size, stdin) <= 0) STATUS_OK;
-    status_t result = inter_line(inter, input);
-    if (status_is_err(result)) {
-      str_t msg = status_msg(result);
-      fprintf(stderr, "ERROR: %pS\n", &msg);
-      status_free(result);
+    if (getline(&input, &input_size, stdin) <= 0) return;
+    if (setjmp(global_jmp_buf)) {
+      fprintf(stderr, "ERROR: %pS\n", &global_err);
+      continue;
     }
+    inter_line(inter, input);
   }
 }
 
 // test runner
 
-STATUS_T test(inter_t* inter, const char* fname, bool v) {
+void test(inter_t* inter, const char* fname, bool v) {
   own(FILE) file = fopen(fname, "r");
-  STATUS_CHECK(file, "test: can't open file: %s", fname);
+  CHECK(file, "test: can't open file: %s", fname);
 
   size_t len = 0;
   own(char) line = NULL;
@@ -90,8 +89,15 @@ STATUS_T test(inter_t* inter, const char* fname, bool v) {
           fprintf(stderr, "ERROR %s:%ld : unmatched output: '%s'\n", fname, in_line_no, rest_out);
         if (out) free(out);
         in_line_no = line_no;
-        inter_line_capture_out(inter, line + 1, &out, &out_size);
+
+        if (setjmp(global_jmp_buf)) {
+          out_size = asprintf(&out, "ERROR: %pS\n", &global_err);
+          rest_out = out;
+          continue;
+        }
+
         stack_clear(inter->stack);
+        inter_line_capture_out(inter, line + 1, &out, &out_size);
         rest_out = out;
         continue;
       } else if (memcmp(line, rest_out, read)) {
@@ -106,8 +112,6 @@ STATUS_T test(inter_t* inter, const char* fname, bool v) {
       else if (str_ends_with(l, nk_start)) in_nk = true;
     }
   }
-
-  STATUS_OK;
 }
 
 // main
@@ -134,12 +138,14 @@ int main(int argc, char* argv[]) {
   if (!z) inter_load_prelude();
   own(inter_t) inter = inter_new();
 
-  status_t s;
-  if (t) s = test(inter, t, v);
-  else if (e) s = inter_line(inter, e);
-  else s = repl(inter);
+  if (setjmp(global_jmp_buf)) {
+    fprintf(stderr, "ERROR: %pS", &global_err);
+    exit(1);
+  }
 
-  if (status_is_ok(s)) return 0;
-  status_print_error(s);
-  return 1;
+  if (t) test(inter, t, v);
+  else if (e) inter_line(inter, e);
+  else repl(inter);
+
+  return 0;
 }

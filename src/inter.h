@@ -1,7 +1,6 @@
 #pragma once
 
 #include "array.h"
-#include "status.h"
 
 // token
 typedef struct {
@@ -25,32 +24,6 @@ typedef struct {
 } token_t;
 
 token_t next_token(const char** s);
-
-// result
-typedef struct {
-  bool ok;
-  union {
-    array_t* a;
-    string_t e;
-  } either;
-} result_t;
-#define RESULT_T WARN_UNUSED result_t
-INLINE result_t result_ok(array_t* a) { return (result_t){.ok = true, .either.a = array_inc_ref(a)}; }
-INLINE result_t result_err(string_t msg) { return (result_t){.ok = false, .either.e = msg}; }
-INLINE PRINTF(1, 2) result_t result_errf(const char* format, ...) {
-  return result_err(VA_ARGS_FWD(format, string_vnewf(format, args)));
-}
-#define RESULT_UNWRAP(r)                                    \
-  ({                                                        \
-    result_t __result = (r);                                \
-    if (!__result.ok) return status_err(__result.either.e); \
-    __result.either.a;                                      \
-  })
-
-#define RESULT_OK(a) return result_ok(a)
-
-#define RESULT_CHECK(cond, ...) \
-  if (!(cond)) return result_errf(__VA_ARGS__)
 
 // stack
 
@@ -93,7 +66,7 @@ INLINE borrow(array_t) stack_peek(stack_t* s, size_t i) {
 }
 INLINE array_t* stack_i(stack_t* s, size_t i) { return array_inc_ref(stack_peek(s, i)); }
 
-RESULT_T concatenate(stack_t* stack, shape_t sh);
+array_t* concatenate(stack_t* stack, shape_t sh);
 
 // dictionary
 
@@ -147,6 +120,6 @@ DEF_CLEANUP(inter_t, inter_free);
 
 void inter_load_prelude();
 
-STATUS_T inter_dict_entry(inter_t* inter, dict_entry_t* e);
-STATUS_T inter_line(inter_t* inter, const char* s);
+void inter_dict_entry(inter_t* inter, dict_entry_t* e);
+void inter_line(inter_t* inter, const char* s);
 void inter_line_capture_out(inter_t* inter, const char* line, char** out, size_t* out_size);

@@ -5,48 +5,38 @@
 
 // common utilities
 
-STATUS_T as_size_t(array_t* a, size_t* out) {
-  STATUS_CHECK(a->r == 0, "scalar expected");
-  STATUS_CHECK(a->t == T_I64, "int scalar expected");
+size_t as_size_t(array_t* a) {
+  CHECK(a->r == 0, "scalar expected");
+  CHECK(a->t == T_I64, "int scalar expected");
   i64 i = *array_data_t_i64(a);
-  STATUS_CHECK(i >= 0, "non-negative scalar expected");
-  *out = i;
-  STATUS_OK;
+  CHECK(i >= 0, "non-negative scalar expected");
+  return i;
 }
 
 #pragma region stack
 
 #define DUP(stack) stack_push(stack, stack_peek(stack, 0))
 
-DEF_WORD("dup", dup) {
-  DUP(stack);
-  STATUS_OK;
-}
+DEF_WORD("dup", dup) { DUP(stack); }
 
 DEF_WORD("swap", swap) {
   own(array_t) a = stack_pop(stack);
   own(array_t) b = stack_pop(stack);
   stack_push(stack, a);
   stack_push(stack, b);
-  STATUS_OK;
 }
 
-DEF_WORD("drop", drop) {
-  stack_drop(stack);
-  STATUS_OK;
-}
+DEF_WORD("drop", drop) { stack_drop(stack); }
 
 DEF_WORD("nip", nip) {
   own(array_t) a = stack_pop(stack);
   stack_drop(stack);
   stack_push(stack, a);
-  STATUS_OK;
 }
 
 DEF_WORD("over", over) {
   own(array_t) a = stack_i(stack, 1);
   stack_push(stack, a);
-  STATUS_OK;
 }
 
 DEF_WORD("rot", rot) {
@@ -56,7 +46,6 @@ DEF_WORD("rot", rot) {
   stack_push(stack, b);
   stack_push(stack, a);
   stack_push(stack, c);
-  STATUS_OK;
 }
 
 DEF_WORD("tuck", tuck) {
@@ -65,23 +54,20 @@ DEF_WORD("tuck", tuck) {
   stack_push(stack, a);
   stack_push(stack, b);
   stack_push(stack, a);
-  STATUS_OK;
 }
 
 DEF_WORD("pick", pick) {
-  STATUS_CHECK(stack_len(stack) > 0, "stack underflow: 1 value expected");
+  CHECK(stack_len(stack) > 0, "stack underflow: 1 value expected");
   own(array_t) x = stack_pop(stack);
-  size_t n = 0;
-  STATUS_UNWRAP(as_size_t(x, &n));
-  STATUS_CHECK(stack_len(stack) > n, "stack underflow: index %ld >= stack size %ld", n, stack_len(stack));
+  size_t n = as_size_t(x);
+  CHECK(stack_len(stack) > n, "stack underflow: index %ld >= stack size %ld", n, stack_len(stack));
 
   stack_push(stack, array_move(stack_i(stack, n)));
-  STATUS_OK;
 }
 
 #pragma endregion stack
 
-INLINE STATUS_T thread1(inter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_table[T_MAX]) {
+INLINE void thread1(inter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_table[T_MAX]) {
   assert(x->t == T_ARR);
   own(array_t) out = array_alloc_as(x);
 
@@ -91,11 +77,10 @@ INLINE STATUS_T thread1(inter_t* inter, stack_t* stack, const array_t* x, t_ffi 
     stack_push(stack, src[i]);
     t_ffi ffi = ffi_table[src[i]->t];
     assert(ffi);
-    STATUS_UNWRAP(ffi(inter, stack));
+    ffi(inter, stack);
     dst[i] = stack_pop(stack);
   }
   stack_push(stack, out);
-  return status_ok();
 }
 
 #define GEN_THREAD1(name, ffi)            \
@@ -114,7 +99,7 @@ t_ffi neg_table[T_MAX];
   DEF_WORD_HANDLER_1_1(neg_##t) {                                            \
     own(array_t) out = array_alloc_as(x);                                    \
     DO(i, x->n)((t*)array_mut_data(out))[i] = -((const t*)array_data(x))[i]; \
-    return result_ok(out);                                                   \
+    return array_inc_ref(out);                                               \
   }
 
 GEN_NEG(t_i64);
@@ -137,7 +122,7 @@ t_ffi abs_table[T_MAX];
   DEF_WORD_HANDLER_1_1(abs_##t) {                                               \
     own(array_t) out = array_alloc_as(x);                                       \
     DO(i, x->n)((t*)array_mut_data(out))[i] = op(((const t*)array_data(x))[i]); \
-    return result_ok(out);                                                      \
+    return array_inc_ref(out);                                                  \
   }
 
 GEN_ABS(t_i64, labs);
@@ -160,7 +145,7 @@ CONSTRUCTOR void reg_abs() {
     own(array_t) out = array_alloc(T_F64, x->n, array_shape(x));                    \
     DO(i, x->n)((t_f64*)array_mut_data(out))[i] = op(((const t*)array_data(x))[i]); \
     stack_push(stack, out);                                                         \
-    STATUS_OK;                                                                      \
+    return;                                                                         \
   }
 
 #define GEN_FLOAT(name, op)                                    \
@@ -215,10 +200,10 @@ typedef void (*binop_kernel_t)(const void* restrict x,
                                void* restrict out,
                                size_t out_n);
 
-STATUS_T w_binop(stack_t* stack, type_t t, binop_kernel_t kernel) {
+void w_binop(stack_t* stack, type_t t, binop_kernel_t kernel) {
   shape_t ys = array_shape(stack_peek(stack, 0));
   shape_t xs = array_shape(stack_peek(stack, 1));
-  STATUS_CHECK(shapes_are_compatible(xs, ys), "array shapes are incompatible: %pH vs %pH", &xs, &ys);
+  CHECK(shapes_are_compatible(xs, ys), "array shapes are incompatible: %pH vs %pH", &xs, &ys);
 
   own(array_t) y = stack_pop(stack);
   own(array_t) x = stack_pop(stack);
@@ -226,7 +211,6 @@ STATUS_T w_binop(stack_t* stack, type_t t, binop_kernel_t kernel) {
   own(array_t) out = array_alloc_shape(t, shape_max(xs, ys));
   kernel(array_data(x), x->n, array_data(y), y->n, array_mut_data(out), out->n);
   stack_push(stack, out);
-  STATUS_OK;
 }
 
 #define GEN_BINOP_KERNEL(name, a_t, b_t, y_t, op)                                                                 \
@@ -318,9 +302,9 @@ DEF_WORD_1_1("shape", shape) {
   dim_t d = x->r;
   own(array_t) y = array_alloc(T_I64, x->r, shape_1d(&d));
   DO_MUT_ARRAY(y, t_i64, i, p) { *p = array_dims(x)[i]; }
-  return result_ok(y);
+  return array_inc_ref(y);
 }
-DEF_WORD_1_1("len", len) { return result_ok(array_move(array_new_scalar_t_i64(x->n))); }
+DEF_WORD_1_1("len", len) { return array_inc_ref(array_move(array_new_scalar_t_i64(x->n))); }
 
 // creating arrays
 
@@ -339,13 +323,12 @@ DEF_WORD_1_1("index", index) {
   shape_t s = create_shape(x);
   own(array_t) y = array_alloc(T_I64, shape_len(s), s);
   DO_MUT_ARRAY(y, t_i64, i, ptr)(*ptr) = i;
-  return result_ok(y);
+  return array_inc_ref(y);
 }
 
 DEF_WORD("pascal", pascal) {
   own(array_t) x = stack_pop(stack);
-  size_t n = 0;
-  STATUS_UNWRAP(as_size_t(x, &n));
+  size_t n = as_size_t(x);
 
   dim_t dims[2] = {n, n};
   own(array_t) y = array_alloc(T_I64, n * n, shape_create(2, dims));
@@ -355,22 +338,20 @@ DEF_WORD("pascal", pascal) {
   DO(i, n) DO(j, n) if (i > 0 && j > 0) ptr[i * n + j] = ptr[i * n + j - 1] + ptr[(i - 1) * n + j];
 
   stack_push(stack, y);
-  STATUS_OK;
 }
 
 #pragma region array_ops
 
 DEF_WORD("reverse", reverse) {
-  STATUS_CHECK(stack_len(stack) > 0, "stack underflow: 1 values expected");
+  CHECK(stack_len(stack) > 0, "stack underflow: 1 values expected");
   own(array_t) x = stack_pop(stack);
   own(array_t) y = array_alloc(x->t, x->n, array_shape(x));
   DO(i, x->n) { memcpy(array_mut_data_i(y, i), array_data_i(x, x->n - i - 1), type_sizeof(x->t, 1)); }
   stack_push(stack, y);
-  STATUS_OK;
 }
 
 DEF_WORD("reshape", reshape) {
-  STATUS_CHECK(stack_len(stack) > 1, "stack underflow: 2 values expected");
+  CHECK(stack_len(stack) > 1, "stack underflow: 2 values expected");
   own(array_t) x = stack_pop(stack);
   own(array_t) y = stack_pop(stack);
   shape_t s = create_shape(x);
@@ -378,7 +359,6 @@ DEF_WORD("reshape", reshape) {
   size_t ys = type_sizeof(y->t, y->n);
   DO(i, type_sizeof(y->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)array_data(y))[i % ys]; }
   stack_push(stack, z);
-  STATUS_OK;
 }
 
 #pragma endregion array_ops
@@ -394,7 +374,6 @@ DEF_WORD("\\c", slash_clear) {
   stack_clear(stack);
   inter->arr_level = 0;
   inter->mode = MODE_INTERPRET;
-  STATUS_OK;
 }
 
 DEF_WORD("\\i", slash_info) {
@@ -403,127 +382,100 @@ DEF_WORD("\\i", slash_info) {
   {
     size_t allocated;
     size_t sz = sizeof(allocated);
-    STATUS_CHECK(mallctl("stats.allocated", &allocated, &sz, NULL, 0) == 0, "failed to query heap size");
+    CHECK(mallctl("stats.allocated", &allocated, &sz, NULL, 0) == 0, "failed to query heap size");
     printf("  %-20s %10ld bytes\n", "allocated mem:", allocated);
   }
-  STATUS_OK;
 }
 
-DEF_WORD("\\mem", slash_mem) {
-  malloc_stats_print(NULL, NULL, NULL);
-  STATUS_OK;
-}
+DEF_WORD("\\mem", slash_mem) { malloc_stats_print(NULL, NULL, NULL); }
 
-DEF_WORD("\\s", slash_stack) {
-  DO(i, stack_len(stack)) fprintf(inter->out, "%ld: %pA\n", i, stack_peek(stack, i));
-  STATUS_OK;
-}
+DEF_WORD("\\s", slash_stack) { DO(i, stack_len(stack)) fprintf(inter->out, "%ld: %pA\n", i, stack_peek(stack, i)); }
 
 #pragma endregion slash_words
 
 #pragma region adverbs
 
-INLINE STATUS_T pop_rank(stack_t* s, size_t* r) {
+INLINE size_t pop_rank(stack_t* s) {
   own(array_t) x = stack_pop(s);
-  STATUS_CHECK(x->r == 0, "scalar expected");
-  STATUS_CHECK(x->t == T_I64, "int scalar expected");
-  STATUS_UNWRAP(as_size_t(x, r));
-  STATUS_OK;
+  CHECK(x->r == 0, "scalar expected");
+  CHECK(x->t == T_I64, "int scalar expected");
+  return as_size_t(x);
 }
 
-INLINE STATUS_T pop_dict_entry(stack_t* s, dict_entry_t** e) {
+INLINE dict_entry_t* pop_dict_entry(stack_t* s) {
   own(array_t) op = stack_pop(s);
-  STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
-  *e = *array_data_t_dict_entry(op);
-  STATUS_OK;
+  CHECK(op->t == T_DICT_ENTRY, "dict entry expected");
+  return *array_data_t_dict_entry(op);
 }
 
 DEF_WORD("fold_rank", fold_rank) {
-  STATUS_CHECK(stack_len(stack) > 2, "stack underflow: 3 values expected");
-  dict_entry_t* e = NULL;
-  STATUS_UNWRAP(pop_dict_entry(stack, &e));
-
-  size_t rank = 0;
-  STATUS_UNWRAP(pop_rank(stack, &rank));
-
+  CHECK(stack_len(stack) > 2, "stack underflow: 3 values expected");
+  dict_entry_t* e = pop_dict_entry(stack);
+  size_t rank = pop_rank(stack);
   own(array_t) x = stack_pop(stack);
 
-  STATUS_T __iter(size_t i, array_t * slice) {
+  void __iter(size_t i, array_t * slice) {
     stack_push(stack, slice);
-    if (i > 0) STATUS_UNWRAP(inter_dict_entry(inter, e));
-    STATUS_OK;
+    if (i > 0) inter_dict_entry(inter, e);
+    return;
   }
-  STATUS_UNWRAP(array_for_each_cell(x, rank, __iter));
-
-  STATUS_OK;
+  array_for_each_cell(x, rank, __iter);
 }
 
 DEF_WORD("scan_rank", scan_rank) {
-  STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
-  dict_entry_t* e = NULL;
-  STATUS_UNWRAP(pop_dict_entry(stack, &e));
-
-  size_t rank = 0;
-  STATUS_UNWRAP(pop_rank(stack, &rank));
+  CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
+  dict_entry_t* e = pop_dict_entry(stack);
+  size_t rank = pop_rank(stack);
 
   own(array_t) x = stack_pop(stack);
 
-  STATUS_T __iter(size_t i, array_t * slice) {
+  void __iter(size_t i, array_t * slice) {
     if (i > 0) DUP(stack);
     stack_push(stack, slice);
-    if (i > 0) STATUS_UNWRAP(inter_dict_entry(inter, e));
-    STATUS_OK;
+    if (i > 0) inter_dict_entry(inter, e);
+    return;
   }
-  STATUS_UNWRAP(array_for_each_cell(x, rank, __iter));
+  array_for_each_cell(x, rank, __iter);
 
-  own(array_t) result = RESULT_UNWRAP(concatenate(stack, shape_prefix(array_shape(x), x->r - rank)));
+  own(array_t) result = concatenate(stack, shape_prefix(array_shape(x), x->r - rank));
   stack_push(stack, result);
-  STATUS_OK;
 }
 
 DEF_WORD("apply_rank", apply_rank) {
-  STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
-  dict_entry_t* e = NULL;
-  STATUS_UNWRAP(pop_dict_entry(stack, &e));
-
-  size_t rank = 0;
-  STATUS_UNWRAP(pop_rank(stack, &rank));
+  CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
+  dict_entry_t* e = pop_dict_entry(stack);
+  size_t rank = pop_rank(stack);
   own(array_t) x = stack_pop(stack);
 
-  STATUS_T __iter(size_t i, array_t * slice) {
+  void __iter(size_t i, array_t * slice) {
     stack_push(stack, slice);
     return inter_dict_entry(inter, e);
   }
-  STATUS_UNWRAP(array_for_each_cell(x, rank, __iter));
+  array_for_each_cell(x, rank, __iter);
 
-  own(array_t) result = RESULT_UNWRAP(concatenate(stack, shape_prefix(array_shape(x), x->r - rank)));
+  own(array_t) result = concatenate(stack, shape_prefix(array_shape(x), x->r - rank));
   stack_push(stack, result);
-  STATUS_OK;
 }
 
 DEF_WORD("power", power) {
-  STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
+  CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   own(array_t) op = stack_pop(stack);
-  STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
+  CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
   dict_entry_t* e = *array_data_t_dict_entry(op);
 
   own(array_t) y = stack_pop(stack);
-  STATUS_CHECK(y->r == 0, "scalar expected");
-  STATUS_CHECK(y->t == T_I64, "int scalar expected");
-  size_t n = 0;
-  STATUS_UNWRAP(as_size_t(y, &n));
-
-  DO(i, n) { STATUS_UNWRAP(inter_dict_entry(inter, e)); }
-
-  STATUS_OK;
+  CHECK(y->r == 0, "scalar expected");
+  CHECK(y->t == T_I64, "int scalar expected");
+  size_t n = as_size_t(y);
+  DO(i, n) { inter_dict_entry(inter, e); }
 }
 
 DEF_WORD("trace", trace) {
-  STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
+  CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
 
-  STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
+  CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   own(array_t) op = stack_pop(stack);
-  STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
+  CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
   dict_entry_t* e = *array_data_t_dict_entry(op);
 
   own(array_t) y = stack_pop(stack);
@@ -531,12 +483,11 @@ DEF_WORD("trace", trace) {
 
   DO(i, shape_len(s)) {
     if (i > 0) DUP(stack);
-    STATUS_UNWRAP(inter_dict_entry(inter, e));
+    inter_dict_entry(inter, e);
   }
 
-  own(array_t) result = RESULT_UNWRAP(concatenate(stack, s));
+  own(array_t) result = concatenate(stack, s);
   stack_push(stack, result);
-  STATUS_OK;
 }
 
 #pragma endregion adverbs
@@ -544,26 +495,25 @@ DEF_WORD("trace", trace) {
 #pragma region io
 
 DEF_WORD(".", dot) {
-  STATUS_CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
+  CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
   own(array_t) x = stack_pop(stack);
   fprintf(inter->out, "%pA\n", x);
-  STATUS_OK;
 }
 
 DEF_WORD_1_1("load_text", load_text) {
-  RESULT_CHECK(x->t == T_C8, "c8 array expected");
-  RESULT_CHECK(x->r >= 1, "rank >= 1 expected");
+  CHECK(x->t == T_C8, "c8 array expected");
+  CHECK(x->r >= 1, "rank >= 1 expected");
   str_t name = str_new_len(array_data_t_c8(x), x->n);
   own(char) c_name = str_toc(name);
   own(FILE) file = fopen(c_name, "r");
-  RESULT_CHECK(file, "failed to open file %s", c_name);
-  RESULT_CHECK(!fseek(file, 0, SEEK_END), "failed to seek file");
+  CHECK(file, "failed to open file %s", c_name);
+  CHECK(!fseek(file, 0, SEEK_END), "failed to seek file");
   size_t n = ftell(file);
   own(array_t) y = array_alloc(T_C8, n, shape_1d(&n));
   rewind(file);
   size_t read = fread(array_mut_data(y), 1, n, file);
-  RESULT_CHECK(n == read, "truncated read");
-  RESULT_OK(y);
+  CHECK(n == read, "truncated read");
+  return array_inc_ref(y);
 }
 
 #pragma endregion io

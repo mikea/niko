@@ -1,8 +1,8 @@
 #pragma once
 
 #include "common.h"
+#include "err.h"
 #include "simd.h"
-#include "status.h"
 
 // type
 typedef enum { T_C8, T_I64, T_F64, T_ARR, T_FFI, T_DICT_ENTRY } type_t;
@@ -25,7 +25,7 @@ typedef struct array_t* t_arr;
 
 struct inter_t;
 struct stack_t;
-typedef STATUS_T (*t_ffi)(struct inter_t* inter, struct stack_t* s);
+typedef void (*t_ffi)(struct inter_t* inter, struct stack_t* s);
 #define t_ffi_enum T_FFI
 
 struct dict_entry_t;
@@ -219,8 +219,8 @@ TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 #define DO_MUT_ARRAY(a, t, i, p) _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), t* restrict p = (t*)array_mut_data(a))
 #define DO_ARRAY(a, t, i, p) _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), const t* restrict p = (const t*)array_data(a))
 
-INLINE STATUS_T array_for_each_cell(array_t* x, size_t r, STATUS_T (*callback)(size_t i, array_t* slice)) {
-  STATUS_CHECK(r <= x->r, "invalid rank: %ld > %ld", r, x->r);
+INLINE void array_for_each_cell(array_t* x, size_t r, void (*callback)(size_t i, array_t* slice)) {
+  CHECK(r <= x->r, "invalid rank: %ld > %ld", r, x->r);
   shape_t cell = shape_suffix(array_shape(x), r);
   size_t l = shape_len(cell);
   size_t stride = type_sizeof(x->t, l);
@@ -228,8 +228,6 @@ INLINE STATUS_T array_for_each_cell(array_t* x, size_t r, STATUS_T (*callback)(s
   const void* ptr = array_data(x);
   DO(i, x->n / l) {
     own(array_t) y = array_new_slice(x, l, cell, ptr + stride * i);
-    STATUS_UNWRAP(callback(i, y));
+    callback(i, y);
   }
-
-  STATUS_OK;
 }

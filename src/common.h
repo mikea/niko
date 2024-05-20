@@ -19,6 +19,7 @@ static_assert(sizeof(f64) == sizeof(i64));
 #define DESTRUCTOR ATTR(destructor)
 #define PRINTF(i, j) ATTR(format(printf, i, j))
 #define CONST ATTR(const)
+#define NORETURN ATTR(noreturn)
 
 #define __PASTE__(a, b) a##b
 #define PASTE(a, b) __PASTE__(a, b)

@@ -10,9 +10,10 @@ add_compile_options(
   -mmemset-strategy=vector_loop:-1:noalign
   -Wall -Werror=implicit-fallthrough -Werror=switch
   -Wno-psabi 
-  -fno-math-errno -fno-trapping-math -fno-omit-frame-pointer -fverbose-asm )
+  -fno-math-errno -fno-trapping-math -fno-omit-frame-pointer -fverbose-asm)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-inline-small-functions -Og")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -g")
+add_link_options(-z execstack)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -20,7 +21,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 option(USE_LAPACK_64 "Use LAPACK 64-bit library (needed for ubuntu)" OFF)
 
 add_executable(niko 
-  src/main.c src/words.c src/print.c src/blas.c src/array.c src/inter.c
+  src/main.c src/words.c src/print.c src/blas.c src/array.c src/inter.c src/err.c
   ${CMAKE_CURRENT_BINARY_DIR}/lexer.c
   ${CMAKE_CURRENT_BINARY_DIR}/prelude.h)
 target_link_libraries(niko m)
