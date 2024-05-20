@@ -218,3 +218,18 @@ TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 #define _DO_ARRAY_IMPL(a, i, p, u, p_decl) __DO_ARRAY_IMPL(a, i, p, u, p_decl)
 #define DO_MUT_ARRAY(a, t, i, p) _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), t* restrict p = (t*)array_mut_data(a))
 #define DO_ARRAY(a, t, i, p) _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), const t* restrict p = (const t*)array_data(a))
+
+INLINE STATUS_T array_for_each_cell(array_t* x, size_t r, STATUS_T (*callback)(size_t i, array_t* slice)) {
+  STATUS_CHECK(r <= x->r, "invalid rank: %ld > %ld", r, x->r);
+  shape_t cell = shape_suffix(array_shape(x), r);
+  size_t l = shape_len(cell);
+  size_t stride = type_sizeof(x->t, l);
+
+  const void* ptr = array_data(x);
+  DO(i, x->n / l) {
+    own(array_t) y = array_new_slice(x, l, cell, ptr + stride * i);
+    STATUS_UNWRAP(callback(i, y));
+  }
+
+  STATUS_OK;
+}

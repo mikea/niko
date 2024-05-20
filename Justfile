@@ -21,6 +21,7 @@ clean:
     rm -rf bin build callgrind.out.* perf.data perf.data.old vgcore.*
 
 valgrind: build
+    valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t tests/inter.md -v
     valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t tests/core.md -v
     valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t tests/prelude.md -v
 

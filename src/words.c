@@ -423,63 +423,58 @@ DEF_WORD("\\s", slash_stack) {
 
 #pragma region adverbs
 
+INLINE STATUS_T pop_rank(stack_t* s, size_t* r) {
+  own(array_t) x = stack_pop(s);
+  STATUS_CHECK(x->r == 0, "scalar expected");
+  STATUS_CHECK(x->t == T_I64, "int scalar expected");
+  STATUS_UNWRAP(as_size_t(x, r));
+  STATUS_OK;
+}
+
+INLINE STATUS_T pop_dict_entry(stack_t* s, dict_entry_t** e) {
+  own(array_t) op = stack_pop(s);
+  STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
+  *e = *array_data_t_dict_entry(op);
+  STATUS_OK;
+}
+
 DEF_WORD("fold_rank", fold_rank) {
   STATUS_CHECK(stack_len(stack) > 2, "stack underflow: 3 values expected");
-  own(array_t) op = stack_pop(stack);
-  STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
-  dict_entry_t* e = *array_data_t_dict_entry(op);
+  dict_entry_t* e = NULL;
+  STATUS_UNWRAP(pop_dict_entry(stack, &e));
 
-  own(array_t) r = stack_pop(stack);
-  STATUS_CHECK(r->r == 0, "scalar expected");
-  STATUS_CHECK(r->t == T_I64, "int scalar expected");
+  size_t rank = 0;
+  STATUS_UNWRAP(pop_rank(stack, &rank));
 
   own(array_t) x = stack_pop(stack);
 
-  size_t rank = 0;
-  STATUS_UNWRAP(as_size_t(r, &rank));
-  STATUS_CHECK(rank <= x->r, "invalid rank: %ld > %ld", rank, x->r);
-
-  shape_t cell = shape_suffix(array_shape(x), rank);
-  size_t l = shape_len(cell);
-  size_t stride = type_sizeof(x->t, l);
-
-  const void* ptr = array_data(x);
-  DO(i, x->n / l) {
-    own(array_t) y = array_new_slice(x, l, cell, ptr + stride * i);
-    stack_push(stack, y);
+  STATUS_T __iter(size_t i, array_t * slice) {
+    stack_push(stack, slice);
     if (i > 0) STATUS_UNWRAP(inter_dict_entry(inter, e));
+    STATUS_OK;
   }
+  STATUS_UNWRAP(array_for_each_cell(x, rank, __iter));
 
   STATUS_OK;
 }
 
 DEF_WORD("scan_rank", scan_rank) {
   STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
-  own(array_t) op = stack_pop(stack);
-  STATUS_CHECK(op->t == T_DICT_ENTRY, "dict entry expected");
-  dict_entry_t* e = *array_data_t_dict_entry(op);
+  dict_entry_t* e = NULL;
+  STATUS_UNWRAP(pop_dict_entry(stack, &e));
 
-  own(array_t) r = stack_pop(stack);
-  STATUS_CHECK(r->r == 0, "scalar expected");
-  STATUS_CHECK(r->t == T_I64, "int scalar expected");
+  size_t rank = 0;
+  STATUS_UNWRAP(pop_rank(stack, &rank));
 
   own(array_t) x = stack_pop(stack);
 
-  size_t rank = 0;
-  STATUS_UNWRAP(as_size_t(r, &rank));
-  STATUS_CHECK(rank <= x->r, "invalid rank: %ld > %ld", rank, x->r);
-
-  shape_t cell = shape_suffix(array_shape(x), rank);
-  size_t l = shape_len(cell);
-  size_t stride = type_sizeof(x->t, l);
-
-  const void* ptr = array_data(x);
-  DO(i, x->n / l) {
+  STATUS_T __iter(size_t i, array_t * slice) {
     if (i > 0) DUP(stack);
-    own(array_t) y = array_new_slice(x, l, cell, ptr + stride * i);
-    stack_push(stack, y);
+    stack_push(stack, slice);
     if (i > 0) STATUS_UNWRAP(inter_dict_entry(inter, e));
+    STATUS_OK;
   }
+  STATUS_UNWRAP(array_for_each_cell(x, rank, __iter));
 
   own(array_t) result = RESULT_UNWRAP(concatenate(stack, shape_prefix(array_shape(x), x->r - rank)));
   stack_push(stack, result);
@@ -488,30 +483,18 @@ DEF_WORD("scan_rank", scan_rank) {
 
 DEF_WORD("apply_rank", apply_rank) {
   STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
-  own(array_t) op = stack_pop(stack);
-  STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
-  dict_entry_t* e = *array_data_t_dict_entry(op);
-
-  own(array_t) r = stack_pop(stack);
-  STATUS_CHECK(r->r == 0, "scalar expected");
-  STATUS_CHECK(r->t == T_I64, "int scalar expected");
-
-  own(array_t) x = stack_pop(stack);
+  dict_entry_t* e = NULL;
+  STATUS_UNWRAP(pop_dict_entry(stack, &e));
 
   size_t rank = 0;
-  STATUS_UNWRAP(as_size_t(r, &rank));
-  STATUS_CHECK(rank <= x->r, "invalid rank: %ld > %ld", rank, x->r);
+  STATUS_UNWRAP(pop_rank(stack, &rank));
+  own(array_t) x = stack_pop(stack);
 
-  shape_t cell = shape_suffix(array_shape(x), rank);
-  size_t l = shape_len(cell);
-  size_t stride = type_sizeof(x->t, l);
-
-  const void* ptr = array_data(x);
-  DO(i, x->n / l) {
-    own(array_t) y = array_new_slice(x, l, cell, ptr + stride * i);
-    stack_push(stack, y);
-    STATUS_UNWRAP(inter_dict_entry(inter, e));
+  STATUS_T __iter(size_t i, array_t * slice) {
+    stack_push(stack, slice);
+    return inter_dict_entry(inter, e);
   }
+  STATUS_UNWRAP(array_for_each_cell(x, rank, __iter));
 
   own(array_t) result = RESULT_UNWRAP(concatenate(stack, shape_prefix(array_shape(x), x->r - rank)));
   stack_push(stack, result);
@@ -519,8 +502,6 @@ DEF_WORD("apply_rank", apply_rank) {
 }
 
 DEF_WORD("power", power) {
-  STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
-
   STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   own(array_t) op = stack_pop(stack);
   STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
