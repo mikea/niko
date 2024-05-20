@@ -33,7 +33,6 @@ Words that starts from '\' are indended to be used during development
 |`zeros`|`( s -> x )`|creates array with shape `s` filled with zeros
 |`ones`|`( s -> x )`|creates array with shape `s` filled with ones
 |`index`|`( s -> x )`|creates array with shape `s` filled values from `0` to the length-1
-|`reshape`|`( x s -> y)`|reshapes `x` according to the shape `s` repeating or truncating if necessary
 |`pascal`|`( n -> x )`|creates `n*n` pascal matrix
 
 
@@ -43,6 +42,11 @@ Words that starts from '\' are indended to be used during development
 |---|---|---|
 |`len`|`( x -> n )`|replaces top array with total number of its elements
 |`shape`|`( x -> x )`|replaces top array with 1-d array of its shape
+
+## Manipulating Arrays
+
+|`reshape`|`( x s -> y)`|reshapes `x` according to the shape `s` repeating or truncating if necessary
+|`reverse`|`( x -> y)`|reverses all values in the array `x` keeping its shape
 
 ## Unary Operations
 
@@ -58,9 +62,13 @@ Words that starts from '\' are indended to be used during development
 
 ## Binary Operations
 
-`x y -> z`
-
-### `+`, `-`, `*`, `/`
+|Word|Signature|Description|
+|---|---|---|
+|`+`|`(x y -> z)`| addition
+|`-`|`(x y -> z)`| subtraction
+|`*`|`(x y -> z)`| multiplication
+|`/`|`(x y -> z)`| division
+|`=`|`(x y -> b)`| equal comparison
 
 ## Higher Level Words
 

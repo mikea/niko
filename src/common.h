@@ -114,7 +114,9 @@ DEF_CLEANUP(FILE, fclose);
 #define __APPLY__3(F, a, b, c) __APPLY__2(F, a, b) F(c)
 #define __APPLY__4(F, a, b, c, d) __APPLY__3(F, a, b, c) F(d)
 #define __APPLY__5(F, a, b, c, d, e) __APPLY__4(F, a, b, c, d) F(e)
-#define __APPLY__6(F, a, b, x, d, e, f) __APPLY__5(F, a, b, c, d, e) F(f)
+#define __APPLY__6(F, a, b, c, d, e, f) __APPLY__5(F, a, b, c, d, e) F(f)
+#define __APPLY__7(F, a, b, c, d, e, f, g) __APPLY__6(F, a, b, c, d, e, f) F(g)
+#define __APPLY__8(F, a, b, c, d, e, f, g, h) __APPLY__7(F, a, b, c, d, e, f, g) F(h)
 
 #define __APPLY__(M, F, ...) M(F, __VA_ARGS__)
 #define APPLY(F, ...) __APPLY__(PASTE(__APPLY__, NARGS(__VA_ARGS__)), F, __VA_ARGS__)

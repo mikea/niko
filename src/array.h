@@ -121,24 +121,24 @@ INLINE bool array_data_simd_aligned(const array_t* a) { return __array_data_simd
 INLINE const dim_t* array_dims(const array_t* a) { return a->d; }
 INLINE shape_t array_shape(const array_t* a) { return (shape_t){a->r, array_dims(a)}; }
 
-INLINE const void* array_data(const array_t* arr) { return arr->p; }
-INLINE size_t array_data_sizeof(const array_t* a) { return type_sizeof(a->t, a->n); }
-INLINE const void* array_data_i(const array_t* a, size_t i) { return array_data(a) + type_sizeof(a->t, i); }
-
 INLINE const array_t* __array_assert_type(const array_t* a, type_t t) {
   assert(a->t == t);
   return a;
 }
-INLINE array_t* __array_assert_mut(array_t* arr) {
+INLINE array_t* __array_assert_mut(const array_t* arr) {
   assert(arr->rc <= 1 && !arr->owner);
-  return arr;
+  return (array_t*)arr;
 }
 INLINE array_t* __array_assert_simd_aligned(array_t* arr) {
   assert(array_data_simd_aligned(arr));
   return arr;
 }
 
+INLINE size_t array_data_sizeof(const array_t* a) { return type_sizeof(a->t, a->n); }
+INLINE const void* array_data(const array_t* arr) { return arr->p; }
 INLINE void* array_mut_data(array_t* arr) { return (void*)array_data(__array_assert_mut(arr)); }
+INLINE const void* array_data_i(const array_t* a, size_t i) { return array_data(a) + type_sizeof(a->t, i); }
+INLINE void* array_mut_data_i(const array_t* a, size_t i) { return (void*)array_data_i(__array_assert_mut(a), i); }
 
 INLINE void array_dec_ref(array_t* arr);
 

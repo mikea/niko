@@ -66,19 +66,6 @@ ERROR: stack underflow: index 5 >= stack size 0
 > [ 2 3 ] index .
 [ [ 0 1 2 ] [ 3 4 5 ] ]
 ```
-## reshape
-```nkt
-> 5 index 9 reshape .
-[ 0 1 2 3 4 0 1 2 3 ]
-> 5 index [ 8 ] reshape .
-[ 0 1 2 3 4 0 1 2 ]
-> 5 index 3 reshape .
-[ 0 1 2 ]
-> 5 index [ 3 4 ] reshape .
-[ [ 0 1 2 3 ] [ 4 0 1 2 ] [ 3 4 0 1 ] ]
-> 5 index [ 2 2 ] reshape .
-[ [ 0 1 ] [ 2 3 ] ]
-```
 ## pascal
 ```nkt
 > 4 pascal .
@@ -105,6 +92,29 @@ ERROR: stack underflow: index 5 >= stack size 0
 > 10 index 1 + index len .
 3628800
 ```
+# array manipulation
+## reshape
+```nkt
+> 5 index 9 reshape .
+[ 0 1 2 3 4 0 1 2 3 ]
+> 5 index [ 8 ] reshape .
+[ 0 1 2 3 4 0 1 2 ]
+> 5 index 3 reshape .
+[ 0 1 2 ]
+> 5 index [ 3 4 ] reshape .
+[ [ 0 1 2 3 ] [ 4 0 1 2 ] [ 3 4 0 1 ] ]
+> 5 index [ 2 2 ] reshape .
+[ [ 0 1 ] [ 2 3 ] ]
+```
+## reverse
+
+```nkt
+> 5 index reverse .
+[ 4 3 2 1 0 ]
+> [ 2 3 ] index reverse .
+[ [ 5 4 3 ] [ 2 1 0 ] ]
+```
+
 # unary words
 ## neg
 ```nkt
@@ -268,6 +278,52 @@ ERROR: c8 i64 are not supported
 > 1. 2 / .
 0.5
 ```
+
+## =
+
+```nkt
+> 1 2 = .
+0
+> 1 1 = .
+1
+> 2 index 1 = .
+[ 0 1 ]
+```
+
+cells:
+
+```nkt
+> [ 2 3 ] index 1 = .
+[ [ 0 1 0 ] [ 0 0 0 ] ]
+> [ 2 3 ] index [ 2 2 2 ] = .
+[ [ 0 0 1 ] [ 0 0 0 ] ]
+> [ 3 3 ] index dup reverse = .
+[ [ 0 0 0 ] [ 0 1 0 ] [ 0 0 0 ] ]
+```
+
+types:
+```nkt
+> "abc" "cba" = .
+[ 0 1 0 ]
+> "abcdef" 100 = .
+[ 0 0 0 1 0 0 ]
+> "abcdef" 100. = .
+[ 0 0 0 1 0 0 ]
+> 98 "abc" = .
+[ 0 1 0 ]
+> 3 index 1 = .
+[ 0 1 0 ]
+> 3 index 1. = .
+[ 0 1 0 ]
+> 98. "abc" = .
+[ 0 1 0 ]
+> 3 index 0. + 1 = .
+[ 0 1 0 ]
+> 3 index 0. + 1. = .
+[ 0 1 0 ]
+```
+
+
 # higher order words
 ## fold_rank
 ```nkt

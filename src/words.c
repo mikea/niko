@@ -272,6 +272,38 @@ GEN_BINOP("*", mul, MUL_OP)
 GEN_BINOP("-", minus, MINUS_OP)
 GEN_BINOP("/", divide, DIV_OP)
 
+t_ffi equal_table[T_MAX][T_MAX] = {};
+
+#define EQUAL_OP(a, b) (a) == (b)
+
+GEN_BINOP_SPECIALIZATION(equal, t_c8, t_c8, t_i64, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, t_c8, t_i64, t_i64, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, t_c8, t_f64, t_i64, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, t_i64, t_c8, t_i64, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, t_i64, t_i64, t_i64, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, t_i64, t_f64, t_i64, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, t_f64, t_c8, t_i64, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, t_f64, t_i64, t_i64, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, t_f64, t_f64, t_i64, EQUAL_OP);
+
+#define REGISTER_EQUAL(t1, t2) equal_table[TYPE_ENUM(t1)][TYPE_ENUM(t2)] = equal_##t1##_##t2;
+
+CONSTRUCTOR void register_equal() {
+  REGISTER_EQUAL(t_c8, t_c8);
+  REGISTER_EQUAL(t_c8, t_i64);
+  REGISTER_EQUAL(t_c8, t_f64);
+  REGISTER_EQUAL(t_i64, t_c8);
+  REGISTER_EQUAL(t_i64, t_i64);
+  REGISTER_EQUAL(t_i64, t_f64);
+  REGISTER_EQUAL(t_f64, t_c8);
+  REGISTER_EQUAL(t_f64, t_i64);
+  REGISTER_EQUAL(t_f64, t_f64);
+  size_t dims[2] = {T_MAX, T_MAX};
+  shape_t sh = (shape_t){2, dims};
+  own(array_t) a = array_new(T_FFI, T_MAX * T_MAX, sh, equal_table);
+  global_dict_add_new(str_from_c("="), a);
+}
+
 #pragma endregion binops
 
 DEF_WORD_1_1("shape", shape) {
@@ -302,18 +334,6 @@ DEF_WORD_1_1("index", index) {
   return result_ok(y);
 }
 
-DEF_WORD("reshape", reshape) {
-  STATUS_CHECK(stack_len(stack) > 1, "stack underflow: 2 values expected");
-  own(array_t) x = stack_pop(stack);
-  own(array_t) y = stack_pop(stack);
-  shape_t s = create_shape(x);
-  own(array_t) z = array_alloc(y->t, shape_len(s), s);
-  size_t ys = type_sizeof(y->t, y->n);
-  DO(i, type_sizeof(y->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)array_data(y))[i % ys]; }
-  stack_push(stack, z);
-  STATUS_OK;
-}
-
 DEF_WORD("pascal", pascal) {
   own(array_t) x = stack_pop(stack);
   size_t n = 0;
@@ -329,6 +349,31 @@ DEF_WORD("pascal", pascal) {
   stack_push(stack, y);
   STATUS_OK;
 }
+
+#pragma region array_ops
+
+DEF_WORD("reverse", reverse) {
+  STATUS_CHECK(stack_len(stack) > 0, "stack underflow: 1 values expected");
+  own(array_t) x = stack_pop(stack);
+  own(array_t) y = array_alloc(x->t, x->n, array_shape(x));
+  DO(i, x->n) { memcpy(array_mut_data_i(y, i), array_data_i(x, x->n - i - 1), type_sizeof(x->t, 1)); }
+  stack_push(stack, y);
+  STATUS_OK;
+}
+
+DEF_WORD("reshape", reshape) {
+  STATUS_CHECK(stack_len(stack) > 1, "stack underflow: 2 values expected");
+  own(array_t) x = stack_pop(stack);
+  own(array_t) y = stack_pop(stack);
+  shape_t s = create_shape(x);
+  own(array_t) z = array_alloc(y->t, shape_len(s), s);
+  size_t ys = type_sizeof(y->t, y->n);
+  DO(i, type_sizeof(y->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)array_data(y))[i % ys]; }
+  stack_push(stack, z);
+  STATUS_OK;
+}
+
+#pragma endregion array_ops
 
 DEF_WORD("exit", exit) {
   fprintf(inter->out, "bye\n");
