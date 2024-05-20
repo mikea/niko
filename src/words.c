@@ -437,8 +437,9 @@ DEF_WORD("fold_rank", fold_rank) {
 
   size_t rank = 0;
   STATUS_UNWRAP(as_size_t(r, &rank));
+  STATUS_CHECK(rank <= x->r, "invalid rank: %ld > %ld", rank, x->r);
 
-  shape_t cell = shape_cell(array_shape(x), rank);
+  shape_t cell = shape_suffix(array_shape(x), rank);
   size_t l = shape_len(cell);
   size_t stride = type_sizeof(x->t, l);
 
@@ -452,9 +453,40 @@ DEF_WORD("fold_rank", fold_rank) {
   STATUS_OK;
 }
 
-DEF_WORD("+'fold", plus_fold) { NOT_IMPLEMENTED; }
-
 DEF_WORD("scan_rank", scan_rank) {
+  STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
+  own(array_t) op = stack_pop(stack);
+  STATUS_CHECK(op->t == T_DICT_ENTRY, "dict entry expected");
+  dict_entry_t* e = *array_data_t_dict_entry(op);
+
+  own(array_t) r = stack_pop(stack);
+  STATUS_CHECK(r->r == 0, "scalar expected");
+  STATUS_CHECK(r->t == T_I64, "int scalar expected");
+
+  own(array_t) x = stack_pop(stack);
+
+  size_t rank = 0;
+  STATUS_UNWRAP(as_size_t(r, &rank));
+  STATUS_CHECK(rank <= x->r, "invalid rank: %ld > %ld", rank, x->r);
+
+  shape_t cell = shape_suffix(array_shape(x), rank);
+  size_t l = shape_len(cell);
+  size_t stride = type_sizeof(x->t, l);
+
+  const void* ptr = array_data(x);
+  DO(i, x->n / l) {
+    if (i > 0) DUP(stack);
+    own(array_t) y = array_new_slice(x, l, cell, ptr + stride * i);
+    stack_push(stack, y);
+    if (i > 0) STATUS_UNWRAP(inter_dict_entry(inter, e));
+  }
+
+  own(array_t) result = RESULT_UNWRAP(concatenate(stack, shape_prefix(array_shape(x), x->r - rank)));
+  stack_push(stack, result);
+  STATUS_OK;
+}
+
+DEF_WORD("apply_rank", apply_rank) {
   STATUS_CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   own(array_t) op = stack_pop(stack);
   STATUS_CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
@@ -468,20 +500,20 @@ DEF_WORD("scan_rank", scan_rank) {
 
   size_t rank = 0;
   STATUS_UNWRAP(as_size_t(r, &rank));
+  STATUS_CHECK(rank <= x->r, "invalid rank: %ld > %ld", rank, x->r);
 
-  shape_t cell = shape_cell(array_shape(x), rank);
+  shape_t cell = shape_suffix(array_shape(x), rank);
   size_t l = shape_len(cell);
   size_t stride = type_sizeof(x->t, l);
 
   const void* ptr = array_data(x);
   DO(i, x->n / l) {
-    if (i > 0) DUP(stack);
     own(array_t) y = array_new_slice(x, l, cell, ptr + stride * i);
     stack_push(stack, y);
-    if (i > 0) STATUS_UNWRAP(inter_dict_entry(inter, e));
+    STATUS_UNWRAP(inter_dict_entry(inter, e));
   }
 
-  own(array_t) result = RESULT_UNWRAP(concatenate(stack, array_shape(x)));
+  own(array_t) result = RESULT_UNWRAP(concatenate(stack, shape_prefix(array_shape(x), x->r - rank)));
   stack_push(stack, result);
   STATUS_OK;
 }

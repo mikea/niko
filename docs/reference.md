@@ -80,6 +80,7 @@ Words that starts from '\' are indended to be used during development
 |`fold_rank`|`( x r op' -> y )`| fold cells of rank `r` using `op`
 |`scan`|`( x op' -> y )`| fold cells of rank `0` using `op` organizing all intermediate results in `x`'s shape
 |`scan_rank`|`( x r op' -> y )`| fold cells of rank `r` using `op` organizing all intermediate results in `x`'s shape
+|`apply_rank`|`( x r op' -> y )`| applies `op` to cells of rank `r` organizing results into `x`'s shape
 |`power`|`( x n op` -> y)`|applies `op` `n` times to `x`
 |`trace`|`( x s op` -> y)`|applies `op` multiple times to `x` and organizes intermediate results into `s` shape
 

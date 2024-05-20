@@ -85,7 +85,8 @@ INLINE shape_t* shape_extend(shape_t outer, shape_t inner) {
   memcpy((dim_t*)sh->d + outer.r, inner.d, dims_sizeof(inner.r));
   return sh;
 }
-INLINE shape_t shape_cell(shape_t s, size_t r) { return (shape_t){r, s.d + s.r - r}; }
+INLINE shape_t shape_suffix(shape_t s, size_t r) { return (shape_t){r, s.d + s.r - r}; }
+INLINE shape_t shape_prefix(shape_t s, size_t r) { return (shape_t){r, s.d}; }
 
 INLINE bool shape_is_cell(shape_t outer, shape_t inner) {
   return outer.r >= inner.r && !memcmp(outer.d + (outer.r - inner.r), inner.d, dims_sizeof(inner.r));
