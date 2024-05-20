@@ -68,6 +68,8 @@ Words that starts from '\' are indended to be used during development
 |`-`|`(x y -> z)`| subtraction
 |`*`|`(x y -> z)`| multiplication
 |`/`|`(x y -> z)`| division
+|`&`, `min`|`(x y -> z)`| min
+|`|`, `max` |`(x y -> z)`| max
 |`=`|`(x y -> b)`| equal comparison
 
 ## Higher Level Words

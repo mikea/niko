@@ -323,6 +323,21 @@ types:
 [ 0 1 0 ]
 ```
 
+## max
+
+```nkt
+> 10 index 5 | .
+[ 5 5 5 5 5 5 6 7 8 9 ]
+> 10 index dup 5 = swap 6 = | .
+[ 0 0 0 0 0 1 1 0 0 0 ]
+```
+
+## min
+
+```nkt
+> 10 index 5 & .
+[ 0 1 2 3 4 5 5 5 5 5 ]
+```
 
 # higher order words
 ## fold_rank

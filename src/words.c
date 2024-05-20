@@ -263,14 +263,22 @@ STATUS_T w_binop(stack_t* stack, type_t t, binop_kernel_t kernel) {
   }
 
 #define PLUS_OP(a, b) (a) + (b)
-#define MUL_OP(a, b) (a) * (b)
-#define MINUS_OP(a, b) (a) - (b)
-#define DIV_OP(a, b) (a) / (b)
-
 GEN_BINOP("+", plus, PLUS_OP)
+
+#define MUL_OP(a, b) (a) * (b)
 GEN_BINOP("*", mul, MUL_OP)
+
+#define MINUS_OP(a, b) (a) - (b)
 GEN_BINOP("-", minus, MINUS_OP)
+
+#define DIV_OP(a, b) (a) / (b)
 GEN_BINOP("/", divide, DIV_OP)
+
+#define MAX_OP(a, b) (a) > (b) ? (a) : (b)
+GEN_BINOP("|", max, MAX_OP)
+
+#define MIN_OP(a, b) (a) > (b) ? (b) : (a)
+GEN_BINOP("&", min, MIN_OP)
 
 t_ffi equal_table[T_MAX][T_MAX] = {};
 

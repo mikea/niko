@@ -25,6 +25,21 @@
 > 10 index sums .
 [ 0 1 3 6 10 15 21 28 36 45 ]
 ```
+
+## min
+
+```nkt
+> 3 index 1 min .
+[ 0 1 1 ]
+```
+
+## max
+
+```nkt
+> 3 index 1 max .
+[ 1 1 2 ]
+```
+
 # higher order words
 ## fold
 ```nkt

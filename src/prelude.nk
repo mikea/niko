@@ -4,3 +4,5 @@
 : scan 0 swap scan_rank ;
 : sum +' fold ;
 : sums +' scan ;
+: min & ;
+: max | ;
