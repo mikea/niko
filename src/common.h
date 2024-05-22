@@ -12,18 +12,18 @@ typedef int64_t       i64;
 typedef double        f64;
 static_assert(sizeof(f64) == sizeof(i64));
 
-#define ATTR(attr) __attribute__((attr))
+#define ATTR(attr)    __attribute__((attr))
 #define CLEANUP(func) ATTR(cleanup(func))
-#define WARN_UNUSED ATTR(warn_unused_result)
-#define DESTRUCTOR ATTR(destructor)
-#define PRINTF(i, j) ATTR(format(printf, i, j))
-#define CONST ATTR(const)
-#define NORETURN ATTR(noreturn)
-#define INLINE static inline
+#define WARN_UNUSED   ATTR(warn_unused_result)
+#define DESTRUCTOR    ATTR(destructor)
+#define PRINTF(i, j)  ATTR(format(printf, i, j))
+#define CONST         ATTR(const)
+#define NORETURN      ATTR(noreturn)
+#define INLINE        static inline
 #define ALWAYS_INLINE INLINE ATTR(always_inline)
 
 #define __PASTE__(a, b) a##b
-#define PASTE(a, b) __PASTE__(a, b)
+#define PASTE(a, b)     __PASTE__(a, b)
 
 #define UNIQUE(n) PASTE(n, __COUNTER__)
 
@@ -85,7 +85,7 @@ static_assert(sizeof(f64) == sizeof(i64));
 
 // NARGS
 
-#define NARGS(...) __NARGS__(__VA_ARGS__, __RSEQ_N__())
+#define NARGS(...)     __NARGS__(__VA_ARGS__, __RSEQ_N__())
 #define __NARGS__(...) __NARGS_N__(__VA_ARGS__)
 
 #define __NARGS_N__(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, \
@@ -101,17 +101,17 @@ static_assert(sizeof(f64) == sizeof(i64));
 
 // APPLY
 
-#define __APPLY__1(F, a) F(a)
-#define __APPLY__2(F, a, b) __APPLY__1(F, a) F(b)
-#define __APPLY__3(F, a, b, c) __APPLY__2(F, a, b) F(c)
-#define __APPLY__4(F, a, b, c, d) __APPLY__3(F, a, b, c) F(d)
-#define __APPLY__5(F, a, b, c, d, e) __APPLY__4(F, a, b, c, d) F(e)
-#define __APPLY__6(F, a, b, c, d, e, f) __APPLY__5(F, a, b, c, d, e) F(f)
-#define __APPLY__7(F, a, b, c, d, e, f, g) __APPLY__6(F, a, b, c, d, e, f) F(g)
+#define __APPLY__1(F, a)                      F(a)
+#define __APPLY__2(F, a, b)                   __APPLY__1(F, a) F(b)
+#define __APPLY__3(F, a, b, c)                __APPLY__2(F, a, b) F(c)
+#define __APPLY__4(F, a, b, c, d)             __APPLY__3(F, a, b, c) F(d)
+#define __APPLY__5(F, a, b, c, d, e)          __APPLY__4(F, a, b, c, d) F(e)
+#define __APPLY__6(F, a, b, c, d, e, f)       __APPLY__5(F, a, b, c, d, e) F(f)
+#define __APPLY__7(F, a, b, c, d, e, f, g)    __APPLY__6(F, a, b, c, d, e, f) F(g)
 #define __APPLY__8(F, a, b, c, d, e, f, g, h) __APPLY__7(F, a, b, c, d, e, f, g) F(h)
 
 #define __APPLY__(M, F, ...) M(F, __VA_ARGS__)
-#define APPLY(F, ...) __APPLY__(PASTE(__APPLY__, NARGS(__VA_ARGS__)), F, __VA_ARGS__)
+#define APPLY(F, ...)        __APPLY__(PASTE(__APPLY__, NARGS(__VA_ARGS__)), F, __VA_ARGS__)
 
 // LOOPS
 

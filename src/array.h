@@ -37,7 +37,7 @@ typedef struct dict_entry_t* t_dict_entry;
 #define TYPE_ENUM(t) t##_enum
 #define TYPE_SIMD(t) t##_simd
 
-#define TYPE_FOREACH(f) f(t_c8) f(t_i64) f(t_f64) f(t_arr) f(t_ffi) f(t_dict_entry)
+#define TYPE_FOREACH(f)      f(t_c8) f(t_i64) f(t_f64) f(t_arr) f(t_ffi) f(t_dict_entry)
 #define TYPE_FOREACH_SIMD(f) f(t_i64, vmax_i64) f(t_f64, vmax_f64)
 
 #define TYPE_ROW(v_c8, v_i64, v_f64, v_arr, v_ffi, v_dict_entry) \
@@ -218,8 +218,8 @@ TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
       for (size_t i = 0, u##n = a->n; i < u##n && u##b; i++, p++)
 
 #define _DO_ARRAY_IMPL(a, i, p, u, p_decl) __DO_ARRAY_IMPL(a, i, p, u, p_decl)
-#define DO_MUT_ARRAY(a, t, i, p) _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), t* restrict p = (t*)array_mut_data(a))
-#define DO_ARRAY(a, t, i, p) _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), const t* restrict p = (const t*)array_data(a))
+#define DO_MUT_ARRAY(a, t, i, p)           _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), t* restrict p = (t*)array_mut_data(a))
+#define DO_ARRAY(a, t, i, p)               _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), const t* restrict p = (const t*)array_data(a))
 
 INLINE void array_for_each_cell(array_t* x, size_t r, void (*callback)(size_t i, array_t* slice)) {
   CHECK(r <= x->r, "invalid rank: %ld > %ld", r, x->r);
