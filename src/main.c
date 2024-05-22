@@ -1,8 +1,8 @@
 #include <getopt.h>
 #include <unistd.h>
 
-#include "niko.h"
 #include "inter.h"
+#include "niko.h"
 
 // repl
 

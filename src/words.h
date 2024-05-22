@@ -8,9 +8,9 @@
   INLINE array_t* n##_impl(const array_t* x);                           \
   DEF_WORD_HANDLER(n) {                                                 \
     CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected"); \
-    own(array_t) x = stack_pop(stack);                                  \
+    POP(x);                                                             \
     own(array_t) y = n##_impl(x);                                       \
-    stack_push(stack, y);                                               \
+    PUSH(y);                                                            \
   }                                                                     \
   INLINE array_t* n##_impl(const array_t* x)
 

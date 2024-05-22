@@ -5,8 +5,8 @@
 
 DEF_WORD("blas_gemm", blas_gemm) {
   CHECK(stack_len(stack) > 1, "stack underflow: 2 values expected");
-  own(array_t) y = stack_pop(stack);
-  own(array_t) x = stack_pop(stack);
+  POP(y);
+  POP(x);
 
   CHECK(x->r == 2, "rank 2 expected");
   CHECK(y->r == 2, "rank 2 expected");
@@ -27,7 +27,7 @@ DEF_WORD("blas_gemm", blas_gemm) {
   cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1.0, array_data(x), k, array_data(y), n, 0.0,
               array_mut_data(z), n);
 
-  stack_push(stack, z);
+  PUSH(z);
 }
 
 static_assert(sizeof(lapack_int) == sizeof(i64));
@@ -43,13 +43,13 @@ DEF_WORD("lapack_getrf", lapack_getrf) {
   own(array_t) ipiv = array_alloc(T_I64, n, shape_1d(&n));
   t_i64 status = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, m, n, array_mut_data(x), n, array_mut_data(ipiv));
 
-  stack_push(stack, x);
-  stack_push(stack, ipiv);
-  stack_push(stack, array_move(array_new_scalar_t_i64(status)));
+  PUSH(x);
+  PUSH(ipiv);
+  PUSH(array_move(array_new_scalar_t_i64(status)));
 }
 
 DEF_WORD("lapack_getri", lapack_getri) {
-  own(array_t) ipiv = stack_pop(stack);
+  POP(ipiv);
   CHECK(ipiv->t == T_I64, "i64 expected");
 
   own(array_t) x = array_cow(stack_pop(stack));
@@ -64,5 +64,5 @@ DEF_WORD("lapack_getri", lapack_getri) {
 
   LAPACKE_dgetri(LAPACK_ROW_MAJOR, n, array_mut_data(x), n, array_data(ipiv));
 
-  stack_push(stack, x);
+  PUSH(x);
 }

@@ -59,6 +59,7 @@ array_t* concatenate(stack_t* stack, shape_t sh) {
 token_t _inter_next_token(inter_t* inter) { return next_token(&inter->line); }
 
 void inter_dict_entry(inter_t* inter, dict_entry_t* e) {
+  stack_t* stack = inter->stack;
   array_t* a = e->v;
   switch (a->t) {
     case T_FFI: {
@@ -68,22 +69,22 @@ void inter_dict_entry(inter_t* inter, dict_entry_t* e) {
         case 0: {
           f = *array_data_t_ffi(a);
           CHECK(f, "not implemented");
-          return f(inter, inter->stack);
+          return f(inter, stack);
         }
         case 1: {
-          CHECK(stack_len(inter->stack) >= 1, "stack underflow: 1 value expected");
-          borrow(array_t) x = stack_peek(inter->stack, 0);
+          CHECK(stack_len(stack) >= 1, "stack underflow: 1 value expected");
+          borrow(array_t) x = stack_peek(stack, 0);
           f = (array_data_t_ffi(a))[x->t];
           CHECK(f, "%pT is not supported", &x->t);
-          return f(inter, inter->stack);
+          return f(inter, stack);
         }
         case 2: {
-          CHECK(stack_len(inter->stack) >= 2, "stack underflow: 2 value expected");
-          borrow(array_t) y = stack_peek(inter->stack, 0);
-          borrow(array_t) x = stack_peek(inter->stack, 1);
+          CHECK(stack_len(stack) >= 2, "stack underflow: 2 value expected");
+          borrow(array_t) y = stack_peek(stack, 0);
+          borrow(array_t) x = stack_peek(stack, 1);
           f = ((t_ffi(*)[T_MAX])array_data(a))[x->t][y->t];
           CHECK(f, "%pT %pT are not supported", &x->t, &y->t);
-          return f(inter, inter->stack);
+          return f(inter, stack);
         }
         default: panicf("unexpected ffi rank: %ld", a->r);
       }
@@ -94,13 +95,13 @@ void inter_dict_entry(inter_t* inter, dict_entry_t* e) {
           case T_C8:
           case T_I64:
           case T_F64: {
-            stack_push(inter->stack, *p);
+            PUSH(*p);
             break;
           }
           case T_ARR: NOT_IMPLEMENTED;
           case T_FFI: NOT_IMPLEMENTED;
           case T_DICT_ENTRY: {
-            if ((*p)->f & FLAG_QUOTE) stack_push(inter->stack, *p);
+            if ((*p)->f & FLAG_QUOTE) PUSH(*p);
             else inter_dict_entry(inter, *array_data_t_dict_entry(*p));
             break;
           };
@@ -121,7 +122,7 @@ dict_entry_t* _inter_find_word(inter_t* inter, const str_t n) {
 }
 
 void inter_token(inter_t* inter, token_t t) {
-  stack_t* stack = inter->mode == MODE_INTERPRET ? inter->stack : inter->comp_stack;
+  stack_t* stack = inter->mode == MODE_COMPILE ? inter->comp_stack : inter->stack;
 
   switch (t.tok) {
     case TOK_EOF: return;
@@ -134,10 +135,11 @@ void inter_token(inter_t* inter, token_t t) {
     case TOK_ARR_CLOSE: {
       assert(inter->arr_level);  // todo: report error
       size_t mark = inter->arr_marks[--inter->arr_level];
-      assert(inter->stack->l >= mark);  // todo: report error
-      size_t n = inter->stack->l - mark;
-      own(array_t) a = concatenate(inter->stack, shape_1d(&n));
-      stack_push(inter->stack, a);
+      stack_t* stack = inter->stack;
+      assert(stack->l >= mark);  // todo: report error
+      size_t n = stack->l - mark;
+      own(array_t) a = concatenate(stack, shape_1d(&n));
+      PUSH(a);
       return;
     }
     case TOK_WORD: {
@@ -164,7 +166,7 @@ void inter_token(inter_t* inter, token_t t) {
           case MODE_INTERPRET: return inter_dict_entry(inter, e);
           case MODE_COMPILE: {
             own(array_t) a = array_new_scalar_t_dict_entry(e);
-            stack_push(inter->comp_stack, a);
+            PUSH(a);
             return;
           }
         }
@@ -174,19 +176,19 @@ void inter_token(inter_t* inter, token_t t) {
     }
     case TOK_I64: {
       own(array_t) a = array_new_scalar_t_i64(t.val.i);
-      stack_push(stack, a);
+      PUSH(a);
       return;
     }
     case TOK_F64: {
       own(array_t) a = array_new_scalar_t_f64(t.val.d);
-      stack_push(stack, a);
+      PUSH(a);
       return;
     }
     case TOK_STR: {
       size_t l = t.val.s.l;
       dim_t d = l;
       own(array_t) a = array_new_t_c8(l, shape_1d(&d), t.val.s.p);
-      stack_push(stack, a);
+      PUSH(a);
       return;
     }
     case TOK_QUOTE: {
@@ -194,7 +196,7 @@ void inter_token(inter_t* inter, token_t t) {
       CHECK(e, "unknown word '%pS'", &t.text);
       own(array_t) a = array_new_scalar_t_dict_entry(e);
       a->f |= FLAG_QUOTE;
-      stack_push(stack, a);
+      PUSH(a);
       return;
     }
   }

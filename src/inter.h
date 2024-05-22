@@ -69,6 +69,10 @@ INLINE array_t* stack_i(stack_t* s, size_t i) { return array_inc_ref(stack_peek(
 
 array_t* concatenate(stack_t* stack, shape_t sh);
 
+#define POP(x) PROTECTED(array_t, x, stack_pop(stack))
+#define PUSH(x) stack_push(stack, x)
+#define DUP PUSH(stack_peek(stack, 0))
+
 // dictionary
 
 struct dict_entry_t {

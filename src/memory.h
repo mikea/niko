@@ -29,3 +29,5 @@ DEF_CLEANUP(FILE, fclose);
 #define own(t) CLEANUP(t##_cleanup) t*
 #define protected(t) CLEANUP(t##_cleanup_protected) t*
 #define borrow(t) t*
+
+#define PROTECTED(t, n, expr) protected(t) n = PROTECT(t, expr)
