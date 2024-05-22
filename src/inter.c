@@ -153,7 +153,7 @@ void inter_token(inter_t* inter, token_t t) {
         return;
       } else if (str_eqc(t.text, ";")) {
         CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
-        own(array_t) a       = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->bottom);
+        own(array_t) a       = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->data);
         inter->comp_stack->l = 0;
         inter->dict          = dict_entry_new(inter->dict, string_as_str(inter->comp), a);
         string_free(inter->comp);
@@ -221,12 +221,8 @@ void inter_line_capture_out(inter_t* inter, const char* line, char** out, size_t
     return;
   }
 
-  __attribute__((cleanup(FILE_cleanup_protected))) FILE* fout = ({
-    FILE* _x = (open_memstream(out, out_size));
-    unwind_handler_push(FILE_unwind, NULL, _x);
-    _x;
-  });
-  inter->out                                                  = fout;
+  PROTECTED(FILE, fout, open_memstream(out, out_size));
+  inter->out = fout;
   inter_line(inter, line);
   inter->out = stdout;
 }

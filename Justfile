@@ -68,4 +68,4 @@ _benchmarks:
 
 [private]
 _valgrind-test FILE: 
-    valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t {{FILE}} -v
+    valgrind --leak-check=full --error-exitcode=121 --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t {{FILE}} -v

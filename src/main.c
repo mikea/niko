@@ -9,7 +9,7 @@
 INLINE void stack_print_repl(stack_t* stack) {
   DO(i, stack->l) {
     if (i > 0) printf(" ");
-    printf("%25pA", stack->bottom[i]);
+    printf("%25pA", stack->data[i]);
   }
 }
 

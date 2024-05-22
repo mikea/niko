@@ -30,46 +30,46 @@ token_t next_token(const char** s);
 
 typedef struct stack_t stack_t;
 struct stack_t {
-  array_t** bottom;
+  array_t** data;
   size_t    l;
   size_t    cap;
 };
 
 INLINE stack_t* stack_new() { return calloc(1, sizeof(stack_t)); }
 INLINE void     stack_clear(stack_t* s) {
-  DO(i, s->l) array_dec_ref(s->bottom[i]);
+  DO(i, s->l) array_dec_ref(s->data[i]);
   s->l = 0;
 }
 INLINE void stack_free(stack_t* s) {
   stack_clear(s);
-  free(s->bottom);
+  free(s->data);
   free(s);
 }
 INLINE size_t stack_len(const stack_t* s) { return s->l; }
 INLINE bool   stack_is_empty(const stack_t* s) { return !stack_len(s); }
 INLINE void   stack_grow(stack_t* s) {
-  s->cap    = (s->cap + 1) * 2;
-  s->bottom = reallocarray(s->bottom, sizeof(array_t*), s->cap);
+  s->cap  = (s->cap + 1) * 2;
+  s->data = reallocarray(s->data, sizeof(array_t*), s->cap);
 }
-INLINE void stack_push(stack_t* stack, const array_t* a) {
+INLINE const array_t* stack_push(stack_t* stack, const array_t* a) {
   if (stack->l == stack->cap) stack_grow(stack);
-  stack->bottom[stack->l++] = array_inc_ref((array_t*)a);
+  return stack->data[stack->l++] = array_inc_ref((array_t*)a);
 }
 INLINE stack_t* stack_assert_not_empty(stack_t* stack) {
   assert(stack->l > 0);
   return stack;
 }
-INLINE array_t* stack_pop(stack_t* stack) { return stack_assert_not_empty(stack)->bottom[--stack->l]; }
+INLINE array_t* stack_pop(stack_t* stack) { return stack_assert_not_empty(stack)->data[--stack->l]; }
 INLINE void     stack_drop(stack_t* s) { array_dec_ref(stack_pop(s)); }
 INLINE          borrow(array_t) stack_peek(stack_t* s, size_t i) {
   assert(i < s->l);
-  return s->bottom[s->l - i - 1];
+  return s->data[s->l - i - 1];
 }
 INLINE array_t* stack_i(stack_t* s, size_t i) { return array_inc_ref(stack_peek(s, i)); }
 
 array_t* concatenate(stack_t* stack, shape_t sh);
 
-INLINE void __push_back(void* ctx, void* x) { stack_push(ctx, x); }
+INLINE void __push_back(void* ctx, void* x) { array_dec_ref((array_t*)stack_push(ctx, x)); }
 
 INLINE void array_t_cleanup_protected_push(array_t** p) {
   unwind_handler_pop(__push_back, *p);
