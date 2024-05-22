@@ -223,7 +223,7 @@ void inter_line_capture_out(inter_t* inter, const char* line, char** out, size_t
 
   __attribute__((cleanup(FILE_cleanup_protected))) FILE* fout = ({
     FILE* _x = (open_memstream(out, out_size));
-    unwind_handler_push(FILE_panic_handler, _x);
+    unwind_handler_push(FILE_unwind, NULL, _x);
     _x;
   });
   inter->out                                                  = fout;
@@ -247,5 +247,5 @@ void inter_reset(inter_t* inter) {
   stack_clear(inter->stack);
   stack_clear(inter->comp_stack);
   inter->arr_level = 0;
-  inter->mode = MODE_INTERPRET;
+  inter->mode      = MODE_INTERPRET;
 }

@@ -81,6 +81,7 @@ void test(inter_t* inter, const char* fname, bool v) {
       }
     } else if (in_nkt) {
       if (str_starts_with(l, code_end)) {
+        inter_reset(inter);
         if (rest_out && *rest_out)
           fprintf(stderr, "ERROR %s:%ld : unmatched output: '%s'\n", fname, in_line_no, rest_out);
         rest_out = NULL;

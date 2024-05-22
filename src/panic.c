@@ -10,7 +10,7 @@ void __unwind(size_t pos) {
   assert(pos <= __unwind_stack.s);
   DO(i, __unwind_stack.s - pos) {
     unwind_entry_t* e = __unwind_stack.d + __unwind_stack.s - i - 1;
-    e->c(e->p);
+    e->h(e->ctx, e->p);
   }
   __unwind_stack.s = pos;
 }

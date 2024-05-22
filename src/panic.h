@@ -12,10 +12,11 @@ NORETURN PRINTF(1, 2) void panicf(const char* format, ...);
 #define CHECK(cond, ...) \
   if (!(cond)) panicf(__VA_ARGS__)
 
-typedef void(unwind_t)(void* ptr);
+typedef void(unwind_t)(void* ctx, void* ptr);
 
 typedef struct {
-  unwind_t* c;
+  unwind_t* h;
+  void*     ctx;
   void*     p;
 } unwind_entry_t;
 
@@ -23,10 +24,12 @@ GEN_VECTOR(unwind_stack, unwind_entry_t);
 
 extern unwind_stack_t __unwind_stack;
 
-INLINE void unwind_handler_push(unwind_t* c, void* p) { unwind_stack_push(&__unwind_stack, (unwind_entry_t){c, p}); }
-INLINE void unwind_handler_pop(unwind_t* c, void* p) {
- UNUSED unwind_entry_t e = unwind_stack_pop(&__unwind_stack);
-  assert(e.c == c);
+INLINE void unwind_handler_push(unwind_t* h, void* ctx, void* p) {
+  unwind_stack_push(&__unwind_stack, (unwind_entry_t){h, ctx, p});
+}
+INLINE void unwind_handler_pop(unwind_t* h, void* p) {
+  UNUSED unwind_entry_t e = unwind_stack_pop(&__unwind_stack);
+  assert(e.h == h);
   assert(e.p == p);
 }
 
@@ -43,9 +46,9 @@ INLINE void __panic_message_cleanup(str_t*) { string_free(__panic_message); }
            __after; __after = false)                                          \
         for (CLEANUP(__panic_message_cleanup) str_t msg = string_as_str(__panic_message); __after; __after = false)
 
-#define PROTECT(t, x)                           \
-  ({                                            \
-    t* _x = (x);                                \
-    unwind_handler_push(t##_panic_handler, _x); \
-    _x;                                         \
+#define PROTECT(t, x, h, ctx)        \
+  ({                                 \
+    t* _x = (x);                     \
+    unwind_handler_push(h, ctx, _x); \
+    _x;                              \
   })

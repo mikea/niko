@@ -25,3 +25,16 @@
 #define DEF_WORD_1_1(w, n) \
   REGISTER_WORD(w, n)      \
   DEF_WORD_HANDLER_1_1(w_##n)
+
+INLINE size_t as_size_t(array_t* a) {
+  CHECK(a->r == 0, "scalar expected");
+  CHECK(a->t == T_I64, "int scalar expected");
+  i64 i = *array_data_t_i64(a);
+  CHECK(i >= 0, "non-negative scalar expected");
+  return i;
+}
+
+INLINE dict_entry_t* as_dict_entry(array_t* x) {
+  CHECK(x->t == T_DICT_ENTRY, "dict entry expected");
+  return *array_data_t_dict_entry(x);
+}

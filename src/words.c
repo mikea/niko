@@ -6,23 +6,6 @@
 
 // common utilities
 
-size_t as_size_t(array_t* a) {
-  CHECK(a->r == 0, "scalar expected");
-  CHECK(a->t == T_I64, "int scalar expected");
-  i64 i = *array_data_t_i64(a);
-  CHECK(i >= 0, "non-negative scalar expected");
-  return i;
-}
-
-size_t pop_size_t(stack_t* stack) {
-  __attribute__((cleanup(array_t_cleanup_protected))) array_t* x = ({
-    array_t* _x = (stack_pop(stack));
-    unwind_handler_push(array_t_panic_handler, _x);
-    _x;
-  });
-  return as_size_t(x);
-}
-
 #pragma region stack
 
 DEF_WORD("dup", dup) { DUP; }
@@ -66,9 +49,10 @@ DEF_WORD("tuck", tuck) {
 
 DEF_WORD("pick", pick) {
   CHECK(stack_len(stack) > 0, "stack underflow: 1 value expected");
-  size_t n = pop_size_t(stack);
-  CHECK(stack_len(stack) > n, "stack underflow: index %ld >= stack size %ld", n, stack_len(stack));
-  PUSH(array_move(stack_i(stack, n)));
+  POP(n);
+  size_t idx = as_size_t(n);
+  CHECK(stack_len(stack) > idx, "stack underflow: index %ld >= stack size %ld", idx, stack_len(stack));
+  PUSH(array_move(stack_i(stack, idx)));
 }
 
 #pragma endregion stack
@@ -333,7 +317,8 @@ DEF_WORD_1_1("index", index) {
 }
 
 DEF_WORD("pascal", pascal) {
-  size_t n       = pop_size_t(stack);
+  POP(x);
+  size_t n       = as_size_t(x);
   dim_t  dims[2] = {n, n};
   own(array_t) y = array_alloc(T_I64, n * n, shape_create(2, dims));
   t_i64* ptr     = array_mut_data(y);
@@ -399,17 +384,14 @@ DEF_WORD("\\s", slash_stack) { DO(i, stack_len(stack)) fprintf(inter->out, "%ld:
 
 #pragma region adverbs
 
-INLINE dict_entry_t* pop_dict_entry(stack_t* stack) {
-  POP(op);
-  CHECK(op->t == T_DICT_ENTRY, "dict entry expected");
-  return *array_data_t_dict_entry(op);
-}
-
 DEF_WORD("fold_rank", fold_rank) {
   CHECK(stack_len(stack) > 2, "stack underflow: 3 values expected");
-  dict_entry_t* e    = pop_dict_entry(stack);
-  size_t        rank = pop_size_t(stack);
+  POP(op);
+  POP(r);
   POP(x);
+
+  dict_entry_t* e    = as_dict_entry(op);
+  size_t        rank = as_size_t(r);
 
   void __iter(size_t i, array_t * slice) {
     PUSH(slice);
@@ -421,9 +403,12 @@ DEF_WORD("fold_rank", fold_rank) {
 
 DEF_WORD("scan_rank", scan_rank) {
   CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
-  dict_entry_t* e    = pop_dict_entry(stack);
-  size_t        rank = pop_size_t(stack);
+  POP(op);
+  POP(r);
   POP(x);
+
+  dict_entry_t* e    = as_dict_entry(op);
+  size_t        rank = as_size_t(r);
 
   void __iter(size_t i, array_t * slice) {
     if (i > 0) DUP;
@@ -439,9 +424,12 @@ DEF_WORD("scan_rank", scan_rank) {
 
 DEF_WORD("apply_rank", apply_rank) {
   CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
-  dict_entry_t* e    = pop_dict_entry(stack);
-  size_t        rank = pop_size_t(stack);
+  POP(op);
+  POP(r);
   POP(x);
+
+  dict_entry_t* e    = as_dict_entry(op);
+  size_t        rank = as_size_t(r);
 
   void __iter(size_t i, array_t * slice) {
     PUSH(slice);
@@ -454,17 +442,21 @@ DEF_WORD("apply_rank", apply_rank) {
 }
 
 DEF_WORD("power", power) {
-  CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
-  dict_entry_t* e = pop_dict_entry(stack);
-  size_t        n = pop_size_t(stack);
-  DO(i, n) { inter_dict_entry(inter, e); }
+  CHECK(stack_len(stack) >= 2, "stack underflow: 2 values expected");
+  POP(op);
+  POP(n);
+
+  dict_entry_t* e = as_dict_entry(op);
+  DO(i, as_size_t(n)) { inter_dict_entry(inter, e); }
 }
 
 DEF_WORD("trace", trace) {
   CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
-  dict_entry_t* e = pop_dict_entry(stack);
+  POP(op);
   POP(y);
-  shape_t s = create_shape(y);
+
+  dict_entry_t* e = as_dict_entry(op);
+  shape_t       s = create_shape(y);
 
   DO(i, shape_len(s)) {
     if (i > 0) DUP;

@@ -69,7 +69,16 @@ INLINE array_t* stack_i(stack_t* s, size_t i) { return array_inc_ref(stack_peek(
 
 array_t* concatenate(stack_t* stack, shape_t sh);
 
-#define POP(x)  PROTECTED(array_t, x, stack_pop(stack))
+INLINE void __push_back(void* ctx, void* x) { stack_push(ctx, x); }
+
+INLINE void array_t_cleanup_protected_push(array_t** p) {
+  unwind_handler_pop(__push_back, *p);
+  if (*p) array_t_free(*p);
+  *p = NULL;
+}
+
+#define POP(x) \
+  CLEANUP(array_t_cleanup_protected_push) array_t* x = PROTECT(array_t, stack_pop(stack), __push_back, stack);
 #define PUSH(x) stack_push(stack, x)
 #define DUP     PUSH(stack_peek(stack, 0))
 
