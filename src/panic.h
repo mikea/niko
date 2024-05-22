@@ -10,7 +10,7 @@ extern jmp_buf  global_jmp_buf;
 NORETURN PRINTF(1, 2) void panicf(const char* format, ...);
 
 #define CHECK(cond, ...) \
-  if (!(cond)) panicf(__VA_ARGS__)
+  if (unlikely(!(cond))) panicf(__VA_ARGS__)
 
 typedef void(unwind_t)(void* ctx, void* ptr);
 
@@ -20,7 +20,7 @@ typedef struct {
   void*     p;
 } unwind_entry_t;
 
-GEN_VECTOR(unwind_stack, unwind_entry_t);
+GEN_VECTOR(unwind_stack, unwind_entry_t)
 
 extern unwind_stack_t __unwind_stack;
 

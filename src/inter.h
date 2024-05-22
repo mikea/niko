@@ -56,13 +56,13 @@ INLINE const array_t* stack_push(stack_t* stack, const array_t* a) {
   return stack->data[stack->l++] = array_inc_ref((array_t*)a);
 }
 INLINE stack_t* stack_assert_not_empty(stack_t* stack) {
-  assert(stack->l > 0);
+  CHECK(stack->l > 0, "stack underflow");
   return stack;
 }
 INLINE array_t* stack_pop(stack_t* stack) { return stack_assert_not_empty(stack)->data[--stack->l]; }
 INLINE void     stack_drop(stack_t* s) { array_dec_ref(stack_pop(s)); }
 INLINE          borrow(array_t) stack_peek(stack_t* s, size_t i) {
-  assert(i < s->l);
+  CHECK(i < s->l, "stack underflow");
   return s->data[s->l - i - 1];
 }
 INLINE array_t* stack_i(stack_t* s, size_t i) { return array_inc_ref(stack_peek(s, i)); }
@@ -81,6 +81,7 @@ INLINE void array_t_cleanup_protected_push(array_t** p) {
   CLEANUP(array_t_cleanup_protected_push) array_t* x = PROTECT(array_t, stack_pop(stack), __push_back, stack);
 #define PUSH(x) stack_push(stack, x)
 #define DUP     PUSH(stack_peek(stack, 0))
+#define DROP    stack_drop(stack)
 
 // dictionary
 

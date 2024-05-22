@@ -53,8 +53,12 @@ Tests for core set of words
 2
 1
 0
-> 5 pick
-ERROR: stack underflow: index 5 >= stack size 0
+> 1 2 5 pick
+ERROR: stack underflow
+> \s
+0: 5
+1: 2
+2: 1
 ```
 # creating arrays
 ## index
@@ -452,7 +456,7 @@ ERROR: unknown word '1999912+'
 ## \c
 ```nkt
 > 10 index \c .
-ERROR: stack underflow: 1 value expected
+ERROR: stack underflow
 ```
 ## \s
 ```nkt

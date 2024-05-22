@@ -72,14 +72,12 @@ void inter_dict_entry(inter_t* inter, dict_entry_t* e) {
           return f(inter, stack);
         }
         case 1: {
-          CHECK(stack_len(stack) >= 1, "stack underflow: 1 value expected");
           borrow(array_t) x = stack_peek(stack, 0);
           f                 = (array_data_t_ffi(a))[x->t];
           CHECK(f, "%pT is not supported", &x->t);
           return f(inter, stack);
         }
         case 2: {
-          CHECK(stack_len(stack) >= 2, "stack underflow: 2 value expected");
           borrow(array_t) y = stack_peek(stack, 0);
           borrow(array_t) x = stack_peek(stack, 1);
           f                 = ((t_ffi(*)[T_MAX])array_data(a))[x->t][y->t];
@@ -156,8 +154,8 @@ void inter_token(inter_t* inter, token_t t) {
         own(array_t) a       = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->data);
         inter->comp_stack->l = 0;
         inter->dict          = dict_entry_new(inter->dict, string_as_str(inter->comp), a);
+        inter->mode          = MODE_INTERPRET;
         string_free(inter->comp);
-        inter->mode = MODE_INTERPRET;
         return;
       } else {
         dict_entry_t* e = _inter_find_word(inter, t.text);

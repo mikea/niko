@@ -119,3 +119,6 @@ static_assert(sizeof(f64) == sizeof(i64));
 #define DO(var, l) for (size_t var = 0, __limit = l; var < __limit; var++)
 #define DO_BLOCK(var, l, block) \
   DO(var, l) { block; }
+
+#define likely(x)   __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)

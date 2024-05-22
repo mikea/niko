@@ -4,7 +4,6 @@
 #include <lapacke.h>
 
 DEF_WORD("blas_gemm", blas_gemm) {
-  CHECK(stack_len(stack) > 1, "stack underflow: 2 values expected");
   POP(y);
   POP(x);
 

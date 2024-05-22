@@ -21,7 +21,7 @@ DEF_WORD("drop", drop) { stack_drop(stack); }
 
 DEF_WORD("nip", nip) {
   POP(a);
-  stack_drop(stack);
+  DROP;
   PUSH(a);
 }
 
@@ -48,11 +48,8 @@ DEF_WORD("tuck", tuck) {
 }
 
 DEF_WORD("pick", pick) {
-  CHECK(stack_len(stack) > 0, "stack underflow: 1 value expected");
   POP(n);
-  size_t idx = as_size_t(n);
-  CHECK(stack_len(stack) > idx, "stack underflow: index %ld >= stack size %ld", idx, stack_len(stack));
-  PUSH(array_move(stack_i(stack, idx)));
+  PUSH(array_move(stack_i(stack, as_size_t(n))));
 }
 
 #pragma endregion stack
@@ -332,7 +329,6 @@ DEF_WORD("pascal", pascal) {
 #pragma region array_ops
 
 DEF_WORD("reverse", reverse) {
-  CHECK(stack_len(stack) > 0, "stack underflow: 1 values expected");
   POP(x);
   own(array_t) y = array_alloc(x->t, x->n, array_shape(x));
   DO(i, x->n) { memcpy(array_mut_data_i(y, i), array_data_i(x, x->n - i - 1), type_sizeof(x->t, 1)); }
@@ -340,7 +336,6 @@ DEF_WORD("reverse", reverse) {
 }
 
 DEF_WORD("reshape", reshape) {
-  CHECK(stack_len(stack) > 1, "stack underflow: 2 values expected");
   POP(x);
   POP(y);
   shape_t s      = create_shape(x);
@@ -359,12 +354,6 @@ DEF_WORD("exit", exit) {
 
 #pragma region slash_words
 
-DEF_WORD("\\c", slash_clear) {
-  stack_clear(stack);
-  inter->arr_level = 0;
-  inter->mode      = MODE_INTERPRET;
-}
-
 DEF_WORD("\\i", slash_info) {
   printf(VERSION_STRING "\n");
   printf("  %-20s %10ld entries\n", "stack size:", stack_len(stack));
@@ -376,8 +365,8 @@ DEF_WORD("\\i", slash_info) {
   }
 }
 
+DEF_WORD("\\c", slash_clear) { inter_reset(inter); }
 DEF_WORD("\\mem", slash_mem) { malloc_stats_print(NULL, NULL, NULL); }
-
 DEF_WORD("\\s", slash_stack) { DO(i, stack_len(stack)) fprintf(inter->out, "%ld: %pA\n", i, stack_peek(stack, i)); }
 
 #pragma endregion slash_words
@@ -385,24 +374,20 @@ DEF_WORD("\\s", slash_stack) { DO(i, stack_len(stack)) fprintf(inter->out, "%ld:
 #pragma region adverbs
 
 DEF_WORD("fold_rank", fold_rank) {
-  CHECK(stack_len(stack) > 2, "stack underflow: 3 values expected");
   POP(op);
   POP(r);
   POP(x);
 
-  dict_entry_t* e    = as_dict_entry(op);
-  size_t        rank = as_size_t(r);
+  dict_entry_t* e = as_dict_entry(op);
 
   void __iter(size_t i, array_t * slice) {
     PUSH(slice);
     if (i > 0) inter_dict_entry(inter, e);
-    return;
   }
-  array_for_each_cell(x, rank, __iter);
+  array_for_each_cell(x, as_size_t(r), __iter);
 }
 
 DEF_WORD("scan_rank", scan_rank) {
-  CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   POP(op);
   POP(r);
   POP(x);
@@ -414,16 +399,13 @@ DEF_WORD("scan_rank", scan_rank) {
     if (i > 0) DUP;
     PUSH(slice);
     if (i > 0) inter_dict_entry(inter, e);
-    return;
   }
   array_for_each_cell(x, rank, __iter);
-
   own(array_t) result = concatenate(stack, shape_prefix(array_shape(x), x->r - rank));
   PUSH(result);
 }
 
 DEF_WORD("apply_rank", apply_rank) {
-  CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   POP(op);
   POP(r);
   POP(x);
@@ -433,16 +415,14 @@ DEF_WORD("apply_rank", apply_rank) {
 
   void __iter(size_t i, array_t * slice) {
     PUSH(slice);
-    return inter_dict_entry(inter, e);
+    inter_dict_entry(inter, e);
   }
   array_for_each_cell(x, rank, __iter);
-
   own(array_t) result = concatenate(stack, shape_prefix(array_shape(x), x->r - rank));
   PUSH(result);
 }
 
 DEF_WORD("power", power) {
-  CHECK(stack_len(stack) >= 2, "stack underflow: 2 values expected");
   POP(op);
   POP(n);
 
@@ -451,7 +431,6 @@ DEF_WORD("power", power) {
 }
 
 DEF_WORD("trace", trace) {
-  CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   POP(op);
   POP(y);
 
@@ -472,7 +451,6 @@ DEF_WORD("trace", trace) {
 #pragma region io
 
 DEF_WORD(".", dot) {
-  CHECK(!stack_is_empty(stack), "stack underflow: 1 value expected");
   POP(x);
   fprintf(inter->out, "%pA\n", x);
 }
