@@ -55,7 +55,7 @@ void test(inter_t* inter, const char* fname, bool v) {
 
   own(char) out = NULL;
   size_t out_size;
-  char* rest_out = NULL;
+  char*  rest_out = NULL;
   size_t in_line_no = 0;
 
   const str_t nkt_start = str_from_c("```nkt\n");
@@ -113,8 +113,8 @@ void test(inter_t* inter, const char* fname, bool v) {
 
 int main(int argc, char* argv[]) {
   char *t = NULL, *e = NULL;
-  bool v = false;
-  bool z = false;
+  bool  v = false;
+  bool  z = false;
 
   int opt;
   while ((opt = getopt(argc, argv, "vzht:e:m:")) != -1) {

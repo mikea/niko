@@ -44,7 +44,7 @@ size_t print_array_impl(FILE* f, type_t t, flag_t fl, shape_t s, const void* x, 
   }
   c += fprintf(f, "[ ");
   shape_t sub_shape = (shape_t){s.r - 1, s.d + 1};
-  size_t stride = type_sizeof(t, shape_len(sub_shape));
+  size_t  stride = type_sizeof(t, shape_len(sub_shape));
   DO(i, *s.d) {
     if (w < c + 4) {
       c += fprintf(f, "... ");
@@ -73,7 +73,7 @@ int printf_str(FILE* f, const struct printf_info* info, const void* const* args)
 int printf_shape(FILE* f, const struct printf_info* info, const void* const* args) {
   assert(info->user == p_modifier);  // p modifier expected
   const shape_t* s = *((const shape_t**)(args[0]));
-  size_t c = fprintf(f, "(");
+  size_t         c = fprintf(f, "(");
   DO(i, s->r) {
     if (i > 0) c += fprintf(f, ", ");
     c += fprintf(f, "%ld", s->d[i]);

@@ -74,7 +74,7 @@ INLINE void thread1(inter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_
   own(array_t) out = array_alloc_as(x);
 
   array_t* const* src = array_data_t_arr(x);
-  array_t** dst = array_mut_data_t_arr(out);
+  array_t**       dst = array_mut_data_t_arr(out);
   DO(i, x->n) {
     PUSH(src[i]);
     t_ffi ffi = ffi_table[src[i]->t];
@@ -236,13 +236,13 @@ void w_binop(stack_t* stack, type_t t, binop_kernel_t kernel) {
   GEN_BINOP_SPECIALIZATION(name, t_i64, t_f64, t_f64, op)               \
   GEN_BINOP_SPECIALIZATION(name, t_f64, t_i64, t_f64, op)               \
   GEN_BINOP_SPECIALIZATION(name, t_f64, t_f64, t_f64, op)               \
-  t_ffi name##_table[T_MAX][T_MAX] = {};                                \
+  t_ffi            name##_table[T_MAX][T_MAX] = {};                     \
   CONSTRUCTOR void __register_w_##name() {                              \
     name##_table[T_I64][T_I64] = name##_t_i64_t_i64;                    \
     name##_table[T_F64][T_I64] = name##_t_f64_t_i64;                    \
     name##_table[T_I64][T_F64] = name##_t_i64_t_f64;                    \
     name##_table[T_F64][T_F64] = name##_t_f64_t_f64;                    \
-    size_t dims[2] = {T_MAX, T_MAX};                                    \
+    size_t  dims[2] = {T_MAX, T_MAX};                                   \
     shape_t sh = (shape_t){2, dims};                                    \
     own(array_t) a = array_new(T_FFI, T_MAX * T_MAX, sh, name##_table); \
     global_dict_add_new(str_from_c(word), a);                           \
@@ -292,7 +292,7 @@ CONSTRUCTOR void register_equal() {
   REGISTER_EQUAL(t_f64, t_c8);
   REGISTER_EQUAL(t_f64, t_i64);
   REGISTER_EQUAL(t_f64, t_f64);
-  size_t dims[2] = {T_MAX, T_MAX};
+  size_t  dims[2] = {T_MAX, T_MAX};
   shape_t sh = (shape_t){2, dims};
   own(array_t) a = array_new(T_FFI, T_MAX * T_MAX, sh, equal_table);
   global_dict_add_new(str_from_c("="), a);
@@ -330,7 +330,7 @@ DEF_WORD_1_1("index", index) {
 
 DEF_WORD("pascal", pascal) {
   size_t n = pop_size_t(stack);
-  dim_t dims[2] = {n, n};
+  dim_t  dims[2] = {n, n};
   own(array_t) y = array_alloc(T_I64, n * n, shape_create(2, dims));
   t_i64* ptr = array_mut_data(y);
 
@@ -404,7 +404,7 @@ INLINE dict_entry_t* pop_dict_entry(stack_t* stack) {
 DEF_WORD("fold_rank", fold_rank) {
   CHECK(stack_len(stack) > 2, "stack underflow: 3 values expected");
   dict_entry_t* e = pop_dict_entry(stack);
-  size_t rank = pop_size_t(stack);
+  size_t        rank = pop_size_t(stack);
   POP(x);
 
   void __iter(size_t i, array_t * slice) {
@@ -418,7 +418,7 @@ DEF_WORD("fold_rank", fold_rank) {
 DEF_WORD("scan_rank", scan_rank) {
   CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   dict_entry_t* e = pop_dict_entry(stack);
-  size_t rank = pop_size_t(stack);
+  size_t        rank = pop_size_t(stack);
   POP(x);
 
   void __iter(size_t i, array_t * slice) {
@@ -436,7 +436,7 @@ DEF_WORD("scan_rank", scan_rank) {
 DEF_WORD("apply_rank", apply_rank) {
   CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   dict_entry_t* e = pop_dict_entry(stack);
-  size_t rank = pop_size_t(stack);
+  size_t        rank = pop_size_t(stack);
   POP(x);
 
   void __iter(size_t i, array_t * slice) {
@@ -452,7 +452,7 @@ DEF_WORD("apply_rank", apply_rank) {
 DEF_WORD("power", power) {
   CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   dict_entry_t* e = pop_dict_entry(stack);
-  size_t n = pop_size_t(stack);
+  size_t        n = pop_size_t(stack);
   DO(i, n) { inter_dict_entry(inter, e); }
 }
 

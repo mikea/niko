@@ -1,5 +1,6 @@
 ---
 BasedOnStyle: Chromium
+AlignConsecutiveDeclarations: Consecutive
 AllowShortBlocksOnASingleLine: Always
 AllowShortCaseLabelsOnASingleLine: True
 AllowShortEnumsOnASingleLine: True

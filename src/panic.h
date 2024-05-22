@@ -5,7 +5,7 @@
 #include "str.h"
 
 extern string_t __panic_message;
-extern jmp_buf global_jmp_buf;
+extern jmp_buf  global_jmp_buf;
 
 NORETURN PRINTF(1, 2) void panicf(const char* format, ...);
 
@@ -16,7 +16,7 @@ typedef void(unwind_t)(void* ptr);
 
 typedef struct {
   unwind_t* c;
-  void* p;
+  void*     p;
 } unwind_entry_t;
 
 GEN_VECTOR(unwind_stack, unwind_entry_t);
@@ -30,7 +30,7 @@ INLINE void unwind_handler_pop(unwind_t* c, void* p) {
   assert(e.p == p);
 }
 
-void __unwind(size_t pos);
+void        __unwind(size_t pos);
 INLINE void __panic_message_cleanup(str_t*) { string_free(__panic_message); }
 
 #define CATCH(msg)                                                            \

@@ -2,8 +2,8 @@
 
 #include "str.h"
 
-string_t __panic_message;
-jmp_buf global_jmp_buf;
+string_t       __panic_message;
+jmp_buf        global_jmp_buf;
 unwind_stack_t __unwind_stack;
 
 void __unwind(size_t pos) {

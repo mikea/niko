@@ -28,7 +28,7 @@ array_t* concatenate(stack_t* stack, shape_t sh) {
   bool all_common = true;
   borrow(array_t) top = stack_peek(stack, 0);
   const shape_t common_shape = array_shape(top);
-  const type_t t = top->t;
+  const type_t  t = top->t;
   DO(i, len) {
     own(array_t) e = stack_i(stack, i);
     all_common &= e->t == t;
@@ -134,7 +134,7 @@ void inter_token(inter_t* inter, token_t t) {
     }
     case TOK_ARR_CLOSE: {
       assert(inter->arr_level);  // todo: report error
-      size_t mark = inter->arr_marks[--inter->arr_level];
+      size_t   mark = inter->arr_marks[--inter->arr_level];
       stack_t* stack = inter->stack;
       assert(stack->l >= mark);  // todo: report error
       size_t n = stack->l - mark;
@@ -186,7 +186,7 @@ void inter_token(inter_t* inter, token_t t) {
     }
     case TOK_STR: {
       size_t l = t.val.s.l;
-      dim_t d = l;
+      dim_t  d = l;
       own(array_t) a = array_new_t_c8(l, shape_1d(&d), t.val.s.p);
       PUSH(a);
       return;

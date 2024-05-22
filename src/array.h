@@ -59,11 +59,11 @@ typedef size_t dim_t;
 
 // shape
 typedef struct {
-  size_t r;  // rank
+  size_t       r;  // rank
   const dim_t* d;
 } shape_t;
 
-INLINE size_t dims_sizeof(size_t r) { return r * sizeof(dim_t); }
+INLINE size_t   dims_sizeof(size_t r) { return r * sizeof(dim_t); }
 INLINE shape_t* shape_new(size_t r) {
   shape_t* s = malloc(sizeof(shape_t) + dims_sizeof(r));
   s->r = r;
@@ -72,10 +72,10 @@ INLINE shape_t* shape_new(size_t r) {
 }
 INLINE void shape_free(shape_t* s) { free(s); }
 DEF_CLEANUP(shape_t, shape_free);
-INLINE shape_t shape_scalar() { return (shape_t){0, NULL}; }
-INLINE shape_t shape_1d(const dim_t* d) { return (shape_t){1, d}; }
-INLINE shape_t shape_create(size_t r, const dim_t* d) { return (shape_t){r, d}; }
-INLINE bool shape_eq(shape_t s1, shape_t s2) { return s1.r == s2.r && !memcmp(s1.d, s2.d, dims_sizeof(s1.r)); }
+INLINE shape_t      shape_scalar() { return (shape_t){0, NULL}; }
+INLINE shape_t      shape_1d(const dim_t* d) { return (shape_t){1, d}; }
+INLINE shape_t      shape_create(size_t r, const dim_t* d) { return (shape_t){r, d}; }
+INLINE bool         shape_eq(shape_t s1, shape_t s2) { return s1.r == s2.r && !memcmp(s1.d, s2.d, dims_sizeof(s1.r)); }
 INLINE CONST size_t shape_len(shape_t s) {
   size_t y = 1;
   DO(i, s.r) y *= s.d[i];
@@ -93,7 +93,7 @@ INLINE shape_t shape_prefix(shape_t s, size_t r) { return (shape_t){r, s.d}; }
 INLINE bool shape_is_cell(shape_t outer, shape_t inner) {
   return outer.r >= inner.r && !memcmp(outer.d + (outer.r - inner.r), inner.d, dims_sizeof(inner.r));
 }
-INLINE bool shapes_are_compatible(shape_t s1, shape_t s2) { return shape_is_cell(s1, s2) || shape_is_cell(s2, s1); }
+INLINE bool    shapes_are_compatible(shape_t s1, shape_t s2) { return shape_is_cell(s1, s2) || shape_is_cell(s2, s1); }
 INLINE shape_t shape_max(shape_t s1, shape_t s2) {
   assert(shapes_are_compatible(s1, s2));
   return s1.r >= s2.r ? s1 : s2;
@@ -103,26 +103,26 @@ typedef enum { FLAG_QUOTE = 1 } flag_t;
 
 // array: (header, dims, data)
 struct array_t {
-  type_t t;   // type
-  flag_t f;   // flag
-  size_t rc;  // ref count
-  size_t n;   // number of elements
+  type_t          t;   // type
+  flag_t          f;   // flag
+  size_t          rc;  // ref count
+  size_t          n;   // number of elements
   struct array_t* owner;
   void* restrict p;  // simd aligned size and length if n is large enough
   size_t r;          // rank
-  dim_t d[0];        // dims
+  dim_t  d[0];       // dims
 };
 typedef struct array_t array_t;
 
 array_t* array_alloc(type_t t, size_t n, shape_t s);
-void array_free(array_t* a);
+void     array_free(array_t* a);
 
 INLINE array_t* array_alloc_shape(type_t t, shape_t s) { return array_alloc(t, shape_len(s), s); }
 INLINE bool __array_data_simd_aligned(type_t t, size_t n) { return n >= 2 * SIMD_REG_WIDTH_BYTES / type_sizeof(t, 1); }
 INLINE bool array_data_simd_aligned(const array_t* a) { return __array_data_simd_aligned(a->t, a->n); }
 
 INLINE const dim_t* array_dims(const array_t* a) { return a->d; }
-INLINE shape_t array_shape(const array_t* a) { return (shape_t){a->r, array_dims(a)}; }
+INLINE shape_t      array_shape(const array_t* a) { return (shape_t){a->r, array_dims(a)}; }
 
 INLINE const array_t* __array_assert_type(const array_t* a, type_t t) {
   assert(a->t == t);
@@ -137,9 +137,9 @@ INLINE array_t* __array_assert_simd_aligned(array_t* arr) {
   return arr;
 }
 
-INLINE size_t array_data_sizeof(const array_t* a) { return type_sizeof(a->t, a->n); }
+INLINE size_t      array_data_sizeof(const array_t* a) { return type_sizeof(a->t, a->n); }
 INLINE const void* array_data(const array_t* arr) { return arr->p; }
-INLINE void* array_mut_data(array_t* arr) { return (void*)array_data(__array_assert_mut(arr)); }
+INLINE void*       array_mut_data(array_t* arr) { return (void*)array_data(__array_assert_mut(arr)); }
 INLINE const void* array_data_i(const array_t* a, size_t i) { return array_data(a) + type_sizeof(a->t, i); }
 INLINE void* array_mut_data_i(const array_t* a, size_t i) { return (void*)array_data_i(__array_assert_mut(a), i); }
 
@@ -190,7 +190,7 @@ INLINE array_t* array_cow(array_t* a) {
   return y;
 }
 
-INLINE bool array_is_scalar(const array_t* a) { return a->r == 0; }
+INLINE bool     array_is_scalar(const array_t* a) { return a->r == 0; }
 INLINE array_t* array_new_scalar(type_t t, const void* x) { return array_new(t, 1, shape_scalar(), x); }
 
 #define __DEF_TYPE_HELPER(t)                                                                                  \
@@ -224,8 +224,8 @@ TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 INLINE void array_for_each_cell(array_t* x, size_t r, void (*callback)(size_t i, array_t* slice)) {
   CHECK(r <= x->r, "invalid rank: %ld > %ld", r, x->r);
   shape_t cell = shape_suffix(array_shape(x), r);
-  size_t l = shape_len(cell);
-  size_t stride = type_sizeof(x->t, l);
+  size_t  l = shape_len(cell);
+  size_t  stride = type_sizeof(x->t, l);
 
   const void* ptr = array_data(x);
   DO(i, x->n / l) {

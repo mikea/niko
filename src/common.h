@@ -8,8 +8,8 @@
 #include <stdlib.h>
 
 typedef unsigned char byte;
-typedef int64_t i64;
-typedef double f64;
+typedef int64_t       i64;
+typedef double        f64;
 static_assert(sizeof(f64) == sizeof(i64));
 
 #define ATTR(attr) __attribute__((attr))
@@ -60,7 +60,7 @@ static_assert(sizeof(f64) == sizeof(i64));
   typedef struct {                                        \
     size_t s;                                             \
     size_t c;                                             \
-    t* d;                                                 \
+    t*     d;                                             \
   } name##_t;                                             \
   INLINE void name##_grow(name##_t* v) {                  \
     v->c = (v->c + 1) * 2;                                \
