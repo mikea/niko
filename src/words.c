@@ -15,7 +15,11 @@ size_t as_size_t(array_t* a) {
 }
 
 size_t pop_size_t(stack_t* stack) {
-  POP(x);
+  __attribute__((cleanup(array_t_cleanup_protected))) array_t* x = ({
+    array_t* _x = (stack_pop(stack));
+    unwind_handler_push(array_t_panic_handler, _x);
+    _x;
+  });
   return as_size_t(x);
 }
 

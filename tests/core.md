@@ -245,11 +245,19 @@ error handling:
 ```nkt
 > [ 2 3 4 ] index [ 1 1 ] +
 ERROR: array shapes are incompatible: (2, 3, 4) vs (2)
+> \s \c
+0: [ 1 1 ]
+1: [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
 > [ 2 3 4 ] index dup [ 4 3 2 ] reshape + .
 ERROR: array shapes are incompatible: (2, 3, 4) vs (4, 3, 2)
+> \s \c
+0: [ [ [ 0 1 ] [ 2 3 ] [ 4 5 ] ] [ [ 6 7 ] [ 8 9 ] [ 10 11 ] ] [ [ 12 13 ] [ 14 15 ] [ 16 17 ] ] [ [ 18 19 ] [ 20 21 ] [ 22 23 ] ] ]
+1: [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
 > "abc" 2 +
 ERROR: c8 i64 are not supported
-> \s
+> \s \c
+0: 2
+1: "abc"
 ```
 ## *
 ```nkt

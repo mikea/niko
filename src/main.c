@@ -72,6 +72,7 @@ void test(inter_t* inter, const char* fname, bool v) {
 
     if (in_nk) {
       if (str_starts_with(l, code_end)) {
+        inter_reset(inter);
         in_nk = false;
       } else {
         if (out) free(out);
@@ -89,7 +90,6 @@ void test(inter_t* inter, const char* fname, bool v) {
         if (rest_out && *rest_out)
           fprintf(stderr, "ERROR %s:%ld : unmatched output: '%s'\n", fname, in_line_no, rest_out);
         in_line_no = line_no;
-        stack_clear(inter->stack);
         if (out) free(out);
         inter_line_capture_out(inter, line + 1, &out, &out_size);
         rest_out = out;
@@ -101,10 +101,9 @@ void test(inter_t* inter, const char* fname, bool v) {
       } else {
         rest_out += read;
       }
-    } else {
-      if (str_ends_with(l, nkt_start)) in_nkt = true;
-      else if (str_ends_with(l, nk_start)) in_nk = true;
     }
+    if (str_ends_with(l, nkt_start)) in_nkt = true;
+    else if (str_ends_with(l, nk_start)) in_nk = true;
   }
 }
 

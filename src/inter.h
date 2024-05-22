@@ -125,6 +125,7 @@ DEF_CLEANUP(inter_t, inter_free);
 
 void inter_load_prelude();
 
+void inter_reset(inter_t* inter);
 void inter_dict_entry(inter_t* inter, dict_entry_t* e);
 void inter_line(inter_t* inter, const char* s);
 void inter_line_capture_out(inter_t* inter, const char* line, char** out, size_t* out_size);

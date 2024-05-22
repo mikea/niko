@@ -242,3 +242,10 @@ void inter_load_prelude() {
   global_dict = inter->dict;
   inter->dict = NULL;
 }
+
+void inter_reset(inter_t* inter) {
+  stack_clear(inter->stack);
+  stack_clear(inter->comp_stack);
+  inter->arr_level = 0;
+  inter->mode = MODE_INTERPRET;
+}
