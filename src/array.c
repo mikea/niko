@@ -25,9 +25,7 @@ array_t* array_alloc(type_t t, size_t n, shape_t s) {
 
 void array_free(array_t* a) {
   if (a->t == T_ARR) {
-    DO_ARRAY(a, t_arr, i, p) {
-        array_free(*p);
-    }
+    DO_ARRAY(a, t_arr, i, p) { array_free(*p); }
   }
   if (a->owner) array_dec_ref(a->owner);
   else if (__array_data_simd_aligned(a->t, a->n)) free(a->p);

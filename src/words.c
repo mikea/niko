@@ -16,8 +16,8 @@ size_t as_size_t(array_t* a) {
 #define PROTECTED(t, n, expr) protected(t) n = PROTECT(array_t, expr);
 
 size_t pop_size_t(stack_t* s) {
-    protected(array_t) x = PROTECT(array_t, stack_pop(s));
-    return as_size_t(x);
+  protected(array_t) x = PROTECT(array_t, stack_pop(s));
+  return as_size_t(x);
 }
 
 #pragma region stack

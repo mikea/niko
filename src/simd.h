@@ -11,10 +11,9 @@
 #define SIMD_ALIGNED ALIGNED(SIMD_ALIGNMENT)
 
 #define SIMD_ALIGN_BYTES(x) ALIGN(x, SIMD_ALIGNMENT)
-#define SIMD_ALIGN_TYPE(t, x) ALIGN(x, SIMD_ALIGNMENT/ sizeof(t))
+#define SIMD_ALIGN_TYPE(t, x) ALIGN(x, SIMD_ALIGNMENT / sizeof(t))
 
-
-#define DEF_MAX_VECTOR(t) typedef t vmax_##t __attribute__ ((vector_size (SIMD_REG_WIDTH_BYTES)))
+#define DEF_MAX_VECTOR(t) typedef t vmax_##t __attribute__((vector_size(SIMD_REG_WIDTH_BYTES)))
 
 DEF_MAX_VECTOR(char);
 DEF_MAX_VECTOR(i64);

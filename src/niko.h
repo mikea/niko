@@ -12,8 +12,8 @@
 
 #include "array.h"
 #include "common.h"
-#include "panic.h"
 #include "inter.h"
+#include "panic.h"
 #include "str.h"
 
 #ifndef GIT_DESCRIBE

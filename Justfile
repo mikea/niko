@@ -20,6 +20,9 @@ test: build _test
 clean:
     rm -rf bin build callgrind.out.* perf.data perf.data.old vgcore.*
 
+format:
+    clang-format -i src/*.c src/*.h
+
 valgrind-test FILE: build (_valgrind-test FILE)
 valgrind: build (_valgrind-test "tests/inter.md") (_valgrind-test "tests/core.md") (_valgrind-test "tests/prelude.md")
 

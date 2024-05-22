@@ -20,7 +20,8 @@ void repl(inter_t* inter) {
 
   if (prompt) printf(VERSION_STRING "\n");
 
-  next: while (true) {
+next:
+  while (true) {
     if (prompt) {
       if (inter->arr_level) {
         printf("%ld> ", inter->arr_level);
