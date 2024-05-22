@@ -1,6 +1,7 @@
-#include "niko.h"
-
 #include <printf.h>
+
+#include "array.h"
+#include "inter.h"
 
 // %pp - void*
 // %pA - array_t*

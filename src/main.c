@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 #include "niko.h"
+#include "inter.h"
 
 // repl
 

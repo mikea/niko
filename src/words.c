@@ -2,6 +2,7 @@
 #include <math.h>
 
 #include "niko.h"
+#include "words.h"
 
 // common utilities
 

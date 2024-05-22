@@ -1,4 +1,4 @@
-#include "niko.h"
+#include "words.h"
 
 #include <cblas.h>
 #include <lapacke.h>

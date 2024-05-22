@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.27)
 project(niko VERSION 0.1 DESCRIPTION "niko programming language" LANGUAGES C)
 
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
+add_definitions(-D_GNU_SOURCE)
 
 add_compile_options(
   -mavx2
