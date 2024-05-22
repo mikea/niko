@@ -3,10 +3,10 @@
 #include "prelude.h"
 
 inter_t* inter_new() {
-  inter_t* inter = calloc(1, sizeof(inter_t));
-  inter->stack = stack_new();
+  inter_t* inter    = calloc(1, sizeof(inter_t));
+  inter->stack      = stack_new();
   inter->comp_stack = stack_new();
-  inter->out = stdout;
+  inter->out        = stdout;
   return inter;
 }
 
@@ -25,10 +25,10 @@ array_t* concatenate(stack_t* stack, shape_t sh) {
   size_t len = shape_len(sh);
   if (!len) return array_alloc(T_I64, 0, sh);
 
-  bool all_common = true;
-  borrow(array_t) top = stack_peek(stack, 0);
+  bool all_common            = true;
+  borrow(array_t) top        = stack_peek(stack, 0);
   const shape_t common_shape = array_shape(top);
-  const type_t  t = top->t;
+  const type_t  t            = top->t;
   DO(i, len) {
     own(array_t) e = stack_i(stack, i);
     all_common &= e->t == t;
@@ -41,8 +41,8 @@ array_t* concatenate(stack_t* stack, shape_t sh) {
     DO(i, len) { ((array_t**)array_mut_data(a))[i] = stack_i(stack, len - i - 1); }
   } else {
     own(shape_t) new_shape = shape_extend(sh, common_shape);
-    a = array_alloc(t, shape_len(*new_shape), *new_shape);
-    size_t stride = type_sizeof(t, shape_len(common_shape));
+    a                      = array_alloc(t, shape_len(*new_shape), *new_shape);
+    size_t stride          = type_sizeof(t, shape_len(common_shape));
     assert(array_data_sizeof(a) == stride * len);
     DO(i, len) {
       own(array_t) e = stack_i(stack, len - i - 1);
@@ -60,7 +60,7 @@ token_t _inter_next_token(inter_t* inter) { return next_token(&inter->line); }
 
 void inter_dict_entry(inter_t* inter, dict_entry_t* e) {
   stack_t* stack = inter->stack;
-  array_t* a = e->v;
+  array_t* a     = e->v;
   switch (a->t) {
     case T_FFI: {
       t_ffi f;
@@ -74,7 +74,7 @@ void inter_dict_entry(inter_t* inter, dict_entry_t* e) {
         case 1: {
           CHECK(stack_len(stack) >= 1, "stack underflow: 1 value expected");
           borrow(array_t) x = stack_peek(stack, 0);
-          f = (array_data_t_ffi(a))[x->t];
+          f                 = (array_data_t_ffi(a))[x->t];
           CHECK(f, "%pT is not supported", &x->t);
           return f(inter, stack);
         }
@@ -82,7 +82,7 @@ void inter_dict_entry(inter_t* inter, dict_entry_t* e) {
           CHECK(stack_len(stack) >= 2, "stack underflow: 2 value expected");
           borrow(array_t) y = stack_peek(stack, 0);
           borrow(array_t) x = stack_peek(stack, 1);
-          f = ((t_ffi(*)[T_MAX])array_data(a))[x->t][y->t];
+          f                 = ((t_ffi(*)[T_MAX])array_data(a))[x->t][y->t];
           CHECK(f, "%pT %pT are not supported", &x->t, &y->t);
           return f(inter, stack);
         }
@@ -134,10 +134,10 @@ void inter_token(inter_t* inter, token_t t) {
     }
     case TOK_ARR_CLOSE: {
       assert(inter->arr_level);  // todo: report error
-      size_t   mark = inter->arr_marks[--inter->arr_level];
+      size_t   mark  = inter->arr_marks[--inter->arr_level];
       stack_t* stack = inter->stack;
       assert(stack->l >= mark);  // todo: report error
-      size_t n = stack->l - mark;
+      size_t n       = stack->l - mark;
       own(array_t) a = concatenate(stack, shape_1d(&n));
       PUSH(a);
       return;
@@ -153,9 +153,9 @@ void inter_token(inter_t* inter, token_t t) {
         return;
       } else if (str_eqc(t.text, ";")) {
         CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
-        own(array_t) a = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->bottom);
+        own(array_t) a       = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->bottom);
         inter->comp_stack->l = 0;
-        inter->dict = dict_entry_new(inter->dict, string_as_str(inter->comp), a);
+        inter->dict          = dict_entry_new(inter->dict, string_as_str(inter->comp), a);
         string_free(inter->comp);
         inter->mode = MODE_INTERPRET;
         return;
@@ -185,8 +185,8 @@ void inter_token(inter_t* inter, token_t t) {
       return;
     }
     case TOK_STR: {
-      size_t l = t.val.s.l;
-      dim_t  d = l;
+      size_t l       = t.val.s.l;
+      dim_t  d       = l;
       own(array_t) a = array_new_t_c8(l, shape_1d(&d), t.val.s.p);
       PUSH(a);
       return;
@@ -216,7 +216,7 @@ void inter_line(inter_t* inter, const char* s) {
 void inter_line_capture_out(inter_t* inter, const char* line, char** out, size_t* out_size) {
   CATCH(e) {
     free(*out);
-    *out_size = asprintf(out, "ERROR: %pS\n", &e);
+    *out_size  = asprintf(out, "ERROR: %pS\n", &e);
     inter->out = stdout;
     return;
   }
@@ -226,19 +226,19 @@ void inter_line_capture_out(inter_t* inter, const char* line, char** out, size_t
     unwind_handler_push(FILE_panic_handler, _x);
     _x;
   });
-  inter->out = fout;
+  inter->out                                                  = fout;
   inter_line(inter, line);
   inter->out = stdout;
 }
 
 void inter_load_prelude() {
-  str_t prelude = str_new_len((char*)__prelude_nk, __prelude_nk_len);
+  str_t prelude       = str_new_len((char*)__prelude_nk, __prelude_nk_len);
   own(char) c_prelude = str_toc(prelude);
-  own(inter_t) inter = inter_new();
+  own(inter_t) inter  = inter_new();
   inter_line(inter, c_prelude);
   dict_entry_t* last = inter->dict;
   while (last->n != NULL) last = last->n;
-  last->n = global_dict;
+  last->n     = global_dict;
   global_dict = inter->dict;
   inter->dict = NULL;
 }

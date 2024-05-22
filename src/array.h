@@ -66,8 +66,8 @@ typedef struct {
 INLINE size_t   dims_sizeof(size_t r) { return r * sizeof(dim_t); }
 INLINE shape_t* shape_new(size_t r) {
   shape_t* s = malloc(sizeof(shape_t) + dims_sizeof(r));
-  s->r = r;
-  s->d = (dim_t*)(s + 1);
+  s->r       = r;
+  s->d       = (dim_t*)(s + 1);
   return s;
 }
 INLINE void shape_free(shape_t* s) { free(s); }
@@ -173,12 +173,12 @@ INLINE array_t* array_new_1d(type_t t, size_t n, const void* x) {
 INLINE array_t* array_new_slice(array_t* x, size_t n, shape_t s, const void* p) {
   array_inc_ref(x);
   array_t* y = malloc(sizeof(array_t) + dims_sizeof(s.r));
-  y->t = x->t;
-  y->rc = 1;
-  y->n = n;
-  y->r = s.r;
-  y->p = (void*)p;
-  y->owner = x;
+  y->t       = x->t;
+  y->rc      = 1;
+  y->n       = n;
+  y->r       = s.r;
+  y->p       = (void*)p;
+  y->owner   = x;
   memcpy(y + 1, s.d, dims_sizeof(s.r));
   return y;
 }
@@ -223,8 +223,8 @@ TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 
 INLINE void array_for_each_cell(array_t* x, size_t r, void (*callback)(size_t i, array_t* slice)) {
   CHECK(r <= x->r, "invalid rank: %ld > %ld", r, x->r);
-  shape_t cell = shape_suffix(array_shape(x), r);
-  size_t  l = shape_len(cell);
+  shape_t cell   = shape_suffix(array_shape(x), r);
+  size_t  l      = shape_len(cell);
   size_t  stride = type_sizeof(x->t, l);
 
   const void* ptr = array_data(x);

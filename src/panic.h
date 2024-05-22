@@ -36,10 +36,10 @@ INLINE void __panic_message_cleanup(str_t*) { string_free(__panic_message); }
 #define CATCH(msg)                                                            \
   for (size_t __before = 1, __pos = __unwind_stack.s; __before; __before = 0) \
     if (setjmp(global_jmp_buf))                                               \
-      for (bool __after = ({                                                  \
-             __unwind(__pos);                                                 \
-             true;                                                            \
-           });                                                                \
+      for (bool __after     = ({                                              \
+                 __unwind(__pos);                                             \
+                 true;                                                        \
+           });                                                            \
            __after; __after = false)                                          \
         for (CLEANUP(__panic_message_cleanup) str_t msg = string_as_str(__panic_message); __after; __after = false)
 

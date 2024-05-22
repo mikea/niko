@@ -15,9 +15,8 @@ INLINE void stack_print_repl(stack_t* stack) {
 
 void repl(inter_t* inter) {
   size_t input_size = 0;
-  own(char) input = NULL;
-
-  bool prompt = isatty(STDIN_FILENO);
+  own(char) input   = NULL;
+  bool prompt       = isatty(STDIN_FILENO);
 
   if (prompt) printf(VERSION_STRING "\n");
 
@@ -47,7 +46,7 @@ void test(inter_t* inter, const char* fname, bool v) {
   own(FILE) file = fopen(fname, "r");
   CHECK(file, "test: can't open file: %s", fname);
 
-  size_t len = 0;
+  size_t len     = 0;
   own(char) line = NULL;
 
   size_t read;
@@ -55,14 +54,14 @@ void test(inter_t* inter, const char* fname, bool v) {
 
   own(char) out = NULL;
   size_t out_size;
-  char*  rest_out = NULL;
+  char*  rest_out   = NULL;
   size_t in_line_no = 0;
 
   const str_t nkt_start = str_from_c("```nkt\n");
-  const str_t nk_start = str_from_c("```nk\n");
-  const str_t code_end = str_from_c("```");
+  const str_t nk_start  = str_from_c("```nk\n");
+  const str_t code_end  = str_from_c("```");
 
-  bool in_nk = false;
+  bool in_nk  = false;
   bool in_nkt = false;
 
   while ((read = getline(&line, &len, file)) != -1) {
@@ -84,7 +83,7 @@ void test(inter_t* inter, const char* fname, bool v) {
         if (rest_out && *rest_out)
           fprintf(stderr, "ERROR %s:%ld : unmatched output: '%s'\n", fname, in_line_no, rest_out);
         rest_out = NULL;
-        in_nkt = false;
+        in_nkt   = false;
       } else if (*line == '>') {
         if (v) fprintf(stderr, "%s", line);
         if (rest_out && *rest_out)

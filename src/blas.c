@@ -41,7 +41,7 @@ DEF_WORD("lapack_getrf", lapack_getrf) {
   dim_t n = array_dims(x)[1];
 
   own(array_t) ipiv = array_alloc(T_I64, n, shape_1d(&n));
-  t_i64 status = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, m, n, array_mut_data(x), n, array_mut_data(ipiv));
+  t_i64 status      = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, m, n, array_mut_data(x), n, array_mut_data(ipiv));
 
   PUSH(x);
   PUSH(ipiv);

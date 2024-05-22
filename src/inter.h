@@ -48,7 +48,7 @@ INLINE void stack_free(stack_t* s) {
 INLINE size_t stack_len(const stack_t* s) { return s->l; }
 INLINE bool   stack_is_empty(const stack_t* s) { return !stack_len(s); }
 INLINE void   stack_grow(stack_t* s) {
-    s->cap = (s->cap + 1) * 2;
+    s->cap    = (s->cap + 1) * 2;
     s->bottom = reallocarray(s->bottom, sizeof(array_t*), s->cap);
 }
 INLINE void stack_push(stack_t* stack, const array_t* a) {
@@ -85,9 +85,9 @@ typedef struct dict_entry_t dict_entry_t;
 
 INLINE dict_entry_t* dict_entry_new(dict_entry_t* n, str_t k, array_t* v) {
   dict_entry_t* e = malloc(sizeof(dict_entry_t));
-  e->n = n;
-  e->k = str_copy(k);
-  e->v = array_inc_ref(v);
+  e->n            = n;
+  e->k            = str_copy(k);
+  e->v            = array_inc_ref(v);
   return e;
 }
 INLINE dict_entry_t* dict_entry_free(dict_entry_t* e) {
