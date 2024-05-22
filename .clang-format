@@ -5,8 +5,9 @@ AlignConsecutiveDeclarations: Consecutive
 AlignConsecutiveMacros: Consecutive
 AlignConsecutiveShortCaseStatements:
   Enabled: true
+AlignTrailingComments:
+  Kind: Always
 AllowShortBlocksOnASingleLine: Always
-# clang 19: AllowShortCaseExpressionOnASingleLine: True
 AllowShortCaseLabelsOnASingleLine: True
 AllowShortEnumsOnASingleLine: True
 AllowShortFunctionsOnASingleLine: All
