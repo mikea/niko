@@ -9,11 +9,11 @@ add_compile_options(
   -mavx2
   -std=gnu2x 
   -mmemset-strategy=vector_loop:-1:noalign
-  -Wall -Werror=implicit-fallthrough -Werror=switch
+  -Wall -Werror=implicit-fallthrough -Werror=switch 
   -Wno-psabi 
   -fno-math-errno -fno-trapping-math -fno-omit-frame-pointer -fverbose-asm)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-inline-small-functions -Og")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -g")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -g -Wno-unknown-pragmas")
 add_link_options(-z execstack)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)

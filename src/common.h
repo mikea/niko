@@ -19,6 +19,7 @@ static_assert(sizeof(f64) == sizeof(i64));
 #define PRINTF(i, j)  ATTR(format(printf, i, j))
 #define CONST         ATTR(const)
 #define NORETURN      ATTR(noreturn)
+#define UNUSED        ATTR(unused)
 #define INLINE        static inline
 #define ALWAYS_INLINE INLINE ATTR(always_inline)
 

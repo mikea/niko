@@ -25,9 +25,7 @@ jobs:
       run: just test
 
     - name: Release
-      run: |
-        just release
-        bin/niko -e "\\i"
+      run: just release
 
     - name: Valgrind
       run: just valgrind

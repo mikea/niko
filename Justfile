@@ -11,6 +11,7 @@ build BUILD_TYPE="Debug":
     cp build/{{BUILD_TYPE}}/niko bin/niko
 
 release: (build "Release") _test
+    build/Release/niko -e "\i"
 
 run: test
     rlwrap bin/niko

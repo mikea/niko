@@ -25,7 +25,7 @@ extern unwind_stack_t __unwind_stack;
 
 INLINE void unwind_handler_push(unwind_t* c, void* p) { unwind_stack_push(&__unwind_stack, (unwind_entry_t){c, p}); }
 INLINE void unwind_handler_pop(unwind_t* c, void* p) {
-  unwind_entry_t e = unwind_stack_pop(&__unwind_stack);
+ UNUSED unwind_entry_t e = unwind_stack_pop(&__unwind_stack);
   assert(e.c == c);
   assert(e.p == p);
 }
