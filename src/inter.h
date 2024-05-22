@@ -37,8 +37,8 @@ struct stack_t {
 
 INLINE stack_t* stack_new() { return calloc(1, sizeof(stack_t)); }
 INLINE void     stack_clear(stack_t* s) {
-      DO(i, s->l) array_dec_ref(s->bottom[i]);
-      s->l = 0;
+  DO(i, s->l) array_dec_ref(s->bottom[i]);
+  s->l = 0;
 }
 INLINE void stack_free(stack_t* s) {
   stack_clear(s);
@@ -48,8 +48,8 @@ INLINE void stack_free(stack_t* s) {
 INLINE size_t stack_len(const stack_t* s) { return s->l; }
 INLINE bool   stack_is_empty(const stack_t* s) { return !stack_len(s); }
 INLINE void   stack_grow(stack_t* s) {
-    s->cap    = (s->cap + 1) * 2;
-    s->bottom = reallocarray(s->bottom, sizeof(array_t*), s->cap);
+  s->cap    = (s->cap + 1) * 2;
+  s->bottom = reallocarray(s->bottom, sizeof(array_t*), s->cap);
 }
 INLINE void stack_push(stack_t* stack, const array_t* a) {
   if (stack->l == stack->cap) stack_grow(stack);
@@ -62,8 +62,8 @@ INLINE stack_t* stack_assert_not_empty(stack_t* stack) {
 INLINE array_t* stack_pop(stack_t* stack) { return stack_assert_not_empty(stack)->bottom[--stack->l]; }
 INLINE void     stack_drop(stack_t* s) { array_dec_ref(stack_pop(s)); }
 INLINE          borrow(array_t) stack_peek(stack_t* s, size_t i) {
-           assert(i < s->l);
-           return s->bottom[s->l - i - 1];
+  assert(i < s->l);
+  return s->bottom[s->l - i - 1];
 }
 INLINE array_t* stack_i(stack_t* s, size_t i) { return array_inc_ref(stack_peek(s, i)); }
 

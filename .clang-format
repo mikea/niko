@@ -3,7 +3,10 @@ BasedOnStyle: Chromium
 AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveDeclarations: Consecutive
 AlignConsecutiveMacros: Consecutive
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
 AllowShortBlocksOnASingleLine: Always
+# clang 19: AllowShortCaseExpressionOnASingleLine: True
 AllowShortCaseLabelsOnASingleLine: True
 AllowShortEnumsOnASingleLine: True
 AllowShortFunctionsOnASingleLine: All

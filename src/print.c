@@ -20,9 +20,9 @@ size_t print_ptr(FILE* f, type_t t, flag_t fl, const void* ptr) {
       if (strchr(s, '.') || strchr(s, 'e')) return fprintf(f, "%s", s);
       else return fprintf(f, "%s.", s);
     }
-    case T_C8: UNREACHABLE;
-    case T_ARR: return fprintf(f, "%pA", *(array_t**)ptr);
-    case T_FFI: return fprintf(f, "<native_function>");
+    case T_C8:         UNREACHABLE;
+    case T_ARR:        return fprintf(f, "%pA", *(array_t**)ptr);
+    case T_FFI:        return fprintf(f, "<native_function>");
     case T_DICT_ENTRY: {
       printf("flag: %d\n", fl);
       if (fl & FLAG_QUOTE) return fprintf(f, "%pS'", &((*(t_dict_entry*)ptr)->k));

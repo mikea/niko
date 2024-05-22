@@ -98,8 +98,8 @@ void inter_dict_entry(inter_t* inter, dict_entry_t* e) {
             PUSH(*p);
             break;
           }
-          case T_ARR: NOT_IMPLEMENTED;
-          case T_FFI: NOT_IMPLEMENTED;
+          case T_ARR:        NOT_IMPLEMENTED;
+          case T_FFI:        NOT_IMPLEMENTED;
           case T_DICT_ENTRY: {
             if ((*p)->f & FLAG_QUOTE) PUSH(*p);
             else inter_dict_entry(inter, *array_data_t_dict_entry(*p));
@@ -125,8 +125,8 @@ void inter_token(inter_t* inter, token_t t) {
   stack_t* stack = inter->mode == MODE_COMPILE ? inter->comp_stack : inter->stack;
 
   switch (t.tok) {
-    case TOK_EOF: return;
-    case TOK_ERR: panicf("unexpected token: '%pS'", &t.text);
+    case TOK_EOF:      return;
+    case TOK_ERR:      panicf("unexpected token: '%pS'", &t.text);
     case TOK_ARR_OPEN: {
       assert(inter->arr_level < sizeof(inter->arr_marks) / sizeof(inter->arr_marks[0]));
       inter->arr_marks[inter->arr_level++] = inter->stack->l;
@@ -164,7 +164,7 @@ void inter_token(inter_t* inter, token_t t) {
         CHECK(e, "unknown word '%pS'", &t.text);
         switch (inter->mode) {
           case MODE_INTERPRET: return inter_dict_entry(inter, e);
-          case MODE_COMPILE: {
+          case MODE_COMPILE:   {
             own(array_t) a = array_new_scalar_t_dict_entry(e);
             PUSH(a);
             return;

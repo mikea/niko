@@ -23,10 +23,10 @@ INLINE void        str_print(const str_t s) { str_fprint(s, stdout); }
 INLINE char        str_i(const str_t s, size_t i) { return *(s.p + i); }
 INLINE const char* str_end(const str_t s) { return s.p + s.l; }
 INLINE char*       str_toc(str_t s) {
-        char* c = malloc(s.l + 1);
-        memcpy(c, s.p, s.l);
-        c[s.l] = 0;
-        return c;
+  char* c = malloc(s.l + 1);
+  memcpy(c, s.p, s.l);
+  c[s.l] = 0;
+  return c;
 }
 INLINE str_t str_memmem(const str_t h, const str_t n) {
   void* p = memmem(h.p, h.l, n.p, n.l);
