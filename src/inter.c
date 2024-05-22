@@ -1,4 +1,5 @@
 #include "inter.h"
+#include "memory.h"
 #include "prelude.h"
 
 inter_t* inter_new() {
@@ -22,7 +23,7 @@ DESTRUCTOR void global_dict_free() { dict_entry_free_chain(global_dict); }
 
 array_t* concatenate(stack_t* stack, shape_t sh) {
   size_t len = shape_len(sh);
-  if (!len) return array_inc_ref(array_move(array_alloc(T_I64, 0, sh)));
+  if (!len) return array_alloc(T_I64, 0, sh);
 
   bool all_common = true;
   borrow(array_t) top = stack_peek(stack, 0);
@@ -84,7 +85,7 @@ void inter_dict_entry(inter_t* inter, dict_entry_t* e) {
           CHECK(f, "%pT %pT are not supported", &x->t, &y->t);
           return f(inter, inter->stack);
         }
-        default: ERROR("unexpected ffi rank: %ld", a->r);
+        default: panicf("unexpected ffi rank: %ld", a->r);
       }
     }
     case T_ARR: {
@@ -107,7 +108,7 @@ void inter_dict_entry(inter_t* inter, dict_entry_t* e) {
       }
       return;
     }
-    default: ERROR("unexpected type: %d", a->t);
+    default: panicf("unexpected type: %d", a->t);
   }
 }
 
@@ -120,9 +121,11 @@ dict_entry_t* _inter_find_word(inter_t* inter, const str_t n) {
 }
 
 void inter_token(inter_t* inter, token_t t) {
+  stack_t* stack = inter->mode == MODE_INTERPRET ? inter->stack : inter->comp_stack;
+
   switch (t.tok) {
     case TOK_EOF: return;
-    case TOK_ERR: ERROR("unexpected token: '%pS'", &t.text);
+    case TOK_ERR: panicf("unexpected token: '%pS'", &t.text);
     case TOK_ARR_OPEN: {
       assert(inter->arr_level < sizeof(inter->arr_marks) / sizeof(inter->arr_marks[0]));
       inter->arr_marks[inter->arr_level++] = inter->stack->l;
@@ -171,65 +174,28 @@ void inter_token(inter_t* inter, token_t t) {
     }
     case TOK_I64: {
       own(array_t) a = array_new_scalar_t_i64(t.val.i);
-      switch (inter->mode) {
-        case MODE_INTERPRET: {
-          stack_push(inter->stack, a);
-          return;
-        };
-        case MODE_COMPILE: {
-          stack_push(inter->comp_stack, a);
-          return;
-        }
-      }
-      UNREACHABLE;
+      stack_push(stack, a);
+      return;
     }
     case TOK_F64: {
       own(array_t) a = array_new_scalar_t_f64(t.val.d);
-      switch (inter->mode) {
-        case MODE_INTERPRET: {
-          stack_push(inter->stack, a);
-          return;
-        };
-        case MODE_COMPILE: {
-          stack_push(inter->comp_stack, a);
-          return;
-        }
-      }
-      UNREACHABLE;
+      stack_push(stack, a);
+      return;
     }
     case TOK_STR: {
       size_t l = t.val.s.l;
       dim_t d = l;
-
-      switch (inter->mode) {
-        case MODE_INTERPRET: {
-          stack_push(inter->stack, array_move(array_new_t_c8(l, shape_1d(&d), t.val.s.p)));
-          return;
-        };
-        case MODE_COMPILE: {
-          DBG("%pS", &t.text);
-          NOT_IMPLEMENTED;
-        }
-      }
-
-      UNREACHABLE;
+      own(array_t) a = array_new_t_c8(l, shape_1d(&d), t.val.s.p);
+      stack_push(stack, a);
+      return;
     }
     case TOK_QUOTE: {
       dict_entry_t* e = _inter_find_word(inter, t.val.s);
       CHECK(e, "unknown word '%pS'", &t.text);
       own(array_t) a = array_new_scalar_t_dict_entry(e);
       a->f |= FLAG_QUOTE;
-      switch (inter->mode) {
-        case MODE_INTERPRET: {
-          stack_push(inter->stack, a);
-          return;
-        };
-        case MODE_COMPILE: {
-          stack_push(inter->comp_stack, a);
-          return;
-        }
-      }
-      UNREACHABLE;
+      stack_push(stack, a);
+      return;
     }
   }
   UNREACHABLE;
@@ -246,11 +212,21 @@ void inter_line(inter_t* inter, const char* s) {
 }
 
 void inter_line_capture_out(inter_t* inter, const char* line, char** out, size_t* out_size) {
-  FILE* fout = open_memstream(out, out_size);
+  CATCH(e) {
+    free(*out);
+    *out_size = asprintf(out, "ERROR: %pS\n", &e);
+    inter->out = stdout;
+    return;
+  }
+
+  __attribute__((cleanup(FILE_cleanup_protected))) FILE* fout = ({
+    FILE* _x = (open_memstream(out, out_size));
+    unwind_handler_push(FILE_panic_handler, _x);
+    _x;
+  });
   inter->out = fout;
   inter_line(inter, line);
   inter->out = stdout;
-  fclose(fout);
 }
 
 void inter_load_prelude() {

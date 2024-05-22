@@ -20,7 +20,7 @@ void repl(inter_t* inter) {
 
   if (prompt) printf(VERSION_STRING "\n");
 
-  while (true) {
+  next: while (true) {
     if (prompt) {
       if (inter->arr_level) {
         printf("%ld> ", inter->arr_level);
@@ -31,9 +31,9 @@ void repl(inter_t* inter) {
     }
 
     if (getline(&input, &input_size, stdin) <= 0) return;
-    if (setjmp(global_jmp_buf)) {
-      fprintf(stderr, "ERROR: %pS\n", &global_err);
-      continue;
+    CATCH(e) {
+      fprintf(stderr, "ERROR: %pS\n", &e);
+      goto next;
     }
     inter_line(inter, input);
   }
@@ -87,16 +87,9 @@ void test(inter_t* inter, const char* fname, bool v) {
         if (v) fprintf(stderr, "%s", line);
         if (rest_out && *rest_out)
           fprintf(stderr, "ERROR %s:%ld : unmatched output: '%s'\n", fname, in_line_no, rest_out);
-        if (out) free(out);
         in_line_no = line_no;
-
-        if (setjmp(global_jmp_buf)) {
-          out_size = asprintf(&out, "ERROR: %pS\n", &global_err);
-          rest_out = out;
-          continue;
-        }
-
         stack_clear(inter->stack);
+        if (out) free(out);
         inter_line_capture_out(inter, line + 1, &out, &out_size);
         rest_out = out;
         continue;
@@ -138,9 +131,9 @@ int main(int argc, char* argv[]) {
   if (!z) inter_load_prelude();
   own(inter_t) inter = inter_new();
 
-  if (setjmp(global_jmp_buf)) {
-    fprintf(stderr, "ERROR: %pS", &global_err);
-    exit(1);
+  CATCH(e) {
+    fprintf(stderr, "ERROR: %pS", &e);
+    return 1;
   }
 
   if (t) test(inter, t, v);

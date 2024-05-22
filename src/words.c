@@ -13,6 +13,13 @@ size_t as_size_t(array_t* a) {
   return i;
 }
 
+#define PROTECTED(t, n, expr) protected(t) n = PROTECT(array_t, expr);
+
+size_t pop_size_t(stack_t* s) {
+    protected(array_t) x = PROTECT(array_t, stack_pop(s));
+    return as_size_t(x);
+}
+
 #pragma region stack
 
 #define DUP(stack) stack_push(stack, stack_peek(stack, 0))
@@ -58,10 +65,8 @@ DEF_WORD("tuck", tuck) {
 
 DEF_WORD("pick", pick) {
   CHECK(stack_len(stack) > 0, "stack underflow: 1 value expected");
-  own(array_t) x = stack_pop(stack);
-  size_t n = as_size_t(x);
+  size_t n = pop_size_t(stack);
   CHECK(stack_len(stack) > n, "stack underflow: index %ld >= stack size %ld", n, stack_len(stack));
-
   stack_push(stack, array_move(stack_i(stack, n)));
 }
 
@@ -327,9 +332,7 @@ DEF_WORD_1_1("index", index) {
 }
 
 DEF_WORD("pascal", pascal) {
-  own(array_t) x = stack_pop(stack);
-  size_t n = as_size_t(x);
-
+  size_t n = pop_size_t(stack);
   dim_t dims[2] = {n, n};
   own(array_t) y = array_alloc(T_I64, n * n, shape_create(2, dims));
   t_i64* ptr = array_mut_data(y);
@@ -395,13 +398,6 @@ DEF_WORD("\\s", slash_stack) { DO(i, stack_len(stack)) fprintf(inter->out, "%ld:
 
 #pragma region adverbs
 
-INLINE size_t pop_rank(stack_t* s) {
-  own(array_t) x = stack_pop(s);
-  CHECK(x->r == 0, "scalar expected");
-  CHECK(x->t == T_I64, "int scalar expected");
-  return as_size_t(x);
-}
-
 INLINE dict_entry_t* pop_dict_entry(stack_t* s) {
   own(array_t) op = stack_pop(s);
   CHECK(op->t == T_DICT_ENTRY, "dict entry expected");
@@ -411,8 +407,8 @@ INLINE dict_entry_t* pop_dict_entry(stack_t* s) {
 DEF_WORD("fold_rank", fold_rank) {
   CHECK(stack_len(stack) > 2, "stack underflow: 3 values expected");
   dict_entry_t* e = pop_dict_entry(stack);
-  size_t rank = pop_rank(stack);
-  own(array_t) x = stack_pop(stack);
+  size_t rank = pop_size_t(stack);
+  PROTECTED(array_t, x, stack_pop(stack));
 
   void __iter(size_t i, array_t * slice) {
     stack_push(stack, slice);
@@ -425,9 +421,8 @@ DEF_WORD("fold_rank", fold_rank) {
 DEF_WORD("scan_rank", scan_rank) {
   CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   dict_entry_t* e = pop_dict_entry(stack);
-  size_t rank = pop_rank(stack);
-
-  own(array_t) x = stack_pop(stack);
+  size_t rank = pop_size_t(stack);
+  PROTECTED(array_t, x, stack_pop(stack));
 
   void __iter(size_t i, array_t * slice) {
     if (i > 0) DUP(stack);
@@ -444,8 +439,8 @@ DEF_WORD("scan_rank", scan_rank) {
 DEF_WORD("apply_rank", apply_rank) {
   CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
   dict_entry_t* e = pop_dict_entry(stack);
-  size_t rank = pop_rank(stack);
-  own(array_t) x = stack_pop(stack);
+  size_t rank = pop_size_t(stack);
+  PROTECTED(array_t, x, stack_pop(stack));
 
   void __iter(size_t i, array_t * slice) {
     stack_push(stack, slice);
@@ -459,25 +454,14 @@ DEF_WORD("apply_rank", apply_rank) {
 
 DEF_WORD("power", power) {
   CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
-  own(array_t) op = stack_pop(stack);
-  CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
-  dict_entry_t* e = *array_data_t_dict_entry(op);
-
-  own(array_t) y = stack_pop(stack);
-  CHECK(y->r == 0, "scalar expected");
-  CHECK(y->t == T_I64, "int scalar expected");
-  size_t n = as_size_t(y);
+  dict_entry_t* e = pop_dict_entry(stack);
+  size_t n = pop_size_t(stack);
   DO(i, n) { inter_dict_entry(inter, e); }
 }
 
 DEF_WORD("trace", trace) {
   CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
-
-  CHECK(stack_len(stack) >= 3, "stack underflow: 3 values expected");
-  own(array_t) op = stack_pop(stack);
-  CHECK(op->t == T_DICT_ENTRY, "fold: dict entry expected");
-  dict_entry_t* e = *array_data_t_dict_entry(op);
-
+  dict_entry_t* e = pop_dict_entry(stack);
   own(array_t) y = stack_pop(stack);
   shape_t s = create_shape(y);
 

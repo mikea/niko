@@ -12,7 +12,7 @@
 
 #include "array.h"
 #include "common.h"
-#include "err.h"
+#include "panic.h"
 #include "inter.h"
 #include "str.h"
 

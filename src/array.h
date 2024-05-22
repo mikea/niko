@@ -1,7 +1,9 @@
 #pragma once
 
+#include <string.h>
+
 #include "common.h"
-#include "err.h"
+#include "memory.h"
 #include "simd.h"
 
 // type

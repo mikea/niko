@@ -1,6 +1,7 @@
 #pragma once
 
 #include "array.h"
+#include "str.h"
 
 // token
 typedef struct {

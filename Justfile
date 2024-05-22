@@ -20,12 +20,10 @@ test: build _test
 clean:
     rm -rf bin build callgrind.out.* perf.data perf.data.old vgcore.*
 
-valgrind: build
-    valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t tests/inter.md -v
-    valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t tests/core.md -v
-    valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t tests/prelude.md -v
+valgrind-test FILE: build (_valgrind-test FILE)
+valgrind: build (_valgrind-test "tests/inter.md") (_valgrind-test "tests/core.md") (_valgrind-test "tests/prelude.md")
 
-valgrind-expr EXPR="10000000 zeros": build
+valgrind-expr EXPR="10000000 zeros": build 
     valgrind --leak-check=full --track-origins=yes --show-reachable=yes  --suppressions=default.supp bin/niko -e "{{EXPR}}"
 
 callgrind EXPR="10000000 zeros": release
@@ -63,3 +61,7 @@ _benchmarks:
         perf stat -- build/Release/niko -e "$line" 2>&1 ; \
         hyperfine --warmup 10 "build/Release/niko -e \"$line\"" ; \
         done < benchmarks
+
+[private]
+_valgrind-test FILE: 
+    valgrind --leak-check=full --track-origins=yes --show-reachable=yes --suppressions=default.supp bin/niko -t {{FILE}} -v
