@@ -1,8 +1,15 @@
-: zeros 0 swap reshape ;
-: ones 1 swap reshape ;
-: fold 0 swap fold_rank ;
-: scan 0 swap scan_rank ;
-: sum +' fold ;
-: sums +' scan ;
 : min & ;
 : max | ;
+
+: zeros 0 swap reshape ;
+: ones 1 swap reshape ;
+
+: swap- swap - ;
+
+: fold 0 swap fold_rank ;
+: scan 0 swap scan_rank ;
+: pairwise 0 swap pairwise_rank ;
+
+: sum +' fold ;
+: sums +' scan ;
+: deltas swap-' pairwise ;

@@ -422,6 +422,25 @@ DEF_WORD("apply_rank", apply_rank) {
   PUSH(result);
 }
 
+DEF_WORD("pairwise_rank", pairwise_rank) {
+  POP(op);
+  POP(r);
+  POP(x);
+
+  dict_entry_t* e    = as_dict_entry(op);
+  size_t        rank = as_size_t(r);
+
+  void __iter(size_t i, array_t * slice) {
+    PUSH(slice);
+    if (i > 0) inter_dict_entry(inter, e);
+    PUSH(slice);
+  }
+  array_for_each_cell(x, rank, __iter);
+  DROP;
+  own(array_t) result = concatenate(stack, shape_prefix(array_shape(x), x->r - rank));
+  PUSH(result);
+}
+
 DEF_WORD("power", power) {
   POP(op);
   POP(n);

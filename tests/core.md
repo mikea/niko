@@ -404,6 +404,28 @@ ERROR: invalid rank: 4 > 3
 ERROR: invalid rank: 4 > 3
 ```
 
+## pairwise_rank
+
+```nkt
+> : -neg - neg ;
+> [ 0 1 1 0 1 0 ] 0 -neg' pairwise_rank . \s
+[ 0 1 0 -1 1 -1 ]
+> [ 2 3 4 ] index 0 -neg' pairwise_rank . \s
+[ [ [ 0 1 1 1 ] [ 1 1 1 1 ] [ 1 1 1 1 ] ] [ [ 1 1 1 1 ] [ 1 1 1 1 ] [ 1 1 1 1 ] ] ]
+> [ 2 3 4 ] index 1 -neg' pairwise_rank . \s
+[ [ [ 0 1 2 3 ] [ 4 4 4 4 ] [ 4 4 4 4 ] ] [ [ 4 4 4 4 ] [ 4 4 4 4 ] [ 4 4 4 4 ] ] ]
+> [ 2 3 4 ] index 2 -neg' pairwise_rank . \s
+[ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 12 12 12 ] [ 12 12 12 12 ] [ 12 12 12 12 ] ] ]
+> [ 2 3 4 ] index 3 -neg' pairwise_rank . \s
+[ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
+> [ 2 3 4 ] index 4 -neg' pairwise_rank
+ERROR: invalid rank: 4 > 3
+> \s
+0: -neg'
+1: 4
+2: [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
+```
+
 ## power
 
 ```nk

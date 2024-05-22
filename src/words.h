@@ -11,7 +11,7 @@
     own(array_t) y = n##_impl(x);             \
     PUSH(y);                                  \
   }                                           \
-  INLINE array_t* n##_impl(const array_t* x)
+  INLINE array_t* n##_impl(const array_t* x)  
 
 #define REGISTER_WORD(w, n)                               \
   void             w_##n(inter_t* inter, stack_t* stack); \

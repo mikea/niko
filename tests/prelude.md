@@ -17,28 +17,6 @@
 > [ 2 3 ] ones .
 [ [ 1 1 1 ] [ 1 1 1 ] ]
 ```
-# operations on arrays
-## sum
-```nkt
-> 10 index sum .
-45
-> 10 index sums .
-[ 0 1 3 6 10 15 21 28 36 45 ]
-```
-
-## min
-
-```nkt
-> 3 index 1 min .
-[ 0 1 1 ]
-```
-
-## max
-
-```nkt
-> 3 index 1 max .
-[ 1 1 2 ]
-```
 
 # higher order words
 ## fold
@@ -62,4 +40,51 @@
 [ 0. 1. 3. 6. 10. 15. 21. 28. 36. 45. ]
 > [ 2 3 4 ] index +' scan .
 [ [ [ 0 1 3 6 ] [ 10 15 21 28 ] [ 36 45 55 66 ] ] [ [ 78 91 105 120 ] [ 136 153 171 190 ] [ 210 231 253 276 ] ] ]
+```
+## pairwise
+```nkt
+> 10 index +' pairwise .
+[ 0 1 3 5 7 9 11 13 15 17 ]
+```
+# shorthands
+
+## sum
+```nkt
+> [ 2 3 ] index sum .
+15
+```
+
+## sums
+```nkt
+> [ 2 3 ] index sums .
+[ [ 0 1 3 ] [ 6 10 15 ] ]
+```
+
+## min
+
+```nkt
+> 3 index 1 min .
+[ 0 1 1 ]
+```
+
+## max
+
+```nkt
+> 3 index 1 max .
+[ 1 1 2 ]
+```
+
+## swap-
+
+```nkt
+> 3 4 - . 3 4 swap- .
+-1
+1
+```
+
+## deltas
+
+```nkt
+> [ 1 3 6 8 0 ] deltas .
+[ 1 2 3 2 -8 ]
 ```
