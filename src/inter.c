@@ -17,19 +17,24 @@ inter_t* inter_new() {
   return inter;
 }
 
+void dict_free(dict_t* dict) {
+  DO(i, dict->s) {
+    string_free(dict->d[i].k);
+    array_dec_ref(dict->d[i].v);
+  }
+  dict_shrink(dict);
+}
+
 void inter_free(inter_t* inter) {
   stack_free(inter->stack);
   stack_free(inter->comp_stack);
-  // dict_entry_free_chain(inter->dict);
+  dict_free(&inter->dict);
   free(inter);
 }
 
-void global_dict_add_new(dict_entry_t e) {
-  // DBG("%pS %ld", &e.k, global_dict.s);
-  dict_push(&global_dict, e);
-}
+void global_dict_add_new(dict_entry_t e) { dict_push(&global_dict, e); }
 
-DESTRUCTOR void global_dict_free() {}
+DESTRUCTOR void global_dict_free() { dict_free(&global_dict); }
 
 array_t* concatenate(stack_t* stack, shape_t sh) {
   size_t len = shape_len(sh);
