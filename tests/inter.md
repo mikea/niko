@@ -79,6 +79,8 @@
 
 # Word Definition
 
+## `:`
+
 ```nkt
 > : test_1 1 ; test_1 .
 1
@@ -98,6 +100,14 @@
 > : test_sums 0 +' scan_rank ; 
 > 10 index test_sums .
 [ 0 1 3 6 10 15 21 28 36 45 ]
+```
+
+## `const`
+
+```nkt
+> 42 const forty_two \s
+> forty_two .
+42
 ```
 
 # error handling

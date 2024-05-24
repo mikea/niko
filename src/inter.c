@@ -73,9 +73,14 @@ array_t* concatenate(stack_t* stack, shape_t sh) {
 
 token_t _inter_next_token(inter_t* inter) { return next_token(&inter->line); }
 
-void inter_dict_entry(inter_t* inter, t_dict_entry e) {
+void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
   stack_t* stack = inter->stack;
-  array_t* a     = inter->dict.d[e].v;
+  dict_entry_t* e = &inter->dict.d[e_idx];
+  if (e->f & ENTRY_CONST || e->f & ENTRY_VAR) {
+    PUSH(e->v);
+    return;
+  }
+  array_t* a     = e->v;
   // DBG("%pS %pA", &inter->dict.d[e].k, a);
   switch (a->t) {
     case T_FFI: {
@@ -173,6 +178,13 @@ void inter_token(inter_t* inter, token_t t) {
         dict_push(&inter->dict, (dict_entry_t){string_copy(inter->comp), array_inc_ref(a)});
         inter->mode = MODE_INTERPRET;
         string_free(inter->comp);
+        return;
+      } else if (str_eqc(t.text, "const")) {
+        CHECK(inter->mode == MODE_INTERPRET, "const can be used only in interpret mode");
+        token_t next = _inter_next_token(inter);
+        CHECK(next.tok == TOK_WORD, "word expected");
+        POP(x);
+        dict_push(&inter->dict, (dict_entry_t){str_copy(next.text), array_inc_ref(x), ENTRY_CONST});
         return;
       } else {
         size_t e = _inter_find_word(inter, t.text);
