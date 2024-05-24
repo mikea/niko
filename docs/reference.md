@@ -65,7 +65,35 @@ Words that starts from '\' are indended to be used during development
 
 ### Mathematical Functions
 
-`x -> y`
+|Word|Signature|Description|
+|---|---|---|
+|`acos`|`(x->y)`|
+|`acosh`|`(x->y)`|
+|`asin`|`(x->y)`|
+|`asinh`|`(x->y)`|
+|`atan`|`(x->y)`|
+|`atanh`|`(x->y)`|
+|`cbrt`|`(x->y)`|
+|`ceil`|`(x->y)`|
+|`cos`|`(x->y)`|
+|`cosh`|`(x->y)`|
+|`erf`|`(x->y)`|
+|`exp`|`(x->y)`|
+|`floor`|`(x->y)`|
+|`j0`|`(x->y)`|
+|`j1`|`(x->y)`|
+|`y0`|`(x->y)`|
+|`y1`|`(x->y)`|
+|`lgamma`|`(x->y)`|
+|`log`|`(x->y)`|
+|`log10`|`(x->y)`|
+|`log1p`|`(x->y)`|
+|`log2`|`(x->y)`|
+|`sin`|`(x->y)`|
+|`sinh`|`(x->y)`|
+|`sqrt`|`(x->y)`|
+|`tan`|`(x->y)`|
+|`tanh`|`(x->y)`|
 
 ## Binary Operations
 
