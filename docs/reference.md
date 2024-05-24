@@ -1,5 +1,12 @@
 # Niko Reference
 
+## Defining New Words
+
+`const <NAME>` `(x -> )` - takes off the top of the stack and defines new word `<NAME>`.
+When evaluated `<NAME>` will always result in `x`.
+
+`: <NAME> ... ;`
+
 ## Development Aids
 
 Words that starts from '\' are indended to be used during development
@@ -108,3 +115,17 @@ Words that starts from '\' are indended to be used during development
 |`blas_gemm`|`(x y -> x * y )`|matrix multiplication
 |`lapack_getrf`|`(x -> x ipiv info )`|matrix factorization
 |`lapack_getri`|`(x ipiv -> x )`|matrix inversion
+
+# Constants
+|Word||Description|
+|---|---|
+|`E`|base of natural logarithm
+|`LOG2E`|base 2 logarithm of `E`
+|`LOG10E`|base 10 logarithm of `E`
+|`LN2`|natural logarithm of 2
+|`LN10`|natural logarithm of 10 
+|`PI`|Pi, the ratio of a circle’s circumference to its diameter
+|`PI/2`|`PI`/2
+|`PI/4`|`PI`/4
+|`1/PI`|1/`PI`
+|`2/PI`|2/`PI`

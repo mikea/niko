@@ -97,15 +97,45 @@
 > : test_sum 0 +' fold_rank ;
 > 10 index test_sum .
 45
-> : test_sums 0 +' scan_rank ; 
-> 10 index test_sums .
+> : sums 0 +' scan_rank ; 
+> 10 index sums .
 [ 0 1 3 6 10 15 21 28 36 45 ]
 ```
+
+redefining words
+
+```nkt
+> : 4_2 42 ;
+> : 8_4 4_2 2 * ;
+> 4_2 . 8_4 .
+42
+84
+> : 4_2 41 ;
+> 4_2 . 8_4 .
+41
+82
+> : + 42 ;
+ERROR: `+` can't be redefined
+> 1 2 + .
+3
+```
+
 
 ## `const`
 
 ```nkt
 > 42 const forty_two \s
+> forty_two .
+42
+> 76 const forty_two
+ERROR: `forty_two` can't be redefined
+> .
+76
+> forty_two .
+42
+> : forty_two 76 ;
+ERROR: `forty_two` can't be redefined
+> \s
 > forty_two .
 42
 ```

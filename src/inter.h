@@ -88,7 +88,7 @@ INLINE void array_t_cleanup_protected_push(array_t** p) {
 typedef struct dict_entry {
   string_t k;
   array_t* v;
-  enum { ENTRY_CONST = 1, ENTRY_VAR = 2 } f;
+  enum { ENTRY_SYSTEM = 1, ENTRY_CONST = 2, ENTRY_VAR = 4 } f;
 } dict_entry_t;
 
 void global_dict_add_new(dict_entry_t e);
