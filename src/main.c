@@ -129,8 +129,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (!z) inter_load_prelude();
   own(inter_t) inter = inter_new();
+  if (!z) inter_load_prelude(inter);
 
   CATCH(e) {
     fprintf(stderr, "ERROR: %pS", &e);

@@ -2,24 +2,34 @@
 #include "memory.h"
 #include "prelude.h"
 
+dict_t global_dict;
+
 inter_t* inter_new() {
   inter_t* inter    = calloc(1, sizeof(inter_t));
   inter->stack      = stack_new();
   inter->comp_stack = stack_new();
   inter->out        = stdout;
+  dict_reserve(&inter->dict, global_dict.s);
+  DO(i, global_dict.s) {
+    dict_entry_t* e = &global_dict.d[i];
+    dict_push(&inter->dict, (dict_entry_t){string_copy(e->k), array_inc_ref(e->v)});
+  }
   return inter;
 }
 
 void inter_free(inter_t* inter) {
   stack_free(inter->stack);
   stack_free(inter->comp_stack);
-  dict_entry_free_chain(inter->dict);
+  // dict_entry_free_chain(inter->dict);
   free(inter);
 }
 
-dict_entry_t* global_dict = NULL;
+void global_dict_add_new(dict_entry_t e) {
+  // DBG("%pS %ld", &e.k, global_dict.s);
+  dict_push(&global_dict, e);
+}
 
-DESTRUCTOR void global_dict_free() { dict_entry_free_chain(global_dict); }
+DESTRUCTOR void global_dict_free() {}
 
 array_t* concatenate(stack_t* stack, shape_t sh) {
   size_t len = shape_len(sh);
@@ -58,9 +68,10 @@ array_t* concatenate(stack_t* stack, shape_t sh) {
 
 token_t _inter_next_token(inter_t* inter) { return next_token(&inter->line); }
 
-void inter_dict_entry(inter_t* inter, dict_entry_t* e) {
+void inter_dict_entry(inter_t* inter, t_dict_entry e) {
   stack_t* stack = inter->stack;
-  array_t* a     = e->v;
+  array_t* a     = inter->dict.d[e].v;
+  // DBG("%pS %pA", &inter->dict.d[e].k, a);
   switch (a->t) {
     case T_FFI: {
       t_ffi f;
@@ -111,12 +122,13 @@ void inter_dict_entry(inter_t* inter, dict_entry_t* e) {
   }
 }
 
-dict_entry_t* _inter_find_word(inter_t* inter, const str_t n) {
-  for (dict_entry_t* e = inter->dict; e; e = e->n)
-    if (str_eq(n, string_as_str(e->k))) return e;
-  for (dict_entry_t* e = global_dict; e; e = e->n)
-    if (str_eq(n, string_as_str(e->k))) return e;
-  return NULL;
+size_t _inter_find_word(inter_t* inter, const str_t n) {
+  dict_t* dict = &inter->dict;
+  DO(i, dict->s) {
+    size_t j = dict->s - i - 1;
+    if (str_eq(n, string_as_str(dict->d[j].k))) return j;
+  }
+  return dict->s;
 }
 
 void inter_token(inter_t* inter, token_t t) {
@@ -153,13 +165,13 @@ void inter_token(inter_t* inter, token_t t) {
         CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
         own(array_t) a       = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->data);
         inter->comp_stack->l = 0;
-        inter->dict          = dict_entry_new(inter->dict, string_as_str(inter->comp), a);
-        inter->mode          = MODE_INTERPRET;
+        dict_push(&inter->dict, (dict_entry_t){string_copy(inter->comp), array_inc_ref(a)});
+        inter->mode = MODE_INTERPRET;
         string_free(inter->comp);
         return;
       } else {
-        dict_entry_t* e = _inter_find_word(inter, t.text);
-        CHECK(e, "unknown word '%pS'", &t.text);
+        size_t e = _inter_find_word(inter, t.text);
+        CHECK(e < inter->dict.s, "unknown word '%pS'", &t.text);
         switch (inter->mode) {
           case MODE_INTERPRET: return inter_dict_entry(inter, e);
           case MODE_COMPILE:   {
@@ -190,8 +202,8 @@ void inter_token(inter_t* inter, token_t t) {
       return;
     }
     case TOK_QUOTE: {
-      dict_entry_t* e = _inter_find_word(inter, t.val.s);
-      CHECK(e, "unknown word '%pS'", &t.text);
+      size_t e = _inter_find_word(inter, t.val.s);
+      CHECK(e < inter->dict.s, "unknown word '%pS'", &t.text);
       own(array_t) a = array_new_scalar_t_dict_entry(e);
       a->f |= FLAG_QUOTE;
       PUSH(a);
@@ -201,7 +213,14 @@ void inter_token(inter_t* inter, token_t t) {
   UNREACHABLE;
 }
 
+inter_t* current;
+inter_t* inter_current() { return current; }
+void     inter_reset_current(bool*) { current = NULL; }
+
 void inter_line(inter_t* inter, const char* s) {
+  current = inter;
+  UNUSED CLEANUP(inter_reset_current) bool b;
+
   inter->line = s;
 
   for (;;) {
@@ -225,16 +244,10 @@ void inter_line_capture_out(inter_t* inter, const char* line, char** out, size_t
   inter->out = stdout;
 }
 
-void inter_load_prelude() {
+void inter_load_prelude(inter_t* inter) {
   str_t prelude       = str_new_len((char*)__prelude_nk, __prelude_nk_len);
   own(char) c_prelude = str_toc(prelude);
-  own(inter_t) inter  = inter_new();
   inter_line(inter, c_prelude);
-  dict_entry_t* last = inter->dict;
-  while (last->n != NULL) last = last->n;
-  last->n     = global_dict;
-  global_dict = inter->dict;
-  inter->dict = NULL;
 }
 
 void inter_reset(inter_t* inter) {

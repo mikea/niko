@@ -57,31 +57,32 @@ static_assert(sizeof(f64) == sizeof(i64));
     __result;                     \
   })
 
-#define GEN_VECTOR(name, t)                               \
-  typedef struct {                                        \
-    size_t s;                                             \
-    size_t c;                                             \
-    t*     d;                                             \
-  } name##_t;                                             \
-  INLINE void name##_grow(name##_t* v) {                  \
-    v->c = (v->c + 1) * 2;                                \
-    v->d = reallocarray(v->d, sizeof(t), v->c);           \
-  }                                                       \
-  INLINE void name##_shrink(name##_t* v) {                \
-    free(v->d);                                           \
-    v->d = NULL;                                          \
-    v->s = v->c = 0;                                      \
-  }                                                       \
-  ALWAYS_INLINE void name##_grow_if_needed(name##_t* v) { \
-    if (v->s == v->c) name##_grow(v);                     \
-  }                                                       \
-  ALWAYS_INLINE void name##_push(name##_t* v, t e) {      \
-    name##_grow_if_needed(v);                             \
-    v->d[v->s++] = e;                                     \
-  }                                                       \
-  ALWAYS_INLINE t name##_pop(name##_t* v) {               \
-    assert(v->s > 0);                                     \
-    return v->d[--v->s];                                  \
+#define GEN_VECTOR(name, t)                                             \
+  typedef struct {                                                      \
+    size_t s;                                                           \
+    size_t c;                                                           \
+    t*     d;                                                           \
+  } name##_t;                                                           \
+  INLINE void name##_reserve(name##_t* v, size_t c) {                   \
+    v->c = v->c > c ? v->c : c;                                         \
+    v->d = reallocarray(v->d, sizeof(t), v->c);                         \
+  }                                                                     \
+  INLINE void name##_grow(name##_t* v) { name##_reserve(v, v->c + 1); } \
+  INLINE void name##_shrink(name##_t* v) {                              \
+    free(v->d);                                                         \
+    v->d = NULL;                                                        \
+    v->s = v->c = 0;                                                    \
+  }                                                                     \
+  ALWAYS_INLINE void name##_grow_if_needed(name##_t* v) {               \
+    if (v->s == v->c) name##_grow(v);                                   \
+  }                                                                     \
+  ALWAYS_INLINE void name##_push(name##_t* v, t e) {                    \
+    name##_grow_if_needed(v);                                           \
+    v->d[v->s++] = e;                                                   \
+  }                                                                     \
+  ALWAYS_INLINE t name##_pop(name##_t* v) {                             \
+    assert(v->s > 0);                                                   \
+    return v->d[--v->s];                                                \
   }
 
 // NARGS

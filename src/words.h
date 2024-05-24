@@ -11,11 +11,13 @@
     own(array_t) y = n##_impl(x);             \
     PUSH(y);                                  \
   }                                           \
-  INLINE array_t* n##_impl(const array_t* x)  
+  INLINE array_t* n##_impl(const array_t* x)
 
-#define REGISTER_WORD(w, n)                               \
-  void             w_##n(inter_t* inter, stack_t* stack); \
-  CONSTRUCTOR void __register_w_##n() { global_dict_add_new(str_from_c(w), array_move(array_new_scalar_t_ffi(w_##n))); }
+#define REGISTER_WORD(w, n)                                                               \
+  void             w_##n(inter_t* inter, stack_t* stack);                                 \
+  CONSTRUCTOR void __register_w_##n() {                                                   \
+    global_dict_add_new((dict_entry_t){string_from_c(w), array_new_scalar_t_ffi(w_##n)}); \
+  }
 
 #define DEF_WORD(w, n) \
   REGISTER_WORD(w, n)  \
@@ -33,7 +35,7 @@ INLINE size_t as_size_t(array_t* a) {
   return i;
 }
 
-INLINE dict_entry_t* as_dict_entry(array_t* x) {
+INLINE t_dict_entry as_dict_entry(array_t* x) {
   CHECK(x->t == T_DICT_ENTRY, "dict entry expected");
   return *array_data_t_dict_entry(x);
 }

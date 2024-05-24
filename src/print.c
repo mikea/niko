@@ -24,8 +24,10 @@ size_t print_ptr(FILE* f, type_t t, flag_t fl, const void* ptr) {
     case T_ARR:        return fprintf(f, "%pA", *(array_t**)ptr);
     case T_FFI:        return fprintf(f, "<native_function>");
     case T_DICT_ENTRY: {
-      if (fl & FLAG_QUOTE) return fprintf(f, "%pS'", &((*(t_dict_entry*)ptr)->k));
-      else return fprintf(f, "%pS", &((*(t_dict_entry*)ptr)->k));
+      size_t        idx = *(t_dict_entry*)ptr;
+      dict_entry_t* e   = &inter_current()->dict.d[idx];
+      if (fl & FLAG_QUOTE) return fprintf(f, "%pS'", &(e->k));
+      else return fprintf(f, "%pS", &(e->k));
     }
   }
   UNREACHABLE;
@@ -92,7 +94,7 @@ int single_pointer_arginfo(const struct printf_info* __info, size_t n, int* argt
   return 1;
 }
 
-CONSTRUCTOR void register_printf_extensions() {
+ATTR(constructor(9999)) void register_printf_extensions() {
   register_printf_specifier('A', printf_array, single_pointer_arginfo);
   register_printf_specifier('S', printf_str, single_pointer_arginfo);
   register_printf_specifier('H', printf_shape, single_pointer_arginfo);

@@ -74,4 +74,5 @@ INLINE string_t str_copy(const str_t s) {
   memcpy(p, s.p, s.l);
   return (string_t){.l = s.l, .p = p};
 }
+INLINE string_t string_copy(const string_t s) { return str_copy(string_as_str(s)); }
 INLINE string_t string_from_c(const char* s) { return str_copy(str_from_c(s)); }

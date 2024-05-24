@@ -28,12 +28,12 @@ token_t next_token(const char** s);
 
 // stack
 
-typedef struct stack_t stack_t;
-struct stack_t {
+struct stack {
   array_t** data;
   size_t    l;
   size_t    cap;
 };
+typedef struct stack stack_t;
 
 INLINE stack_t* stack_new() { return calloc(1, sizeof(stack_t)); }
 INLINE void     stack_clear(stack_t* s) {
@@ -85,57 +85,40 @@ INLINE void array_t_cleanup_protected_push(array_t** p) {
 
 // dictionary
 
-struct dict_entry_t {
-  struct dict_entry_t* n;
-  string_t             k;
-  array_t*             v;
-};
+typedef struct dict_entry {
+  string_t k;
+  array_t* v;
+} dict_entry_t;
 
-typedef struct dict_entry_t dict_entry_t;
-
-INLINE dict_entry_t* dict_entry_new(dict_entry_t* n, str_t k, array_t* v) {
-  dict_entry_t* e = malloc(sizeof(dict_entry_t));
-  e->n            = n;
-  e->k            = str_copy(k);
-  e->v            = array_inc_ref(v);
-  return e;
-}
-INLINE dict_entry_t* dict_entry_free(dict_entry_t* e) {
-  dict_entry_t* n = e->n;
-  string_free(e->k);
-  array_dec_ref(e->v);
-  free(e);
-  return n;
-}
-INLINE void dict_entry_free_chain(dict_entry_t* e) {
-  while (e) e = dict_entry_free(e);
-}
-
-extern dict_entry_t* global_dict;
-INLINE void          global_dict_add_new(str_t k, array_t* v) { global_dict = dict_entry_new(global_dict, k, v); }
+void global_dict_add_new(dict_entry_t e);
 
 // interpreter
 
-struct inter_t {
+GEN_VECTOR(dict, dict_entry_t)
+
+struct inter {
   enum { MODE_INTERPRET, MODE_COMPILE } mode;
-  dict_entry_t* dict;
-  stack_t*      stack;
-  stack_t*      comp_stack;
-  string_t      comp;
-  size_t        arr_level;
-  size_t        arr_marks[256];
-  FILE*         out;
-  const char*   line;
+  dict_t      dict;
+  stack_t*    stack;
+  stack_t*    comp_stack;
+  string_t    comp;
+  size_t      arr_level;
+  size_t      arr_marks[256];
+  FILE*       out;
+  const char* line;
 };
-typedef struct inter_t inter_t;
+typedef struct inter inter_t;
 
 inter_t* inter_new();
 void     inter_free(inter_t* inter);
 DEF_CLEANUP(inter_t, inter_free);
 
-void inter_load_prelude();
+inter_t* inter_current();
+
+void inter_load_prelude(inter_t* inter);
 
 void inter_reset(inter_t* inter);
-void inter_dict_entry(inter_t* inter, dict_entry_t* e);
+void inter_dict_entry(inter_t* inter, t_dict_entry e);
+
 void inter_line(inter_t* inter, const char* s);
 void inter_line_capture_out(inter_t* inter, const char* line, char** out, size_t* out_size);

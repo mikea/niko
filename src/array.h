@@ -25,13 +25,12 @@ struct array_t;
 typedef struct array_t* t_arr;
 #define t_arr_enum T_ARR
 
-struct inter_t;
-struct stack_t;
-typedef void (*t_ffi)(struct inter_t* inter, struct stack_t* s);
+struct inter;
+struct stack;
+typedef void (*t_ffi)(struct inter* inter, struct stack* s);
 #define t_ffi_enum T_FFI
 
-struct dict_entry_t;
-typedef struct dict_entry_t* t_dict_entry;
+typedef i64 t_dict_entry;
 #define t_dict_entry_enum T_DICT_ENTRY
 
 #define TYPE_ENUM(t) t##_enum
