@@ -55,6 +55,7 @@ stat EXPR="10000000 zeros": release
 _test:
     bin/niko -z -t tests/inter.md
     bin/niko -z -t tests/core.md
+    bin/niko -z -t tests/blas.md
     bin/niko -t tests/prelude.md
     bin/niko -t docs/examples.md
     bin/niko -t docs/reference.md
