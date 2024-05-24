@@ -145,7 +145,7 @@ Words that starts from '\' are indended to be used during development
 |`lapack_getri`|`(x ipiv -> x )`|matrix inversion
 
 # Constants
-|Word||Description|
+|Word|Description|
 |---|---|
 |`E`|base of natural logarithm
 |`LOG2E`|base 2 logarithm of `E`
