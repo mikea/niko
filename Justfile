@@ -58,6 +58,7 @@ _test:
     bin/niko -t tests/prelude.md
     bin/niko -t docs/examples.md
     bin/niko -t docs/reference.md
+    bin/niko -t docs/example_test.md
 
 [private]
 _benchmarks:
