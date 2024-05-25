@@ -140,6 +140,18 @@ ERROR: `forty_two` can't be redefined
 42
 ```
 
+## `var`
+
+```nkt
+> [ 1 2 3 ] var one_two_three \s
+> one_two_three .
+[ 1 2 3 ]
+> 123 one_two_three' !
+> \s
+> one_two_three .
+123
+```
+
 # error handling
 ```nkt
 > 1999912+

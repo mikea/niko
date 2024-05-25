@@ -1,6 +1,7 @@
 #include "inter.h"
 #include "memory.h"
 #include "prelude.h"
+#include "words.h"
 
 dict_t global_dict;
 
@@ -12,7 +13,7 @@ inter_t* inter_new() {
   dict_reserve(&inter->dict, global_dict.s);
   DO(i, global_dict.s) {
     dict_entry_t* e = &global_dict.d[i];
-    dict_push(&inter->dict, (dict_entry_t){string_copy(e->k), array_inc_ref(e->v), ENTRY_SYSTEM});
+    dict_push(&inter->dict, (dict_entry_t){copy(e->k), array_inc_ref(e->v), ENTRY_SYSTEM});
   }
   return inter;
 }
@@ -73,9 +74,14 @@ array_t* concatenate(stack_t* stack, shape_t sh) {
 
 token_t _inter_next_token(inter_t* inter) { return next_token(&inter->line); }
 
+ALWAYS_INLINE dict_entry_t* inter_lookup_entry(inter_t* inter, t_dict_entry e) {
+  CHECK(e < inter->dict.s, "bad dict entry");
+  return &inter->dict.d[e];
+}
+
 void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
   stack_t*      stack = inter->stack;
-  dict_entry_t* e     = &inter->dict.d[e_idx];
+  dict_entry_t* e     = inter_lookup_entry(inter, e_idx);
   if (e->f & ENTRY_CONST || e->f & ENTRY_VAR) {
     PUSH(e->v);
     return;
@@ -132,13 +138,19 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
   }
 }
 
-size_t _inter_find_word(inter_t* inter, const str_t n) {
+t_dict_entry inter_find_entry(inter_t* inter, const str_t n) {
   dict_t* dict = &inter->dict;
   DO(i, dict->s) {
     size_t j = dict->s - i - 1;
-    if (str_eq(n, string_as_str(dict->d[j].k))) return j;
+    if (str_eq(n, to_str(dict->d[j].k))) return j;
   }
   return dict->s;
+}
+
+str_t inter_next_word(inter_t* inter) {
+  token_t next = _inter_next_token(inter);
+  CHECK(next.tok == TOK_WORD, "word expected");
+  return next.text;
 }
 
 void inter_token(inter_t* inter, token_t t) {
@@ -165,43 +177,48 @@ void inter_token(inter_t* inter, token_t t) {
     case TOK_WORD: {
       if (str_eqc(t.text, ":")) {
         CHECK(inter->mode == MODE_INTERPRET, ": can be used only in interpret mode");
-        token_t next = _inter_next_token(inter);
-        CHECK(next.tok == TOK_WORD, "word expected");
-        t_dict_entry prev = _inter_find_word(inter, next.text);
+        str_t next = inter_next_word(inter);
+        t_dict_entry prev  = inter_find_entry(inter, next);
         if (prev < inter->dict.s) {
           dict_entry_t* e = &inter->dict.d[prev];
-          if (e->f & (ENTRY_CONST | ENTRY_SYSTEM)) panicf("`%pS` can't be redefined", &next.text);
+          if (e->f & (ENTRY_CONST | ENTRY_SYSTEM)) panicf("`%pS` can't be redefined", &next);
         }
         inter->mode = MODE_COMPILE;
         assert(stack_is_empty(inter->comp_stack));
-        inter->comp = str_copy(next.text);
+        inter->comp = copy(next);
         return;
       } else if (str_eqc(t.text, ";")) {
         CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
         own(array_t) a = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->data);
 
-        t_dict_entry prev = _inter_find_word(inter, string_as_str(inter->comp));
+        t_dict_entry prev = inter_find_entry(inter, to_str(inter->comp));
         if (prev < inter->dict.s) {
           array_dec_ref(inter->dict.d[prev].v);
           inter->dict.d[prev].v = array_inc_ref(a);
         } else {
-          dict_push(&inter->dict, (dict_entry_t){string_copy(inter->comp), array_inc_ref(a)});
+          dict_push(&inter->dict, (dict_entry_t){copy(inter->comp), array_inc_ref(a)});
         }
 
         inter->comp_stack->l = 0;
-        inter->mode = MODE_INTERPRET;
+        inter->mode          = MODE_INTERPRET;
         string_free(inter->comp);
         return;
       } else if (str_eqc(t.text, "const")) {
         CHECK(inter->mode == MODE_INTERPRET, "const can be used only in interpret mode");
-        token_t next = _inter_next_token(inter);
-        CHECK(next.tok == TOK_WORD, "word expected");
-        if (_inter_find_word(inter, next.text) < inter->dict.s) panicf("`%pS` can't be redefined", &next.text);
+        str_t next = inter_next_word(inter);
+        if (inter_find_entry(inter, next) < inter->dict.s) panicf("`%pS` can't be redefined", &next);
         POP(x);
-        dict_push(&inter->dict, (dict_entry_t){str_copy(next.text), array_inc_ref(x), ENTRY_CONST});
+        dict_push(&inter->dict, (dict_entry_t){copy(next), array_inc_ref(x), ENTRY_CONST});
+        return;
+      } else if (str_eqc(t.text, "var")) {
+        CHECK(inter->mode == MODE_INTERPRET, "var can be used only in interpret mode");
+        str_t next = inter_next_word(inter);
+        if (inter_find_entry(inter, next) < inter->dict.s) panicf("`%pS` can't be redefined", &next);
+        POP(x);
+        dict_push(&inter->dict, (dict_entry_t){copy(next), array_inc_ref(x), ENTRY_VAR});
         return;
       } else {
-        size_t e = _inter_find_word(inter, t.text);
+        size_t e = inter_find_entry(inter, t.text);
         CHECK(e < inter->dict.s, "unknown word '%pS'", &t.text);
         switch (inter->mode) {
           case MODE_INTERPRET: return inter_dict_entry(inter, e);
@@ -233,7 +250,7 @@ void inter_token(inter_t* inter, token_t t) {
       return;
     }
     case TOK_QUOTE: {
-      size_t e = _inter_find_word(inter, t.val.s);
+      size_t e = inter_find_entry(inter, t.val.s);
       CHECK(e < inter->dict.s, "unknown word '%pS'", &t.text);
       own(array_t) a = array_new_scalar_t_dict_entry(e);
       a->f |= FLAG_QUOTE;
@@ -286,4 +303,13 @@ void inter_reset(inter_t* inter) {
   stack_clear(inter->comp_stack);
   inter->arr_level = 0;
   inter->mode      = MODE_INTERPRET;
+}
+
+DEF_WORD("!", store) {
+  POP(v);
+  POP(x);
+  dict_entry_t* e = inter_lookup_entry(inter, as_dict_entry(v));
+  CHECK(e->f & ENTRY_VAR, "var expected");
+  array_dec_ref(e->v);
+  e->v = array_inc_ref(x);
 }

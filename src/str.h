@@ -59,7 +59,8 @@ static_assert(sizeof(string_t) == sizeof(str_t), "string_t & str_t binary layout
 static_assert(offsetof(string_t, l) == offsetof(str_t, l), "string_t & str_t binary layout should match");
 static_assert(offsetof(string_t, p) == offsetof(str_t, p), "string_t & str_t binary layout should match");
 
-INLINE void     string_free(string_t s) { free((void*)s.p); }
+INLINE void string_free(string_t s) { free((char*)s.p); }
+
 INLINE string_t string_vnewf(const char* format, va_list args) {
   char*  p;
   size_t l = vasprintf(&p, format, args);
@@ -68,11 +69,13 @@ INLINE string_t string_vnewf(const char* format, va_list args) {
 INLINE PRINTF(1, 2) string_t string_newf(const char* format, ...) {
   return VA_ARGS_FWD(format, string_vnewf(format, args));
 }
-INLINE str_t    string_as_str(string_t s) { return (str_t){s.l, s.p}; }
+INLINE str_t    to_str(string_t s) { return (str_t){s.l, s.p}; }
 INLINE string_t str_copy(const str_t s) {
   char* p = malloc(s.l);
   memcpy(p, s.p, s.l);
   return (string_t){.l = s.l, .p = p};
 }
-INLINE string_t string_copy(const string_t s) { return str_copy(string_as_str(s)); }
+INLINE string_t string_copy(const string_t s) { return str_copy(to_str(s)); }
 INLINE string_t string_from_c(const char* s) { return str_copy(str_from_c(s)); }
+
+#define copy(x) _Generic((x), str_t: str_copy, string_t: string_copy, default: "unexpected")(x)

@@ -2,10 +2,14 @@
 
 ## Defining New Words
 
-`const <NAME>` `(x -> )` - takes off the top of the stack and defines new word `<NAME>`.
+`const <NAME> (x -> )` - takes off the top of the stack and defines new word `<NAME>`.
 When evaluated `<NAME>` will always result in `x`.
 
 `: <NAME> ... ;`
+
+`var <NAME> (x -> )` - defines new variable with initial value `x`
+
+`! (x v' -> )` stores `x` at the address of `v`
 
 ## Development Aids
 

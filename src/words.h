@@ -5,13 +5,13 @@
 #define DEF_WORD_HANDLER(name) void name(inter_t* inter, stack_t* stack)
 
 #define DEF_WORD_HANDLER_1_1(n)               \
-  INLINE array_t* n##_impl(const array_t* x); \
+  INLINE array_t* n##_impl(inter_t* inter, const array_t* x); \
   DEF_WORD_HANDLER(n) {                       \
     POP(x);                                   \
-    own(array_t) y = n##_impl(x);             \
+    own(array_t) y = n##_impl(inter, x);             \
     PUSH(y);                                  \
   }                                           \
-  INLINE array_t* n##_impl(const array_t* x)
+  INLINE array_t* n##_impl(inter_t* inter, const array_t* x)
 
 #define REGISTER_WORD(w, n)                                                               \
   void             w_##n(inter_t* inter, stack_t* stack);                                 \
@@ -35,7 +35,7 @@ INLINE size_t as_size_t(array_t* a) {
   return i;
 }
 
-INLINE t_dict_entry as_dict_entry(array_t* x) {
+INLINE t_dict_entry as_dict_entry(const array_t* x) {
   CHECK(x->t == T_DICT_ENTRY, "dict entry expected");
   return *array_data_t_dict_entry(x);
 }

@@ -44,7 +44,7 @@ INLINE void __panic_message_cleanup(str_t*) { string_free(__panic_message); }
              true;                                                        \
            });                                                            \
            __after; __after = false)                                          \
-        for (CLEANUP(__panic_message_cleanup) str_t msg = string_as_str(__panic_message); __after; __after = false)
+        for (CLEANUP(__panic_message_cleanup) str_t msg = to_str(__panic_message); __after; __after = false)
 
 #define PROTECT(t, x, h, ctx)        \
   ({                                 \

@@ -22,11 +22,19 @@ jobs:
         sudo apt-get install just re2c libopenblas64-dev liblapacke64-dev libopenblas-dev liblapacke-dev valgrind ninja-build libjemalloc-dev
 
     - name: Debug
-      run: just test
+      run: |
+        just test
+        bin/niko -h
+        build/niko -e "\i"
 
     - name: Release
-      run: just release
+      run: |
+        just release
+        bin/niko -h
+        build/niko -e "\i"
 
-    - name: Valgrind
-      run: just valgrind
+    - name: Valgrind Debug
+      run: just valgrind Debug
 
+    - name: Valgrind Release
+      run: just valgrind Release

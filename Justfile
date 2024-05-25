@@ -11,7 +11,6 @@ build BUILD_TYPE="Debug":
     cp build/{{BUILD_TYPE}}/niko bin/niko
 
 release: (build "Release") _test
-    build/Release/niko -e "\i"
 
 run: test
     rlwrap bin/niko
@@ -24,8 +23,8 @@ clean:
 format:
     clang-format -i src/*.c src/*.h
 
-valgrind-test FILE: build (_valgrind-test FILE)
-valgrind: build (_valgrind-test "tests/inter.md") (_valgrind-test "tests/core.md") (_valgrind-test "tests/prelude.md")
+valgrind-test FILE BUILD_TYPE="Debug": (build BUILD_TYPE) (_valgrind-test FILE)
+valgrind BUILD_TYPE="Debug": (build BUILD_TYPE) (_valgrind-test "tests/inter.md") (_valgrind-test "tests/core.md") (_valgrind-test "tests/prelude.md")
 
 valgrind-expr EXPR="10000000 zeros": build 
     valgrind --leak-check=full --track-origins=yes --show-reachable=yes  --suppressions=default.supp bin/niko -e "{{EXPR}}"

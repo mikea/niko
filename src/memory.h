@@ -5,11 +5,12 @@
 #define ALIGNED(n) ATTR(aligned(n))
 
 #define __ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
-#define ALIGN(x, a)           __ALIGN_MASK(x, (typeof(x))(a)-1)
+#define ALIGN(x, a)           __ALIGN_MASK(x, (typeof(x))(a) - 1)
 
 #define CONSTRUCTOR ATTR(constructor)
 
 #define DEF_CLEANUP(t, free_fn)                               \
+  typedef t* own_##t;                                         \
   INLINE void t##_free(void* p) {                             \
     if (p) free_fn((t*)p);                                    \
   }                                                           \
@@ -24,10 +25,13 @@
     *p = NULL;                                                \
   }
 
-DEF_CLEANUP(char, free);
-DEF_CLEANUP(FILE, fclose);
+DEF_CLEANUP(char, free)
+DEF_CLEANUP(FILE, fclose)
 
-#define own(t)       CLEANUP(t##_cleanup) t*
+INLINE void     string_t_cleanup(string_t* s) { string_free(*s); }
+typedef string_t own_string_t;
+
+#define own(t)       CLEANUP(t##_cleanup) own_##t
 #define protected(t) CLEANUP(t##_cleanup_protected) t*
 #define borrow(t)    t*
 

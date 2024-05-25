@@ -3,7 +3,8 @@
     "files.associations": {
         "*.h": "c",
         "typeinfo": "c",
-        "random": "c"
+        "random": "c",
+        "atomic": "c"
     },
     "C_Cpp.default.cStandard": "gnu23",
     "cmake.configureOnOpen": true,
