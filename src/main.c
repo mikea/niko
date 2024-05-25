@@ -143,11 +143,11 @@ int main(int argc, char* argv[]) {
       case 'z': z = true; break;
       case 'h': {
         h(stdout, argv[0]);
-        exit(0);
+        return 0;
       }
       default: {
         h(stderr, argv[0]);
-        exit(1);
+        return 1;
       }
     }
   }
