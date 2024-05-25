@@ -13,6 +13,10 @@ INLINE void stack_print_repl(stack_t* stack) {
   }
 }
 
+void v() {
+  
+}
+
 void repl(inter_t* inter) {
   size_t input_size = 0;
   own(char) input   = NULL;
@@ -108,6 +112,21 @@ void test(inter_t* inter, const char* fname, bool v) {
   }
 }
 
+void h(FILE* f, char* argv_0) {
+  fprintf(f, VERSION_STRING "\n");
+  fprintf(f, "\bUSAGE:\n");
+  fprintf(f, "    %s [FLAGS] [OPTIONS]\n", argv_0);
+  fprintf(f, "\nFLAGS:\n");
+  fprintf(f, "    -z               Do not load the prelude\n");
+  fprintf(f, "    -v               Verbose test execution\n");
+  fprintf(f, "    -h               Print help information\n");
+  fprintf(f, "\nOPTIONS:\n");
+  fprintf(f, "    -e <expr>        Evaluate niko expression\n");
+  fprintf(f, "    -t <test.md>     Run markdown test\n");
+  fprintf(f, "\nEnters the repl if no options are specified (using rlwrap is recommended).\n");
+  fprintf(f, "\n");
+}
+
 // main
 
 int main(int argc, char* argv[]) {
@@ -122,10 +141,14 @@ int main(int argc, char* argv[]) {
       case 'v': v = true; break;
       case 'e': e = optarg; break;
       case 'z': z = true; break;
-      case 'h':
-      default:
-        fprintf(stderr, "Usage: %s | %s -t test_file [-v] | %s -e stmt | %s -h \n", argv[0], argv[0], argv[0], argv[0]);
+      case 'h': {
+        h(stdout, argv[0]);
+        exit(0);
+      }
+      default: {
+        h(stderr, argv[0]);
         exit(1);
+      }
     }
   }
 

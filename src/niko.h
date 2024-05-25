@@ -7,4 +7,4 @@
 #define COMPILE_TIME "unknown"
 #endif
 
-#define VERSION_STRING "niko " GIT_DESCRIBE " (" COMPILE_TIME ")"
+#define VERSION_STRING "niko " GIT_DESCRIBE " (" COMPILE_TIME ") http://github.com/mikea/niko"
