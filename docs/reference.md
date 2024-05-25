@@ -57,6 +57,8 @@ Words that starts from '\' are indended to be used during development
 
 ## Manipulating Arrays
 
+|Word|Signature|Description|
+|---|---|---|
 |`reshape`|`(x s -> y)`|reshapes `x` according to the shape `s` repeating or truncating if necessary
 |`reverse`|`(x -> y)`|reverses all values in the array `x` keeping its shape
 
@@ -114,6 +116,8 @@ Words that starts from '\' are indended to be used during development
 
 ## Aggregation
 
+|Word|Signature|Description|
+|---|---|---|
 |`sum`|`(x -> y)`|sums all elements in `x` keeping only the result
 |`sums`|`(x -> y)`|sums all elements in `x` organizing intermediate results in shape of `x`
 |`deltas`|`(x -> y)`|computes deltas between consequent elements of `x`, leaving first element unchanged
