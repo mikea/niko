@@ -77,7 +77,7 @@
 [ 2 ]
 ```
 
-# Word Definition
+# Compiler
 
 ## `:`
 
@@ -102,7 +102,7 @@
 [ 0 1 3 6 10 15 21 28 36 45 ]
 ```
 
-redefining words
+### redefining words
 
 ```nkt
 > : 4_2 42 ;
@@ -120,6 +120,15 @@ ERROR: `+` can't be redefined
 3
 ```
 
+### error handling
+
+```nkt
+> : abc :
+ERROR: : can be used only in interpret mode
+> 1 . ;
+> abc
+1
+```
 
 ## `const`
 

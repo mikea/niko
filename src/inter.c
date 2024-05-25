@@ -13,7 +13,7 @@ inter_t* inter_new() {
   dict_reserve(&inter->dict, global_dict.s);
   DO(i, global_dict.s) {
     dict_entry_t* e = &global_dict.d[i];
-    dict_push(&inter->dict, (dict_entry_t){copy(e->k), array_inc_ref(e->v), ENTRY_SYSTEM});
+    dict_push(&inter->dict, (dict_entry_t){copy(e->k), array_inc_ref(e->v), e->f});
   }
   return inter;
 }
@@ -33,7 +33,7 @@ void inter_free(inter_t* inter) {
   free(inter);
 }
 
-void global_dict_add_new(dict_entry_t e) { dict_push(&global_dict, e); }
+void global_dict_add_new(dict_entry_t e) { dict_push(&global_dict, (dict_entry_t){e.k, e.v, e.f | ENTRY_SYS}); }
 
 DESTRUCTOR void global_dict_free() { dict_free(&global_dict); }
 
@@ -87,7 +87,7 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
     return;
   }
   array_t* a = e->v;
-  // DBG("%pS %pA", &inter->dict.d[e].k, a);
+  // DBG("%pS %pA", &e->k, a);
   switch (a->t) {
     case T_FFI: {
       t_ffi f;
@@ -175,62 +175,18 @@ void inter_token(inter_t* inter, token_t t) {
       return;
     }
     case TOK_WORD: {
-      if (str_eqc(t.text, ":")) {
-        CHECK(inter->mode == MODE_INTERPRET, ": can be used only in interpret mode");
-        str_t next = inter_next_word(inter);
-        t_dict_entry prev  = inter_find_entry(inter, next);
-        if (prev < inter->dict.s) {
-          dict_entry_t* e = &inter->dict.d[prev];
-          if (e->f & (ENTRY_CONST | ENTRY_SYSTEM)) panicf("`%pS` can't be redefined", &next);
-        }
-        inter->mode = MODE_COMPILE;
-        assert(stack_is_empty(inter->comp_stack));
-        inter->comp = copy(next);
-        return;
-      } else if (str_eqc(t.text, ";")) {
-        CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
-        own(array_t) a = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->data);
+      size_t e = inter_find_entry(inter, t.text);
+      CHECK(e < inter->dict.s, "unknown word '%pS'", &t.text);
+      dict_entry_t* entry = inter_lookup_entry(inter, e);
 
-        t_dict_entry prev = inter_find_entry(inter, to_str(inter->comp));
-        if (prev < inter->dict.s) {
-          array_dec_ref(inter->dict.d[prev].v);
-          inter->dict.d[prev].v = array_inc_ref(a);
-        } else {
-          dict_push(&inter->dict, (dict_entry_t){copy(inter->comp), array_inc_ref(a)});
-        }
-
-        inter->comp_stack->l = 0;
-        inter->mode          = MODE_INTERPRET;
-        string_free(inter->comp);
-        return;
-      } else if (str_eqc(t.text, "const")) {
-        CHECK(inter->mode == MODE_INTERPRET, "const can be used only in interpret mode");
-        str_t next = inter_next_word(inter);
-        if (inter_find_entry(inter, next) < inter->dict.s) panicf("`%pS` can't be redefined", &next);
-        POP(x);
-        dict_push(&inter->dict, (dict_entry_t){copy(next), array_inc_ref(x), ENTRY_CONST});
-        return;
-      } else if (str_eqc(t.text, "var")) {
-        CHECK(inter->mode == MODE_INTERPRET, "var can be used only in interpret mode");
-        str_t next = inter_next_word(inter);
-        if (inter_find_entry(inter, next) < inter->dict.s) panicf("`%pS` can't be redefined", &next);
-        POP(x);
-        dict_push(&inter->dict, (dict_entry_t){copy(next), array_inc_ref(x), ENTRY_VAR});
-        return;
+      if (inter->mode == MODE_INTERPRET || (entry->f & ENTRY_IMM)) {
+        inter_dict_entry(inter, e);
       } else {
-        size_t e = inter_find_entry(inter, t.text);
-        CHECK(e < inter->dict.s, "unknown word '%pS'", &t.text);
-        switch (inter->mode) {
-          case MODE_INTERPRET: return inter_dict_entry(inter, e);
-          case MODE_COMPILE:   {
-            own(array_t) a = array_new_scalar_t_dict_entry(e);
-            PUSH(a);
-            return;
-          }
-        }
-
-        UNREACHABLE;
+        own(array_t) a = array_new_scalar_t_dict_entry(e);
+        PUSH(a);
       }
+
+      return;
     }
     case TOK_I64: {
       own(array_t) a = array_new_scalar_t_i64(t.val.i);
@@ -305,6 +261,54 @@ void inter_reset(inter_t* inter) {
   inter->mode      = MODE_INTERPRET;
 }
 
+#pragma region words
+
+DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
+  CHECK(inter->mode == MODE_INTERPRET, ": can be used only in interpret mode");
+  str_t        next = inter_next_word(inter);
+  t_dict_entry prev = inter_find_entry(inter, next);
+  if (prev < inter->dict.s) {
+    dict_entry_t* e = &inter->dict.d[prev];
+    if (e->f & (ENTRY_CONST | ENTRY_SYS)) panicf("`%pS` can't be redefined", &next);
+  }
+  inter->mode = MODE_COMPILE;
+  assert(stack_is_empty(inter->comp_stack));
+  inter->comp = copy(next);
+}
+
+DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
+  CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
+  own(array_t) a = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->data);
+
+  t_dict_entry prev = inter_find_entry(inter, to_str(inter->comp));
+  if (prev < inter->dict.s) {
+    array_dec_ref(inter->dict.d[prev].v);
+    inter->dict.d[prev].v = array_inc_ref(a);
+  } else {
+    dict_push(&inter->dict, (dict_entry_t){copy(inter->comp), array_inc_ref(a)});
+  }
+
+  inter->comp_stack->l = 0;
+  inter->mode          = MODE_INTERPRET;
+  string_free(inter->comp);
+}
+
+DEF_WORD_FLAGS("const", _const, ENTRY_IMM) {
+  CHECK(inter->mode == MODE_INTERPRET, "const can be used only in interpret mode");
+  str_t next = inter_next_word(inter);
+  if (inter_find_entry(inter, next) < inter->dict.s) panicf("`%pS` can't be redefined", &next);
+  POP(x);
+  dict_push(&inter->dict, (dict_entry_t){copy(next), array_inc_ref(x), ENTRY_CONST});
+}
+
+DEF_WORD_FLAGS("var", _var, ENTRY_IMM) {
+  CHECK(inter->mode == MODE_INTERPRET, "var can be used only in interpret mode");
+  str_t next = inter_next_word(inter);
+  if (inter_find_entry(inter, next) < inter->dict.s) panicf("`%pS` can't be redefined", &next);
+  POP(x);
+  dict_push(&inter->dict, (dict_entry_t){copy(next), array_inc_ref(x), ENTRY_VAR});
+}
+
 DEF_WORD("!", store) {
   POP(v);
   POP(x);
@@ -313,3 +317,5 @@ DEF_WORD("!", store) {
   array_dec_ref(e->v);
   e->v = array_inc_ref(x);
 }
+
+#pragma endregion words
