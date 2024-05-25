@@ -224,13 +224,17 @@ void inter_token(inter_t* inter, token_t t) {
 }
 
 inter_t* current;
-inter_t* inter_current() { return current; }
-void     inter_reset_current(bool*) { current = NULL; }
+inter_t* inter_current() {
+  assert(current != NULL);
+  return current;
+}
+void inter_reset_current(bool*) { current = NULL; }
+void inter_set_current(inter_t* inter) {
+  assert(inter != NULL);
+  current = inter;
+}
 
 void inter_line(inter_t* inter, const char* s) {
-  current = inter;
-  UNUSED CLEANUP(inter_reset_current) bool b;
-
   inter->line = s;
 
   for (;;) {
@@ -328,9 +332,7 @@ DEF_WORD("!", store) {
 
 DEF_WORD("@", load) {
   POP(v);
-  POP(x);
   dict_entry_t* e = inter_lookup_entry(inter, as_dict_entry(v));
-  CHECK(e->f & ENTRY_VAR, "var expected");
   PUSH(e->v);
 }
 

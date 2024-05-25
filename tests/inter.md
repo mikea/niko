@@ -188,6 +188,25 @@ ERROR: `forty_two` can't be redefined
 6.2831852
 ```
 
+## `@`
+
+```nkt
+> 2 const two
+> two .
+2
+> two' @ .
+2
+> 3 var three
+> three' @ .
+3
+> 4 three' !
+> three' @ .
+4
+> : five 5 ;
+> five' @ .
+[ 5 ]
+```
+
 # error handling
 ```nkt
 > 1999912+

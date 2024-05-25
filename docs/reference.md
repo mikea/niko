@@ -7,10 +7,11 @@ When evaluated `<NAME>` will always result in `x`.
 
 `: <NAME> ... ;`
 
-`var <NAME> (x -> )` - defines new variable with initial value `x`
+`var <NAME> (x -> )` - defines new variable with initial value `x`.
 
-`! (x v' -> )` stores `x` at the address of `v`. Works for `var`/`:` definitions interchangeably
+`! (x v' -> )` stores `x` at the address of `v`. Works for `var`/`:` definitions interchangeably.
 
+`@ (v' -> x)` loads value of `v`. Works for `const`/`var`/`:` definitions interchangeably.
 
 ## Development Aids
 

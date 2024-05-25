@@ -153,6 +153,8 @@ int main(int argc, char* argv[]) {
   }
 
   own(inter_t) inter = inter_new();
+  inter_set_current(inter);
+  
   if (!z) inter_load_prelude(inter);
 
   CATCH(e) {
