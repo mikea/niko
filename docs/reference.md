@@ -9,7 +9,8 @@ When evaluated `<NAME>` will always result in `x`.
 
 `var <NAME> (x -> )` - defines new variable with initial value `x`
 
-`! (x v' -> )` stores `x` at the address of `v`
+`! (x v' -> )` stores `x` at the address of `v`. Works for `var`/`:` definitions interchangeably
+
 
 ## Development Aids
 

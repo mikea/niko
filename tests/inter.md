@@ -1,4 +1,4 @@
-# Interpreter tests
+# Input
 
 ## atoms: entering and printing
 ### integers
@@ -100,6 +100,9 @@
 > : sums 0 +' scan_rank ; 
 > 10 index sums .
 [ 0 1 3 6 10 15 21 28 36 45 ]
+> : test_1. 1. ;
+> test_1. .
+1.
 ```
 
 ### redefining words
@@ -159,6 +162,30 @@ ERROR: `forty_two` can't be redefined
 > \s
 > one_two_three .
 123
+```
+
+# interpreter
+
+## `!`
+
+```nkt
+> 3.1 var almost_pi almost_pi .
+3.1
+> : test_almost_pi almost_pi 2 * . ;
+> test_almost_pi
+6.2
+> 3.14 almost_pi' !
+> test_almost_pi
+6.28
+> : almost_pi 3.141 ;
+> test_almost_pi
+6.282
+> : almost_pi 3.1415 ;
+> test_almost_pi
+6.283
+> 3.1415926 almost_pi' !
+> test_almost_pi
+6.2831852
 ```
 
 # error handling

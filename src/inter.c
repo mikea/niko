@@ -74,9 +74,24 @@ array_t* concatenate(stack_t* stack, shape_t sh) {
 
 token_t _inter_next_token(inter_t* inter) { return next_token(&inter->line); }
 
+t_dict_entry inter_find_entry_idx(inter_t* inter, const str_t n) {
+  dict_t* dict = &inter->dict;
+  DO(i, dict->s) {
+    size_t j = dict->s - i - 1;
+    if (str_eq(n, to_str(dict->d[j].k))) return j;
+  }
+  return dict->s;
+}
+
 ALWAYS_INLINE dict_entry_t* inter_lookup_entry(inter_t* inter, t_dict_entry e) {
   CHECK(e < inter->dict.s, "bad dict entry");
   return &inter->dict.d[e];
+}
+
+dict_entry_t* inter_find_entry(inter_t*inter, str_t n) {
+    size_t e = inter_find_entry_idx(inter, n);
+    if (e == inter->dict.s) return NULL;
+    return &inter->dict.d[e];
 }
 
 void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
@@ -138,15 +153,6 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
   }
 }
 
-t_dict_entry inter_find_entry(inter_t* inter, const str_t n) {
-  dict_t* dict = &inter->dict;
-  DO(i, dict->s) {
-    size_t j = dict->s - i - 1;
-    if (str_eq(n, to_str(dict->d[j].k))) return j;
-  }
-  return dict->s;
-}
-
 str_t inter_next_word(inter_t* inter) {
   token_t next = _inter_next_token(inter);
   CHECK(next.tok == TOK_WORD, "word expected");
@@ -175,7 +181,7 @@ void inter_token(inter_t* inter, token_t t) {
       return;
     }
     case TOK_WORD: {
-      size_t e = inter_find_entry(inter, t.text);
+      size_t e = inter_find_entry_idx(inter, t.text);
       CHECK(e < inter->dict.s, "unknown word '%pS'", &t.text);
       dict_entry_t* entry = inter_lookup_entry(inter, e);
 
@@ -206,7 +212,7 @@ void inter_token(inter_t* inter, token_t t) {
       return;
     }
     case TOK_QUOTE: {
-      size_t e = inter_find_entry(inter, t.val.s);
+      size_t e = inter_find_entry_idx(inter, t.val.s);
       CHECK(e < inter->dict.s, "unknown word '%pS'", &t.text);
       own(array_t) a = array_new_scalar_t_dict_entry(e);
       a->f |= FLAG_QUOTE;
@@ -266,7 +272,7 @@ void inter_reset(inter_t* inter) {
 DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
   CHECK(inter->mode == MODE_INTERPRET, ": can be used only in interpret mode");
   str_t        next = inter_next_word(inter);
-  t_dict_entry prev = inter_find_entry(inter, next);
+  t_dict_entry prev = inter_find_entry_idx(inter, next);
   if (prev < inter->dict.s) {
     dict_entry_t* e = &inter->dict.d[prev];
     if (e->f & (ENTRY_CONST | ENTRY_SYS)) panicf("`%pS` can't be redefined", &next);
@@ -280,10 +286,11 @@ DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
   CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
   own(array_t) a = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->data);
 
-  t_dict_entry prev = inter_find_entry(inter, to_str(inter->comp));
-  if (prev < inter->dict.s) {
-    array_dec_ref(inter->dict.d[prev].v);
-    inter->dict.d[prev].v = array_inc_ref(a);
+  dict_entry_t* prev = inter_find_entry(inter, to_str(inter->comp));
+  if (prev) {
+    array_dec_ref(prev->v);
+    prev->v = array_inc_ref(a);
+    prev->f &= ~ENTRY_VAR;
   } else {
     dict_push(&inter->dict, (dict_entry_t){copy(inter->comp), array_inc_ref(a)});
   }
@@ -296,7 +303,7 @@ DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
 DEF_WORD_FLAGS("const", _const, ENTRY_IMM) {
   CHECK(inter->mode == MODE_INTERPRET, "const can be used only in interpret mode");
   str_t next = inter_next_word(inter);
-  if (inter_find_entry(inter, next) < inter->dict.s) panicf("`%pS` can't be redefined", &next);
+  if (inter_find_entry_idx(inter, next) < inter->dict.s) panicf("`%pS` can't be redefined", &next);
   POP(x);
   dict_push(&inter->dict, (dict_entry_t){copy(next), array_inc_ref(x), ENTRY_CONST});
 }
@@ -304,7 +311,7 @@ DEF_WORD_FLAGS("const", _const, ENTRY_IMM) {
 DEF_WORD_FLAGS("var", _var, ENTRY_IMM) {
   CHECK(inter->mode == MODE_INTERPRET, "var can be used only in interpret mode");
   str_t next = inter_next_word(inter);
-  if (inter_find_entry(inter, next) < inter->dict.s) panicf("`%pS` can't be redefined", &next);
+  if (inter_find_entry_idx(inter, next) < inter->dict.s) panicf("`%pS` can't be redefined", &next);
   POP(x);
   dict_push(&inter->dict, (dict_entry_t){copy(next), array_inc_ref(x), ENTRY_VAR});
 }
@@ -313,9 +320,18 @@ DEF_WORD("!", store) {
   POP(v);
   POP(x);
   dict_entry_t* e = inter_lookup_entry(inter, as_dict_entry(v));
-  CHECK(e->f & ENTRY_VAR, "var expected");
+  CHECK(e->f & ENTRY_VAR || !e->f, "%pA is not a valid store target", v);
   array_dec_ref(e->v);
   e->v = array_inc_ref(x);
+  e->f |= ENTRY_VAR;
+}
+
+DEF_WORD("@", load) {
+  POP(v);
+  POP(x);
+  dict_entry_t* e = inter_lookup_entry(inter, as_dict_entry(v));
+  CHECK(e->f & ENTRY_VAR, "var expected");
+  PUSH(e->v);
 }
 
 #pragma endregion words
