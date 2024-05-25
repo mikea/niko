@@ -40,6 +40,7 @@ execute_process(
 string(TIMESTAMP COMPILE_TIME UTC)
 add_definitions(-DCOMPILE_TIME="${COMPILE_TIME}")
 add_definitions(-DGIT_DESCRIBE="${GIT_DESCRIBE}")
+add_definitions(-DBUILD_TYPE="${CMAKE_BUILD_TYPE}")
 
 # Configure BLAS/LAPACK
 find_package(BLAS REQUIRED)
