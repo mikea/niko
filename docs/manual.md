@@ -6,7 +6,7 @@ Niko can be started in variety of mode.
 If you run `niko -h` then you will see help like this:
 
 ```
-niko 3fe660e-dirty (1980-01-01T00:00:00Z) http://github.com/mikea/niko
+niko ecc731b Release (2024-05-25T18:35:35Z) http://github.com/mikea/niko
 
 USAGE:
     bin/niko [FLAGS] [OPTIONS]
