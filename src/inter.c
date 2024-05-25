@@ -88,10 +88,10 @@ ALWAYS_INLINE dict_entry_t* inter_lookup_entry(inter_t* inter, t_dict_entry e) {
   return &inter->dict.d[e];
 }
 
-dict_entry_t* inter_find_entry(inter_t*inter, str_t n) {
-    size_t e = inter_find_entry_idx(inter, n);
-    if (e == inter->dict.s) return NULL;
-    return &inter->dict.d[e];
+dict_entry_t* inter_find_entry(inter_t* inter, str_t n) {
+  size_t e = inter_find_entry_idx(inter, n);
+  if (e == inter->dict.s) return NULL;
+  return &inter->dict.d[e];
 }
 
 void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
