@@ -41,21 +41,24 @@ where interpreter input is on lines starting with `>` (like repl), and everythin
 
 #### Test Example
 
-````md
-# Example Test
+`test.md`:
 
-This block will be executed verbatim:
+````md
+# Simple Test
+
+This `nk` block will be executed verbatim:
 
 ```nk
 : add_2 2 + ;
 ```
 
-This block has input/response structure
+This `nkt` block has input/response structure
 and looks like repl:
 
 ```nkt
 > 1 add_2 .
 3
+```
 
 ````
 

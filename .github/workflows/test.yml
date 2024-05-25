@@ -26,13 +26,13 @@ jobs:
       run: |
         just test
         bin/niko -h
-        build/niko -e "\i"
+        bin/niko -e "\i"
 
     - name: Release
       run: |
         just release
         bin/niko -h
-        build/niko -e "\i"
+        bin/niko -e "\i"
 
     - name: Valgrind Debug
       run: just valgrind Debug
