@@ -19,7 +19,8 @@ jobs:
 
     - name: Install dependecies
       run: |
-        sudo apt-get install just re2c libopenblas64-dev liblapacke64-dev libopenblas-dev liblapacke-dev valgrind ninja-build libjemalloc-dev
+        sudo apt update
+        sudo apt install --no-install-recommend --no-upgrade -y just re2c libopenblas64-dev liblapacke64-dev libopenblas-dev liblapacke-dev valgrind ninja-build libjemalloc-dev
 
     - name: Debug
       run: |

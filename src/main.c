@@ -114,7 +114,7 @@ void test(inter_t* inter, const char* fname, bool v) {
 
 void h(FILE* f, char* argv_0) {
   fprintf(f, VERSION_STRING "\n");
-  fprintf(f, "\bUSAGE:\n");
+  fprintf(f, "\nUSAGE:\n");
   fprintf(f, "    %s [FLAGS] [OPTIONS]\n", argv_0);
   fprintf(f, "\nFLAGS:\n");
   fprintf(f, "    -z               Do not load the prelude\n");
