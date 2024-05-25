@@ -22,3 +22,9 @@ OPTIONS:
 
 Enters the repl if no options are specified (using rlwrap is recommended).
 ```
+
+### REPL
+
+### Expression Evaluation
+
+### Tests
