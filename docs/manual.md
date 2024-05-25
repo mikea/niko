@@ -2,8 +2,8 @@
 
 ## Running
 
-Niko can be started in variety of mode.
-If you run `niko -h` then you will see help like this:
+Niko can be started in several modes: repl, test or eval.
+If you run `niko -h` then you will see help with quick overview:
 
 ```
 niko ecc731b Release (2024-05-25T18:35:35Z) http://github.com/mikea/niko
@@ -25,7 +25,7 @@ Enters the repl if no options are specified (using rlwrap is recommended).
 
 ### REPL
 
-### Expression Evaluation
+### Evaluation
 
 ### Tests
 
