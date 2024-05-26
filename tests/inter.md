@@ -164,6 +164,23 @@ ERROR: `forty_two` can't be redefined
 123
 ```
 
+## `literal`
+
+```nkt
+> 5 : plus_five literal + ;
+> 3 plus_five .
+8
+> plus_five' @ .
+[ 5 + ]
+```
+
+error handling
+
+```nkt
+> 5 literal
+ERROR: literal can be used only in compilation mode
+```
+
 # interpreter
 
 ## `!`

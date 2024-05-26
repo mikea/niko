@@ -5,7 +5,7 @@
 Niko can be started in several modes: repl, test or eval.
 If you run `niko -h` then you will see help with quick overview:
 
-```
+```text
 niko ecc731b Release (2024-05-25T18:35:35Z) http://github.com/mikea/niko
 
 USAGE:
@@ -64,8 +64,7 @@ and looks like repl:
 
 See [example_test.md](example_test.md) for more
 deliberate test example.
-
-
+s
 ## Syntax
 
 Niko program consists of a sequence of words separated by whitespaces. 
@@ -87,10 +86,10 @@ Arrays of rank 0 are called sacalars and always have 1 element.
 Dimensions have to either be all non-zero or all zero. 
 
 Following element types are supported:
+
 - char
 - i64
 - f64
-
 
 #### Characters
 
@@ -110,8 +109,9 @@ Floats are 64-bit wide. Float literal must contain `.` or `e` symbols:
 
 To create an array literal use `[` `]` words to enter them (remember the spaces):
 
-```
+```nkt
 > [ 1 2 3 ] .
-> [ [ 1. 2. 3. ] [ 4. 5. 6. ] ]
+[ 1 2 3 ]
+> [ [ 1. 2. 3. ] [ 4. 5. 6. ] ] .
+[ [ 1. 2. 3. ] [ 4. 5. 6. ] ]
 ```
-

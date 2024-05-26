@@ -9,6 +9,8 @@ When evaluated `<NAME>` will always result in `x`.
 
 `var <NAME> (x -> )` - defines new variable with initial value `x`.
 
+`literal (x -> )` - takes the top of the stack and compiles its value as literal into current word definition.
+
 `! (x v' -> )` stores `x` at the address of `v`. Works for `var`/`:` definitions interchangeably.
 
 `@ (v' -> x)` loads value of `v`. Works for `const`/`var`/`:` definitions interchangeably.
@@ -20,34 +22,32 @@ Words that starts from '\' are indended to be used during development
 
 |Word|Signature|Description|
 |---|---|---|
-|`\c`|`( ... -> )`|clears the stack
-|`\i`|`( -> )`|prints info about current `niko` status
-|`\mem`|`( -> )`|prints detailed memory usage information
-|`\s`|`( -> )`|prints every stack item
-
+|`\c`|`( ... -> )`|clears the stack|
+|`\i`|`( -> )`|prints info about current `niko` status|
+|`\mem`|`( -> )`|prints detailed memory usage information|
+|`\s`|`( -> )`|prints every stack item|
 
 ## Stack Manipulation
 
 |Word|Signature|Description|
 |---|---|---|
-|`drop`|`(x -> )`|removes top item from the stack
-|`nip`|`(x y -> y )`|drops the second item on the stack
-|`dup`|`(x -> x x )`| duplicates top entry of the stack
-| `over`|`(x y -> x y x )`|places a copy of the second item on top of the stack
-|`rot`|`(x y z -> z x y )`|rotates top three items on the stack
-|`swap`|`(x y -> y x )`|exchanges top to items of the stack
-|`tuck`|`(x y -> y x y )`|places a copy of the top of the stack below the second item
-|`pick`|`( n -> x )`| places a copy of `n`-th element on top of the stack. `0 pick` equals `dup`.
+|`drop`|`(x -> )`|removes top item from the stack|
+|`nip`|`(x y -> y )`|drops the second item on the stack|
+|`dup`|`(x -> x x )`| duplicates top entry of the stack|
+| `over`|`(x y -> x y x )`|places a copy of the second item on top of the stack|
+|`rot`|`(x y z -> z x y )`|rotates top three items on the stack|
+|`swap`|`(x y -> y x )`|exchanges top to items of the stack|
+|`tuck`|`(x y -> y x y )`|places a copy of the top of the stack below the second item|
+|`pick`|`( n -> x )`| places a copy of `n`-th element on top of the stack. `0 pick` equals `dup`|
 
 ## Creating Arrays
 
 |Word|Signature|Description|
 |---|---|---|
-|`zeros`|`( s -> x )`|creates array with shape `s` filled with zeros
-|`ones`|`( s -> x )`|creates array with shape `s` filled with ones
-|`index`|`( s -> x )`|creates array with shape `s` filled values from `0` to the length-1
-|`pascal`|`( n -> x )`|creates `n*n` pascal matrix
-
+|`zeros`|`( s -> x )`|creates array with shape `s` filled with zeros|
+|`ones`|`( s -> x )`|creates array with shape `s` filled with ones|
+|`index`|`( s -> x )`|creates array with shape `s` filled values from `0` to the length-1|
+|`pascal`|`( n -> x )`|creates `n*n` pascal matrix|
 
 ## Array Introspection
 

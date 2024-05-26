@@ -273,6 +273,8 @@ void inter_reset(inter_t* inter) {
 
 #pragma region words
 
+#pragma region immediate
+
 DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
   CHECK(inter->mode == MODE_INTERPRET, ": can be used only in interpret mode");
   str_t        next = inter_next_word(inter);
@@ -319,6 +321,14 @@ DEF_WORD_FLAGS("var", _var, ENTRY_IMM) {
   POP(x);
   dict_push(&inter->dict, (dict_entry_t){copy(next), array_inc_ref(x), ENTRY_VAR});
 }
+
+DEF_WORD_FLAGS("literal", literal, ENTRY_IMM) {
+  CHECK(inter->mode == MODE_COMPILE, "literal can be used only in compilation mode");
+  POP(x);
+  stack_push(inter->comp_stack, x);
+}
+
+#pragma endregion immediate
 
 DEF_WORD("!", store) {
   POP(v);

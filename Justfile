@@ -57,6 +57,7 @@ _test:
     bin/niko -z -t tests/blas.md
     bin/niko -t tests/prelude.md
     bin/niko -t docs/examples.md
+    bin/niko -t docs/manual.md
     bin/niko -t docs/reference.md
     bin/niko -t docs/example_test.md
 
