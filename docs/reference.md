@@ -107,13 +107,15 @@ Words that starts from '\' are indended to be used during development
 
 |Word|Signature|Description|
 |---|---|---|
-|`+`|`(x y -> z)`| addition
-|`-`|`(x y -> z)`| subtraction
-|`*`|`(x y -> z)`| multiplication
-|`/`|`(x y -> z)`| division
-|`&`, `min`|`(x y -> z)`| min
-|`|`, `max` |`(x y -> z)`| max
-|`=`|`(x y -> b)`| equal comparison
+|`+`|`(x y -> z)`| addition|
+|`-`|`(x y -> z)`| subtraction|
+|`*`|`(x y -> z)`| multiplication|
+|`/`|`(x y -> z)`| division|
+|`div`|`(x y -> z)`|division quotient|
+|`mod`|`(x y -> z)`|divisin remainder|
+|`&`, `min`|`(x y -> z)`| min|
+|`|`,`max` |`(x y -> z)`|max|
+|`=`|`(x y -> b)`| equal comparison|
 
 ## Aggregation
 

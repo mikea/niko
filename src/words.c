@@ -6,6 +6,16 @@
 
 // common utilities
 
+void global_dict_add_ffi1(const char* n, t_ffi ffi[T_MAX]) {
+  size_t d = T_MAX;
+  global_dict_add_new((dict_entry_t){string_from_c(n), array_new(T_FFI, T_MAX, shape_1d(&d), ffi)});
+}
+
+void global_dict_add_ffi2(const char* n, t_ffi ffi[T_MAX][T_MAX]) {
+  size_t dims[2] = {T_MAX, T_MAX};
+  global_dict_add_new((dict_entry_t){string_from_c(n), array_new(T_FFI, T_MAX * T_MAX, (shape_t){2, dims}, ffi)});
+}
+
 #pragma region stack
 
 DEF_WORD("dup", dup) { DUP; }
@@ -97,7 +107,7 @@ CONSTRUCTOR void reg_neg() {
   neg_table[T_I64] = neg_t_i64;
   neg_table[T_F64] = neg_t_f64;
   neg_table[T_ARR] = neg_t_arr;
-  global_dict_add_new((dict_entry_t){string_from_c("neg"), array_new_1d(T_FFI, T_MAX, neg_table)});
+  global_dict_add_ffi1("neg", neg_table);
 }
 
 // abs
@@ -119,7 +129,7 @@ CONSTRUCTOR void reg_abs() {
   abs_table[T_I64] = abs_t_i64;
   abs_table[T_F64] = abs_t_f64;
   abs_table[T_ARR] = abs_t_arr;
-  global_dict_add_new((dict_entry_t){string_from_c("abs"), array_new_1d(T_FFI, T_MAX, abs_table)});
+  global_dict_add_ffi1("abs", abs_table);
 }
 
 // sqrt, sin, et. al.
@@ -133,16 +143,16 @@ CONSTRUCTOR void reg_abs() {
     return;                                                                                 \
   }
 
-#define GEN_FLOAT(name, op)                                                                              \
-  t_ffi name##_table[T_MAX];                                                                             \
-  GEN_FLOAT1_SPEC(name, t_f64, op)                                                                       \
-  GEN_FLOAT1_SPEC(name, t_i64, op)                                                                       \
-  GEN_THREAD1(name, name##_table)                                                                        \
-  CONSTRUCTOR void reg_##name() {                                                                        \
-    name##_table[T_I64] = name##_t_i64;                                                                  \
-    name##_table[T_F64] = name##_t_f64;                                                                  \
-    name##_table[T_ARR] = name##_t_arr;                                                                  \
-    global_dict_add_new((dict_entry_t){string_from_c(#name), array_new_1d(T_FFI, T_MAX, name##_table)}); \
+#define GEN_FLOAT(name, op)                    \
+  t_ffi name##_table[T_MAX];                   \
+  GEN_FLOAT1_SPEC(name, t_f64, op)             \
+  GEN_FLOAT1_SPEC(name, t_i64, op)             \
+  GEN_THREAD1(name, name##_table)              \
+  CONSTRUCTOR void reg_##name() {              \
+    name##_table[T_I64] = name##_t_i64;        \
+    name##_table[T_F64] = name##_t_f64;        \
+    name##_table[T_ARR] = name##_t_arr;        \
+    global_dict_add_ffi1(#name, name##_table); \
   }
 
 GEN_FLOAT(acos, acos)
@@ -167,11 +177,13 @@ GEN_FLOAT(log, log)
 GEN_FLOAT(log10, log10)
 GEN_FLOAT(log1p, log1p)
 GEN_FLOAT(log2, log2)
+GEN_FLOAT(round, round)
 GEN_FLOAT(sin, sin)
 GEN_FLOAT(sinh, sinh)
 GEN_FLOAT(sqrt, sqrt)
 GEN_FLOAT(tan, tan)
 GEN_FLOAT(tanh, tanh)
+GEN_FLOAT(trunc, trunc)
 
 #pragma endregion math
 
@@ -213,20 +225,18 @@ void w_binop(stack_t* stack, type_t t, binop_kernel_t kernel) {
   GEN_BINOP_KERNEL(name##_kernel_##a_t##_##b_t, a_t, b_t, y_t, op) \
   DEF_WORD_HANDLER(name##_##a_t##_##b_t) { return w_binop(stack, TYPE_ENUM(y_t), name##_kernel_##a_t##_##b_t); }
 
-#define GEN_BINOP(word, name, op)                                                                                \
-  GEN_BINOP_SPECIALIZATION(name, t_i64, t_i64, t_i64, op)                                                        \
-  GEN_BINOP_SPECIALIZATION(name, t_i64, t_f64, t_f64, op)                                                        \
-  GEN_BINOP_SPECIALIZATION(name, t_f64, t_i64, t_f64, op)                                                        \
-  GEN_BINOP_SPECIALIZATION(name, t_f64, t_f64, t_f64, op)                                                        \
-  t_ffi            name##_table[T_MAX][T_MAX] = {};                                                              \
-  CONSTRUCTOR void __register_w_##name() {                                                                       \
-    name##_table[T_I64][T_I64] = name##_t_i64_t_i64;                                                             \
-    name##_table[T_F64][T_I64] = name##_t_f64_t_i64;                                                             \
-    name##_table[T_I64][T_F64] = name##_t_i64_t_f64;                                                             \
-    name##_table[T_F64][T_F64] = name##_t_f64_t_f64;                                                             \
-    size_t  dims[2]            = {T_MAX, T_MAX};                                                                 \
-    shape_t sh                 = (shape_t){2, dims};                                                             \
-    global_dict_add_new((dict_entry_t){string_from_c(word), array_new(T_FFI, T_MAX * T_MAX, sh, name##_table)}); \
+#define GEN_BINOP(word, name, op)                         \
+  GEN_BINOP_SPECIALIZATION(name, t_i64, t_i64, t_i64, op) \
+  GEN_BINOP_SPECIALIZATION(name, t_i64, t_f64, t_f64, op) \
+  GEN_BINOP_SPECIALIZATION(name, t_f64, t_i64, t_f64, op) \
+  GEN_BINOP_SPECIALIZATION(name, t_f64, t_f64, t_f64, op) \
+  t_ffi            name##_table[T_MAX][T_MAX] = {};       \
+  CONSTRUCTOR void __register_w_##name() {                \
+    name##_table[T_I64][T_I64] = name##_t_i64_t_i64;      \
+    name##_table[T_F64][T_I64] = name##_t_f64_t_i64;      \
+    name##_table[T_I64][T_F64] = name##_t_i64_t_f64;      \
+    name##_table[T_F64][T_F64] = name##_t_f64_t_f64;      \
+    global_dict_add_ffi2(word, name##_table);             \
   }
 
 #define PLUS_OP(a, b) (a) + (b)
@@ -238,14 +248,78 @@ GEN_BINOP("*", mul, MUL_OP)
 #define MINUS_OP(a, b) (a) - (b)
 GEN_BINOP("-", minus, MINUS_OP)
 
-#define DIV_OP(a, b) (a) / (b)
-GEN_BINOP("/", divide, DIV_OP)
-
 #define MAX_OP(a, b) (a) > (b) ? (a) : (b)
 GEN_BINOP("|", max, MAX_OP)
 
 #define MIN_OP(a, b) (a) > (b) ? (b) : (a)
 GEN_BINOP("&", min, MIN_OP)
+
+#pragma region divide
+
+t_ffi divide_table[T_MAX][T_MAX] = {};
+
+#define DIVIDE(x, y) ((f64)(x)) / ((f64)(y))
+
+GEN_BINOP_SPECIALIZATION(divide, t_i64, t_i64, t_f64, DIVIDE)
+GEN_BINOP_SPECIALIZATION(divide, t_i64, t_f64, t_f64, DIVIDE)
+GEN_BINOP_SPECIALIZATION(divide, t_f64, t_i64, t_f64, DIVIDE)
+GEN_BINOP_SPECIALIZATION(divide, t_f64, t_f64, t_f64, DIVIDE)
+
+CONSTRUCTOR void register_divide() {
+  divide_table[T_I64][T_I64] = divide_t_i64_t_i64;
+  divide_table[T_I64][T_F64] = divide_t_i64_t_f64;
+  divide_table[T_F64][T_I64] = divide_t_f64_t_i64;
+  divide_table[T_F64][T_F64] = divide_t_f64_t_f64;
+  global_dict_add_ffi2("/", divide_table);
+}
+
+#pragma endregion divide
+
+#pragma region div
+
+t_ffi div_table[T_MAX][T_MAX] = {};
+
+#define DIV_INT(x, y)   (x) / (y)
+#define DIV_FLOAT(x, y) trunc((x) / (y))
+
+GEN_BINOP_SPECIALIZATION(div, t_i64, t_i64, t_i64, DIV_INT)
+GEN_BINOP_SPECIALIZATION(div, t_i64, t_f64, t_f64, DIV_FLOAT)
+GEN_BINOP_SPECIALIZATION(div, t_f64, t_i64, t_f64, DIV_FLOAT)
+GEN_BINOP_SPECIALIZATION(div, t_f64, t_f64, t_f64, DIV_FLOAT)
+
+CONSTRUCTOR void register_div() {
+  div_table[T_I64][T_I64] = div_t_i64_t_i64;
+  div_table[T_I64][T_F64] = div_t_i64_t_f64;
+  div_table[T_F64][T_I64] = div_t_f64_t_i64;
+  div_table[T_F64][T_F64] = div_t_f64_t_f64;
+  global_dict_add_ffi2("div", div_table);
+}
+
+#pragma endregion mod
+
+#pragma region mod
+
+t_ffi mod_table[T_MAX][T_MAX] = {};
+
+#define MOD_PERCENT(x, y) ((x) % (y))
+#define MOD_FMOD(x, y)    fmod((x), (y))
+
+GEN_BINOP_SPECIALIZATION(mod, t_i64, t_i64, t_i64, MOD_PERCENT)
+GEN_BINOP_SPECIALIZATION(mod, t_i64, t_f64, t_f64, MOD_FMOD)
+GEN_BINOP_SPECIALIZATION(mod, t_f64, t_i64, t_f64, MOD_FMOD)
+GEN_BINOP_SPECIALIZATION(mod, t_f64, t_f64, t_f64, MOD_FMOD)
+
+CONSTRUCTOR void register_mod() {
+  mod_table[T_I64][T_I64] = mod_t_i64_t_i64;
+  mod_table[T_I64][T_F64] = mod_t_i64_t_f64;
+  mod_table[T_F64][T_I64] = mod_t_f64_t_i64;
+  mod_table[T_F64][T_F64] = mod_t_f64_t_f64;
+  global_dict_add_ffi2("mod", mod_table);
+}
+
+#pragma endregion mod
+
+#pragma region equal
 
 t_ffi equal_table[T_MAX][T_MAX] = {};
 
@@ -273,10 +347,10 @@ CONSTRUCTOR void register_equal() {
   REGISTER_EQUAL(t_f64, t_c8);
   REGISTER_EQUAL(t_f64, t_i64);
   REGISTER_EQUAL(t_f64, t_f64);
-  size_t  dims[2] = {T_MAX, T_MAX};
-  shape_t sh      = (shape_t){2, dims};
-  global_dict_add_new((dict_entry_t){string_from_c("="), array_new(T_FFI, T_MAX * T_MAX, sh, equal_table)});
+  global_dict_add_ffi2("=", equal_table);
 }
+
+#pragma endregion equal
 
 #pragma endregion binops
 
