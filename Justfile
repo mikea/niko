@@ -23,6 +23,10 @@ clean:
 format:
     clang-format -i src/*.c src/*.h
 
+coverage: clean
+    COVERAGE=ON just test
+    find build/Debug -name "*.gcda" | xargs gcov
+
 valgrind-test FILE BUILD_TYPE="Debug": (build BUILD_TYPE) (_valgrind-test FILE)
 valgrind BUILD_TYPE="Debug": (build BUILD_TYPE) (_valgrind-test "tests/inter.md") (_valgrind-test "tests/core.md") (_valgrind-test "tests/prelude.md")
 
@@ -36,7 +40,7 @@ callgrind EXPR="10000000 zeros": release
 
 cachegrind EXPR="10000000 zeros": release
     rm -f callgrind.out.* cachegrind.out.*
-    valgrind --tool=cachegrind bin/niko -e {{EXPR}}"
+    valgrind --tool=cachegrind bin/niko -e "{{EXPR}}"
 
 benchmarks: release
     taskset -c 4 just _benchmarks > benchmarks.results

@@ -4,7 +4,7 @@
         # tools
         watchexec just cmake valgrind rlwrap xxd ninja
         # build time code dependencies
-        gcc13 re2c glibc openblas jemalloc
+        gcc13 re2c glibc openblas jemalloc libgcc lcov
     ];
     # to compare performance
     packages = [

@@ -20,7 +20,12 @@ add_link_options(-z execstack)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-option(USE_LAPACK_64 "Use LAPACK 64-bit library (needed for ubuntu)" OFF)
+# code coverage
+if (DEFINED ENV{COVERAGE})
+  message("Enabling code coverage")
+  add_compile_options(--coverage -ftest-coverage)
+  add_link_options(--coverage)
+endif()
 
 add_executable(niko 
   src/main.c src/words.c src/print.c src/blas.c src/array.c src/inter.c src/panic.c
