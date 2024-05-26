@@ -9,6 +9,8 @@ Dependencies: `gcc`, `glibc`, `re2c`, `openblas` (or other blas/lapack package).
 
 TODO
 
+## Language Overview
+
 ## Documentation
 
 - [User Manual](docs/manual.md)
