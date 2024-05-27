@@ -48,13 +48,30 @@ dup 2 * rot swap / - (x x^2/2x  )
 1.41421356237309
 ```
 
-# Common Patterns
+## Common Patterns
 
-## Conditional execution
+### Conditional execution
 
 ```nkt
 > 10 0 cos' power .
 10
 > 10 1 cos' power .
 -0.839071529076452
+```
+
+## Project Euler
+
+### Problem 1
+
+```nkt
+> 1000 index dup 3 mod over 5 mod & not * sum .
+233168
+```
+
+### Problem 2
+
+TODO
+
+```nkt
+> [ 1 1 ] dup sum \s
 ```

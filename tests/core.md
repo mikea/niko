@@ -182,6 +182,21 @@ ERROR: invalid rank: 5 > 3
 
 ## unary words
 
+### not
+
+```nkt
+> 1 not .
+0
+> 100 not .
+0
+> 0 not .
+1
+> 0.0 not .
+1
+> [ 0. 1. 2. 3. ] not .
+[ 1 0 0 0 ]
+```
+
 ### neg
 
 ```nkt

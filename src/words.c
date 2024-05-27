@@ -86,6 +86,30 @@ INLINE void thread1(inter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_
     return thread1(inter, stack, x, ffi); \
   }
 
+#pragma region bool
+
+t_ffi not_table[T_MAX];
+
+GEN_THREAD1(not, not_table);
+
+#define GEN_NOT(t)                                                                        \
+  DEF_WORD_HANDLER_1_1(not_##t) {                                                         \
+    own(array_t) out                          = array_alloc(T_I64, x->n, array_shape(x)); \
+    DO(i, x->n)(array_mut_data_t_i64(out))[i] = !((const t*)array_data(x))[i];            \
+    return array_inc_ref(out);                                                            \
+  }
+
+GEN_NOT(t_i64);
+GEN_NOT(t_f64);
+
+CONSTRUCTOR void reg_not() {
+  not_table[T_I64] = not_t_i64;
+  not_table[T_F64] = not_t_f64;
+  not_table[T_ARR] = not_t_arr;
+  global_dict_add_ffi1("not", not_table);
+}
+#pragma endregion bool
+
 #pragma region math
 
 // neg
