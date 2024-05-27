@@ -4,7 +4,9 @@ AlignConsecutiveAssignments:
   Enabled: true
   AcrossEmptyLines: true
   AlignCompound: true
-AlignConsecutiveDeclarations: Consecutive
+  PadOperators: true
+AlignConsecutiveDeclarations: 
+  Enabled: true
 AlignConsecutiveMacros: Consecutive
 AlignConsecutiveShortCaseStatements:
   Enabled: true
