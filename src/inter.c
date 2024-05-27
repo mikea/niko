@@ -40,6 +40,7 @@ DESTRUCTOR void global_dict_free() { dict_free(&global_dict); }
 array_t* concatenate(stack_t* stack, shape_t sh) {
   size_t len = shape_len(sh);
   if (!len) return array_alloc(T_I64, 0, sh);
+  CHECK(len <= stack->l, "stack underflow");
 
   bool all_common            = true;
   borrow(array_t) top        = stack_peek(stack, 0);
