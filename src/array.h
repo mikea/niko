@@ -76,7 +76,7 @@ INLINE shape_t      shape_1d(const dim_t* d) { return (shape_t){1, d}; }
 INLINE shape_t      shape_create(size_t r, const dim_t* d) { return (shape_t){r, d}; }
 INLINE bool         shape_eq(shape_t s1, shape_t s2) { return s1.r == s2.r && !memcmp(s1.d, s2.d, dims_sizeof(s1.r)); }
 INLINE CONST size_t shape_len(shape_t s) {
-  size_t y = 1;
+  size_t y      = 1;
   DO(i, s.r) y *= s.d[i];
   return y;
 }

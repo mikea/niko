@@ -3,6 +3,7 @@ BasedOnStyle: Chromium
 AlignConsecutiveAssignments: 
   Enabled: true
   AcrossEmptyLines: true
+  AlignCompound: true
 AlignConsecutiveDeclarations: Consecutive
 AlignConsecutiveMacros: Consecutive
 AlignConsecutiveShortCaseStatements:

@@ -46,9 +46,9 @@ array_t* concatenate(stack_t* stack, shape_t sh) {
   const shape_t common_shape = array_shape(top);
   const type_t  t            = top->t;
   DO(i, len) {
-    own(array_t) e = stack_i(stack, i);
-    all_common &= e->t == t;
-    all_common &= shape_eq(common_shape, array_shape(e));
+    own(array_t) e  = stack_i(stack, i);
+    all_common     &= e->t == t;
+    all_common     &= shape_eq(common_shape, array_shape(e));
   }
 
   own(array_t) a;
@@ -213,8 +213,8 @@ void inter_token(inter_t* inter, token_t t) {
     case TOK_QUOTE: {
       size_t e = inter_find_entry_idx(inter, t.val.s);
       CHECK(e < inter->dict.s, "unknown word '%pS'", &t.text);
-      own(array_t) a = array_new_scalar_t_dict_entry(e);
-      a->f |= FLAG_QUOTE;
+      own(array_t) a  = array_new_scalar_t_dict_entry(e);
+      a->f           |= FLAG_QUOTE;
       PUSH(a);
       return;
     }
@@ -294,7 +294,7 @@ DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
   dict_entry_t* prev = inter_find_entry(inter, to_str(inter->comp));
   if (prev) {
     array_dec_ref(prev->v);
-    prev->v = array_inc_ref(a);
+    prev->v  = array_inc_ref(a);
     prev->f &= ~ENTRY_VAR;
   } else {
     dict_push(&inter->dict, (dict_entry_t){copy(inter->comp), array_inc_ref(a)});
@@ -335,7 +335,7 @@ DEF_WORD("!", store) {
   dict_entry_t* e = inter_lookup_entry(inter, as_dict_entry(v));
   CHECK(e->f & ENTRY_VAR || !e->f, "%pA is not a valid store target", v);
   array_dec_ref(e->v);
-  e->v = array_inc_ref(x);
+  e->v  = array_inc_ref(x);
   e->f |= ENTRY_VAR;
 }
 
