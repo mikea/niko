@@ -473,8 +473,8 @@ DEF_WORD("[]", cell) {
 
 DEF_WORD("concat", concat) {
   POP(x);
-  PROTECTED(shape_t, s, as_shape(x));
-  own(array_t) y = concatenate(stack, *s);
+  protected(shape_t) s = protect(as_shape(x));
+  own(array_t) y       = concatenate(stack, *s);
   PUSH(y);
 }
 

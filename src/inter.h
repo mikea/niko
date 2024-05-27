@@ -77,8 +77,7 @@ INLINE void array_t_cleanup_protected_push(array_t** p) {
   *p = NULL;
 }
 
-#define POP(x) \
-  CLEANUP(array_t_cleanup_protected_push) array_t* x = PROTECT(array_t, stack_pop(stack), __push_back, stack);
+#define POP(x)  CLEANUP(array_t_cleanup_protected_push) array_t* x = PROTECT(stack_pop(stack), __push_back, stack);
 #define PUSH(x) stack_push(stack, x)
 #define DUP     PUSH(stack_peek(stack, 0))
 #define DROP    stack_drop(stack)

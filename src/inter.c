@@ -252,8 +252,8 @@ void inter_line_capture_out(inter_t* inter, const char* line, char** out, size_t
     return;
   }
 
-  PROTECTED(FILE, fout, open_memstream(out, out_size));
-  inter->out = fout;
+  protected(FILE) fout = protect(open_memstream(out, out_size));
+  inter->out           = fout;
   inter_line(inter, line);
   inter->out = stdout;
 }

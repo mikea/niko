@@ -46,9 +46,24 @@ INLINE void __panic_message_cleanup(str_t*) { string_free(__panic_message); }
            __after; __after = false)                                          \
         for (CLEANUP(__panic_message_cleanup) str_t msg = to_str(__panic_message); __after; __after = false)
 
-#define PROTECT(t, x, h, ctx)        \
+#define PROTECT(x, h, ctx)           \
   ({                                 \
-    t* _x = (x);                     \
+    typeof(x) _x = (x);              \
     unwind_handler_push(h, ctx, _x); \
     _x;                              \
+  })
+
+#define __protect_unwind(x)      \
+  _Generic((x),                  \
+      FILE *: FILE_unwind,       \
+      shape_t *: shape_t_unwind, \
+      char*: char_unwind,        \
+      array_t*: array_t_unwind,  \
+      default: "unexpected")
+
+#define PROTECT_UNWIND(x, ctx)                         \
+  ({                                                   \
+    typeof(x) _x = (x);                                \
+    unwind_handler_push(__protect_unwind(x), ctx, _x); \
+    _x;                                                \
   })

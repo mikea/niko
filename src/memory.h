@@ -31,8 +31,8 @@ DEF_CLEANUP(FILE, fclose)
 INLINE void      string_t_cleanup(string_t* s) { string_free(*s); }
 typedef string_t own_string_t;
 
-#define own(t)       CLEANUP(t##_cleanup) own_##t
-#define protected(t) CLEANUP(t##_cleanup_protected) t*
-#define borrow(t)    t*
+#define own(t)    CLEANUP(t##_cleanup) own_##t
+#define borrow(t) t*
 
-#define PROTECTED(t, n, expr) protected(t) n = PROTECT(t, expr, t##_unwind, NULL)
+#define protected(t)  CLEANUP(t##_cleanup_protected) t*
+#define protect(expr) PROTECT_UNWIND(expr, NULL)
