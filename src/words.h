@@ -33,6 +33,13 @@
   REGISTER_WORD(w, n)      \
   DEF_WORD_HANDLER_1_1(w_##n)
 
+INLINE shape_t as_shape(const array_t* x) {
+  CHECK(x->r <= 1, "array rank <=1 expected");
+  CHECK(x->t == T_I64, "i64 array expected");
+  if (array_is_scalar(x)) return shape_1d(array_data(x));
+  return shape_create(x->n, array_data(x));
+}
+
 INLINE size_t as_size_t(array_t* a) {
   CHECK(a->r == 0, "scalar expected");
   CHECK(a->t == T_I64, "int scalar expected");

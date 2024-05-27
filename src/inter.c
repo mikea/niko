@@ -346,4 +346,9 @@ DEF_WORD("@", load) {
   PUSH(e->v);
 }
 
+DEF_WORD("exit", exit) {
+  fprintf(inter->out, "bye\n");
+  exit(0);
+}
+
 #pragma endregion words

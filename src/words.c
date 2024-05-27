@@ -354,29 +354,10 @@ CONSTRUCTOR void register_equal() {
 
 #pragma endregion binops
 
-DEF_WORD_1_1("shape", shape) {
-  dim_t d        = x->r;
-  own(array_t) y = array_alloc(T_I64, x->r, shape_1d(&d));
-  DO_MUT_ARRAY(y, t_i64, i, p) { *p = array_dims(x)[i]; }
-  return array_inc_ref(y);
-}
-DEF_WORD_1_1("len", len) { return array_inc_ref(array_move(array_new_scalar_t_i64(x->n))); }
-
-// creating arrays
-
-shape_t create_shape(const array_t* x) {
-  assert(x->r <= 1);      // todo: report error
-  assert(x->t == T_I64);  // todo: report error
-  if (array_is_scalar(x)) return shape_1d(array_data(x));
-  return shape_create(x->n, array_data(x));
-}
-
-// INLINE void fill_simd(size_t n, vmax_i64* restrict SIMD_ALIGNED out, vmax_i64 x) {
-//    DO(i, n) out[i] = x;
-//  }
+#pragma region array_create
 
 DEF_WORD_1_1("index", index) {
-  shape_t s                            = create_shape(x);
+  shape_t s                            = as_shape(x);
   own(array_t) y                       = array_alloc(T_I64, shape_len(s), s);
   DO_MUT_ARRAY(y, t_i64, i, ptr)(*ptr) = i;
   return array_inc_ref(y);
@@ -395,6 +376,8 @@ DEF_WORD("pascal", pascal) {
   PUSH(y);
 }
 
+#pragma endregion array_create
+
 #pragma region array_ops
 
 DEF_WORD("reverse", reverse) {
@@ -407,19 +390,29 @@ DEF_WORD("reverse", reverse) {
 DEF_WORD("reshape", reshape) {
   POP(x);
   POP(y);
-  shape_t s      = create_shape(x);
+  shape_t s      = as_shape(x);
   own(array_t) z = array_alloc(y->t, shape_len(s), s);
   size_t ys      = type_sizeof(y->t, y->n);
   DO(i, type_sizeof(y->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)array_data(y))[i % ys]; }
   PUSH(z);
 }
 
-#pragma endregion array_ops
-
-DEF_WORD("exit", exit) {
-  fprintf(inter->out, "bye\n");
-  exit(0);
+DEF_WORD_1_1("shape", shape) {
+  dim_t d        = x->r;
+  own(array_t) y = array_alloc(T_I64, x->r, shape_1d(&d));
+  DO_MUT_ARRAY(y, t_i64, i, p) { *p = array_dims(x)[i]; }
+  return array_inc_ref(y);
 }
+DEF_WORD_1_1("len", len) { return array_inc_ref(array_move(array_new_scalar_t_i64(x->n))); }
+
+DEF_WORD("[]", cell) {
+  POP(y);
+  POP(x);
+  own(array_t) z = array_get_cell(x, as_shape(y));
+  PUSH(z);
+}
+
+#pragma endregion array_ops
 
 #pragma region slash_words
 
@@ -523,7 +516,7 @@ DEF_WORD("trace", trace) {
   POP(y);
 
   t_dict_entry e = as_dict_entry(op);
-  shape_t      s = create_shape(y);
+  shape_t      s = as_shape(y);
 
   DO(i, shape_len(s)) {
     if (i > 0) DUP;

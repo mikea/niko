@@ -232,3 +232,20 @@ INLINE void array_for_each_cell(array_t* x, size_t r, void (*callback)(size_t i,
     callback(i, y);
   }
 }
+
+INLINE array_t* array_get_cell(array_t* x, shape_t s) {
+  size_t r = s.r;
+  CHECK(r <= x->r, "invalid rank: %ld > %ld", r, x->r);
+
+  shape_t a   = array_shape(x);
+  size_t  off = 0;
+  size_t  mul = 1;
+
+  DOR(i, x->r) {
+    if (i < r) off += mul * WRAP(s.d[i], a.d[i]);
+    mul *= a.d[i];
+  }
+
+  shape_t cell = shape_suffix(array_shape(x), x->r - r);
+  return array_new_slice(x, shape_len(cell), cell, array_data(x) + type_sizeof(x->t, off));
+}
