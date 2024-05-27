@@ -1,5 +1,7 @@
 # creating arrays
+
 ## zeros
+
 ```nkt
 > 10 zeros .
 [ 0 0 0 0 0 0 0 0 0 0 ]
@@ -8,7 +10,9 @@
 > [ 2 3 ] zeros .
 [ [ 0 0 0 ] [ 0 0 0 ] ]
 ```
+
 ## ones
+
 ```nkt
 > 10 ones .
 [ 1 1 1 1 1 1 1 1 1 1 ]

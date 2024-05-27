@@ -1,4 +1,4 @@
-# Tests for core set of words
+# `words.c` tests
 
 ## stack manipulation
 
@@ -159,13 +159,15 @@ ERROR: stack underflow
 [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ]
 > [ 2 3 4 ] index -11 [] .
 [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ]
+> 100 index -1 [] .
+99
 ```
 
 ```nkt
 > [ 2 3 4 ] index [ 0 0 ] [] .
 [ 0 1 2 3 ]
 > [ 2 3 4 ] index [ -1 -1 ] [] .
-[ 12 13 14 15 ]
+[ 20 21 22 23 ]
 ```
 
 ```nkt
@@ -178,6 +180,20 @@ ERROR: stack underflow
 ```nkt
 > [ 2 3 4 ] index [ 1 2 3 4 5 ] [] .
 ERROR: invalid rank: 5 > 3
+```
+
+### `concat`
+
+```nkt
+> 1 2 3 3 concat .
+[ 1 2 3 ]
+> 1 2 3 [ 2 3 ] concat .
+ERROR: stack underflow
+> 1 2 3 4 5 6 [ 2 3 ] concat .
+[ [ 1 2 3 ] [ 4 5 6 ] ]
+> [ 1 2 ] [ 3 4 ] [ 5 6 ] 3 concat dup . shape .
+[ [ 1 2 ] [ 3 4 ] [ 5 6 ] ]
+[ 3 2 ]
 ```
 
 ## unary words
@@ -406,7 +422,7 @@ ERROR: c8 i64 are not supported
 0.5
 ```
 
-### =
+### `=`
 
 ```nkt
 > 1 2 = .
@@ -449,6 +465,15 @@ types:
 [ 0 1 0 ]
 > 3 index 0. + 1. = .
 [ 0 1 0 ]
+```
+
+### `<`
+
+```nkt
+> 1 2. < .
+1
+> [ 0 1 2 3 ] 2 < .
+[ 1 1 0 0 ]
 ```
 
 ### max

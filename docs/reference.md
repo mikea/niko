@@ -48,6 +48,7 @@ Words that starts from '\' are indended to be used during development
 |`ones`|`( s -> x )`|creates array with shape `s` filled with ones|
 |`index`|`( s -> x )`|creates array with shape `s` filled values from `0` to the length-1|
 |`pascal`|`( n -> x )`|creates `n*n` pascal matrix|
+|`concat`|`(... s -> x)`|creates array of shape `s` out of preceding stack items|
 
 ## Array Introspection
 
@@ -113,9 +114,10 @@ Words that starts from '\' are indended to be used during development
 |`/`|`(x y -> z)`| division|
 |`div`|`(x y -> z)`|division quotient|
 |`mod`|`(x y -> z)`|divisin remainder|
-|`&`, `min`|`(x y -> z)`| min|
+|`&`, `min`|`(x y -> z)`|min|
 |`|`,`max` |`(x y -> z)`|max|
 |`=`|`(x y -> b)`| equal comparison|
+|`<`|`(x y -> b)`| less comparison|
 
 ## Aggregation
 
@@ -124,7 +126,6 @@ Words that starts from '\' are indended to be used during development
 |`sum`|`(x -> y)`|sums all elements in `x` keeping only the result
 |`sums`|`(x -> y)`|sums all elements in `x` organizing intermediate results in shape of `x`
 |`deltas`|`(x -> y)`|computes deltas between consequent elements of `x`, leaving first element unchanged
-
 
 ## Higher Level Words
 

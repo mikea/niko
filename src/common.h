@@ -119,7 +119,7 @@ static_assert(sizeof(f64) == sizeof(i64));
 
 #define WRAP(i, n)               \
   ({                             \
-    typeof(n) __n = n;           \
+    typeof(i) __n = n;           \
     ((((i) % __n) + __n) % __n); \
   })
 

@@ -376,14 +376,47 @@ CONSTRUCTOR void register_equal() {
 
 #pragma endregion equal
 
+#pragma region less
+
+t_ffi less_table[T_MAX][T_MAX] = {};
+
+#define LESS_OP(a, b) (a) < (b)
+
+GEN_BINOP_SPECIALIZATION(less, t_c8, t_c8, t_i64, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, t_c8, t_i64, t_i64, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, t_c8, t_f64, t_i64, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, t_i64, t_c8, t_i64, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, t_i64, t_i64, t_i64, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, t_i64, t_f64, t_i64, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, t_f64, t_c8, t_i64, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, t_f64, t_i64, t_i64, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, t_f64, t_f64, t_i64, LESS_OP);
+
+#define REGISTER_less(t1, t2) less_table[TYPE_ENUM(t1)][TYPE_ENUM(t2)] = less_##t1##_##t2;
+
+CONSTRUCTOR void register_less() {
+  REGISTER_less(t_c8, t_c8);
+  REGISTER_less(t_c8, t_i64);
+  REGISTER_less(t_c8, t_f64);
+  REGISTER_less(t_i64, t_c8);
+  REGISTER_less(t_i64, t_i64);
+  REGISTER_less(t_i64, t_f64);
+  REGISTER_less(t_f64, t_c8);
+  REGISTER_less(t_f64, t_i64);
+  REGISTER_less(t_f64, t_f64);
+  global_dict_add_ffi2("<", less_table);
+}
+
+#pragma endregion less
+
 #pragma endregion binops
 
 #pragma region array_create
 
 DEF_WORD_1_1("index", index) {
-  shape_t s                            = as_shape(x);
-  own(array_t) y                       = array_alloc(T_I64, shape_len(s), s);
-  DO_MUT_ARRAY(y, t_i64, i, ptr)(*ptr) = i;
+  own(shape_t) s = as_shape(x);
+  own(array_t) y = array_alloc(T_I64, shape_len(*s), *s);
+  DO_MUT_ARRAY(y, t_i64, i, ptr) { (*ptr) = i; }
   return array_inc_ref(y);
 }
 
@@ -414,8 +447,8 @@ DEF_WORD("reverse", reverse) {
 DEF_WORD("reshape", reshape) {
   POP(x);
   POP(y);
-  shape_t s      = as_shape(x);
-  own(array_t) z = array_alloc(y->t, shape_len(s), s);
+  own(shape_t) s = as_shape(x);
+  own(array_t) z = array_alloc(y->t, shape_len(*s), *s);
   size_t ys      = type_sizeof(y->t, y->n);
   DO(i, type_sizeof(y->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)array_data(y))[i % ys]; }
   PUSH(z);
@@ -431,9 +464,18 @@ DEF_WORD_1_1("len", len) { return array_inc_ref(array_move(array_new_scalar_t_i6
 
 DEF_WORD("[]", cell) {
   POP(y);
+  CHECK(y->r <= 1, "array rank <=1 expected");
+  CHECK(y->t == T_I64, "i64 array expected");
   POP(x);
-  own(array_t) z = array_get_cell(x, as_shape(y));
+  own(array_t) z = array_get_cell(x, y->n, array_data_t_i64(y));
   PUSH(z);
+}
+
+DEF_WORD("concat", concat) {
+  POP(x);
+  own(shape_t) s = as_shape(x);
+  own(array_t) y = concatenate(stack, *s);
+  PUSH(y);
 }
 
 #pragma endregion array_ops
@@ -540,14 +582,14 @@ DEF_WORD("trace", trace) {
   POP(y);
 
   t_dict_entry e = as_dict_entry(op);
-  shape_t      s = as_shape(y);
+  own(shape_t) s = as_shape(y);
 
-  DO(i, shape_len(s)) {
+  DO(i, shape_len(*s)) {
     if (i > 0) DUP;
     inter_dict_entry(inter, e);
   }
 
-  own(array_t) result = concatenate(stack, s);
+  own(array_t) result = concatenate(stack, *s);
   PUSH(result);
 }
 

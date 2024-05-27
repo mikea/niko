@@ -24,6 +24,26 @@
 [ -17.7777777777778 -12.2222222222222 -6.66666666666667 -1.11111111111111 4.44444444444444 10. 15.5555555555556 21.1111111111111 26.6666666666667 32.2222222222222 ]
 ```
 
+## Fibonacci numbers
+
+```nk
+: next_fib dup sum swap -1 [] swap 2 concat ;
+: fib [ 0 1 ] swap next_fib' power 0 [] ;
+```
+
+```nkt
+> [ 1 1 ] next_fib .
+[ 1 2 ]
+> [ 1 2 ] next_fib .
+[ 2 3 ]
+> [ 1 1 ] 10 next_fib' power .
+[ 89 144 ]
+> 10 fib .
+55
+> 40 fib .
+102334155
+```
+
 ## Newton Method
 
 Let's apply newton method to calculating `sqrt(2)`.
@@ -61,6 +81,8 @@ dup 2 * rot swap / - (x x^2/2x  )
 
 ## Project Euler
 
+[https://projecteuler.net/](https://projecteuler.net/about)
+
 ### Problem 1
 
 ```nkt
@@ -70,10 +92,15 @@ dup 2 * rot swap / - (x x^2/2x  )
 
 ### Problem 2
 
-TODO
+```nk
+: head 0 [] ;
+: fibs [ 0 1 ] swap next_fib' trace 1 head' apply[] ;
+```
 
 ```nkt
-> [ 1 1 ] dup sum \s
-0: 2
-1: [ 1 1 ]
+>  10 fibs .
+[ 1 1 2 3 5 8 13 21 34 55 ]
+> 40 fibs dup 4000000 < 
+> over 2 mod not & * sum .
+4613732
 ```

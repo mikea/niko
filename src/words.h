@@ -33,11 +33,15 @@
   REGISTER_WORD(w, n)      \
   DEF_WORD_HANDLER_1_1(w_##n)
 
-INLINE shape_t as_shape(const array_t* x) {
+INLINE shape_t* as_shape(const array_t* x) {
   CHECK(x->r <= 1, "array rank <=1 expected");
   CHECK(x->t == T_I64, "i64 array expected");
-  if (array_is_scalar(x)) return shape_1d(array_data(x));
-  return shape_create(x->n, array_data(x));
+
+  const i64* d = array_data_t_i64(x);
+  DO(i, x->n) { CHECK(d[i] >= 0, "shape must be non-negative"); }
+  shape_t* s = shape_new(x->n);
+  DO(i, x->n) { ((dim_t*)s->d)[i] = (dim_t)d[i]; }
+  return s;
 }
 
 INLINE size_t as_size_t(array_t* a) {

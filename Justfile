@@ -28,7 +28,7 @@ coverage: clean
     find build/Debug -name "*.gcda" | xargs gcov
 
 valgrind-test FILE BUILD_TYPE="Debug": (build BUILD_TYPE) (_valgrind-test FILE)
-valgrind BUILD_TYPE="Debug": (build BUILD_TYPE) (_valgrind-test "tests/inter.md") (_valgrind-test "tests/core.md") (_valgrind-test "tests/prelude.md")
+valgrind BUILD_TYPE="Debug": (build BUILD_TYPE) (_valgrind-test "tests/inter.md") (_valgrind-test "tests/words.md") (_valgrind-test "tests/prelude.md")
 
 valgrind-expr EXPR="10000000 zeros": build 
     valgrind --leak-check=full --track-origins=yes --show-reachable=yes  --suppressions=default.supp bin/niko -e "{{EXPR}}"
@@ -57,7 +57,7 @@ stat EXPR="10000000 zeros": release
 [private]
 _test:
     bin/niko -z -t tests/inter.md
-    bin/niko -z -t tests/core.md
+    bin/niko -z -t tests/words.md
     bin/niko -z -t tests/blas.md
     bin/niko -t tests/prelude.md
     bin/niko -t docs/examples.md

@@ -71,6 +71,7 @@ INLINE shape_t* shape_new(size_t r) {
 }
 INLINE void shape_free(shape_t* s) { free(s); }
 DEF_CLEANUP(shape_t, shape_free);
+
 INLINE shape_t      shape_scalar() { return (shape_t){0, NULL}; }
 INLINE shape_t      shape_1d(const dim_t* d) { return (shape_t){1, d}; }
 INLINE shape_t      shape_create(size_t r, const dim_t* d) { return (shape_t){r, d}; }
@@ -233,8 +234,7 @@ INLINE void array_for_each_cell(array_t* x, size_t r, void (*callback)(size_t i,
   }
 }
 
-INLINE array_t* array_get_cell(array_t* x, shape_t s) {
-  size_t r = s.r;
+INLINE array_t* array_get_cell(array_t* x, size_t r, const i64* c) {
   CHECK(r <= x->r, "invalid rank: %ld > %ld", r, x->r);
 
   shape_t a   = array_shape(x);
@@ -242,7 +242,7 @@ INLINE array_t* array_get_cell(array_t* x, shape_t s) {
   size_t  mul = 1;
 
   DOR(i, x->r) {
-    if (i < r) off += mul * WRAP(s.d[i], a.d[i]);
+    if (i < r) off += mul * WRAP(c[i], a.d[i]);
     mul *= a.d[i];
   }
 
