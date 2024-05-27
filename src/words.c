@@ -66,7 +66,7 @@ DEF_WORD("pick", pick) {
 
 INLINE void thread1(inter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_table[T_MAX]) {
   assert(x->t == T_ARR);
-  own(array_t) out = array_alloc_as(x);
+  own(array_t) out    = array_alloc_as(x);
 
   array_t* const* src = array_data_t_arr(x);
   array_t**       dst = array_mut_data_t_arr(out);
@@ -389,10 +389,10 @@ DEF_WORD_1_1("index", index) {
 
 DEF_WORD("pascal", pascal) {
   POP(x);
-  size_t n       = as_size_t(x);
-  dim_t  dims[2] = {n, n};
-  own(array_t) y = array_alloc(T_I64, n * n, shape_create(2, dims));
-  t_i64* ptr     = array_mut_data(y);
+  size_t n        = as_size_t(x);
+  dim_t  dims[2]  = {n, n};
+  own(array_t) y  = array_alloc(T_I64, n * n, shape_create(2, dims));
+  t_i64* ptr      = array_mut_data(y);
 
   DO(i, n) ptr[i] = ptr[i * n]                         = 1;
   DO(i, n) DO(j, n) if (i > 0 && j > 0) ptr[i * n + j] = ptr[i * n + j - 1] + ptr[(i - 1) * n + j];

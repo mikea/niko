@@ -222,9 +222,9 @@ TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 
 INLINE void array_for_each_cell(array_t* x, size_t r, void (*callback)(size_t i, array_t* slice)) {
   CHECK(r <= x->r, "invalid rank: %ld > %ld", r, x->r);
-  shape_t cell   = shape_suffix(array_shape(x), r);
-  size_t  l      = shape_len(cell);
-  size_t  stride = type_sizeof(x->t, l);
+  shape_t cell    = shape_suffix(array_shape(x), r);
+  size_t  l       = shape_len(cell);
+  size_t  stride  = type_sizeof(x->t, l);
 
   const void* ptr = array_data(x);
   DO(i, x->n / l) {

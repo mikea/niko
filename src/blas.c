@@ -36,8 +36,8 @@ DEF_WORD("lapack_getrf", lapack_getrf) {
   CHECK(x->r == 2, "rank 2 expected");
   CHECK(x->t == T_F64, "(todo) f64 expected");
 
-  dim_t m = array_dims(x)[0];
-  dim_t n = array_dims(x)[1];
+  dim_t m           = array_dims(x)[0];
+  dim_t n           = array_dims(x)[1];
 
   own(array_t) ipiv = array_alloc(T_I64, n, shape_1d(&n));
   t_i64 status      = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, m, n, array_mut_data(x), n, array_mut_data(ipiv));

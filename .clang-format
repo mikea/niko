@@ -1,6 +1,8 @@
 ---
 BasedOnStyle: Chromium
-AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveAssignments: 
+  Enabled: true
+  AcrossEmptyLines: true
 AlignConsecutiveDeclarations: Consecutive
 AlignConsecutiveMacros: Consecutive
 AlignConsecutiveShortCaseStatements:

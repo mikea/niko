@@ -54,17 +54,17 @@ void test(inter_t* inter, const char* fname, bool v) {
   size_t read;
   size_t line_no = 0;
 
-  own(char) out = NULL;
+  own(char) out  = NULL;
   size_t out_size;
-  char*  rest_out   = NULL;
-  size_t in_line_no = 0;
+  char*  rest_out       = NULL;
+  size_t in_line_no     = 0;
 
   const str_t nkt_start = str_from_c("```nkt\n");
   const str_t nk_start  = str_from_c("```nk\n");
   const str_t code_end  = str_from_c("```");
 
-  bool in_nk  = false;
-  bool in_nkt = false;
+  bool in_nk            = false;
+  bool in_nkt           = false;
 
   while ((read = getline(&line, &len, file)) != -1) {
     line_no++;

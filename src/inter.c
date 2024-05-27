@@ -289,7 +289,7 @@ DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
 
 DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
   CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
-  own(array_t) a = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->data);
+  own(array_t) a     = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->data);
 
   dict_entry_t* prev = inter_find_entry(inter, to_str(inter->comp));
   if (prev) {
