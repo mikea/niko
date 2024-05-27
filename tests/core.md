@@ -480,23 +480,23 @@ types:
 
 ## higher order words
 
-### fold_rank
+### fold[]
 
 ```nkt
-> [ 2 3 4 ] index 0 +' fold_rank .
+> [ 2 3 4 ] index 0 +' fold[] .
 276
-> [ 2 3 4 ] index 1 +' fold_rank .
+> [ 2 3 4 ] index 1 +' fold[] .
 [ 60 66 72 78 ]
-> [ 2 3 4 ] index 2 +' fold_rank .
+> [ 2 3 4 ] index 2 +' fold[] .
 [ [ 12 14 16 18 ] [ 20 22 24 26 ] [ 28 30 32 34 ] ]
-> [ 2 3 4 ] index 3 +' fold_rank .
+> [ 2 3 4 ] index 3 +' fold[] .
 [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
 ```
 
 error handling
 
 ```nkt
-> 10 index 0. +' fold_rank
+> 10 index 0. +' fold[]
 ERROR: int scalar expected
 > \s
 0: +'
@@ -504,51 +504,51 @@ ERROR: int scalar expected
 2: [ 0 1 2 3 4 5 6 7 8 9 ]
 ```
 
-### scan_rank
+### scan[]
 
 ```nkt
-> [ 2 3 4 ] index 0 +' scan_rank .
+> [ 2 3 4 ] index 0 +' scan[] .
 [ [ [ 0 1 3 6 ] [ 10 15 21 28 ] [ 36 45 55 66 ] ] [ [ 78 91 105 120 ] [ 136 153 171 190 ] [ 210 231 253 276 ] ] ]
-> [ 2 3 4 ] index 1 +' scan_rank .
+> [ 2 3 4 ] index 1 +' scan[] .
 [ [ [ 0 1 2 3 ] [ 4 6 8 10 ] [ 12 15 18 21 ] ] [ [ 24 28 32 36 ] [ 40 45 50 55 ] [ 60 66 72 78 ] ] ]
-> [ 2 3 4 ] index 2 +' scan_rank .
+> [ 2 3 4 ] index 2 +' scan[] .
 [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 14 16 18 ] [ 20 22 24 26 ] [ 28 30 32 34 ] ] ]
-> [ 2 3 4 ] index 3 +' scan_rank .
+> [ 2 3 4 ] index 3 +' scan[] .
 [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
-> [ 2 3 4 ] index 4 +' scan_rank .
+> [ 2 3 4 ] index 4 +' scan[] .
 ERROR: invalid rank: 4 > 3
 ```
 
-### apply_rank
+### apply[]
 
 ```nkt
-> [ 2 3 4 ] index 0 reverse' apply_rank .
+> [ 2 3 4 ] index 0 reverse' apply[] .
 [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
-> [ 2 3 4 ] index 1 reverse' apply_rank .
+> [ 2 3 4 ] index 1 reverse' apply[] .
 [ [ [ 3 2 1 0 ] [ 7 6 5 4 ] [ 11 10 9 8 ] ] [ [ 15 14 13 12 ] [ 19 18 17 16 ] [ 23 22 21 20 ] ] ]
-> [ 2 3 4 ] index 2 reverse' apply_rank .
+> [ 2 3 4 ] index 2 reverse' apply[] .
 [ [ [ 11 10 9 8 ] [ 7 6 5 4 ] [ 3 2 1 0 ] ] [ [ 23 22 21 20 ] [ 19 18 17 16 ] [ 15 14 13 12 ] ] ]
-> [ 2 3 4 ] index 3 reverse' apply_rank .
+> [ 2 3 4 ] index 3 reverse' apply[] .
 [ [ [ 23 22 21 20 ] [ 19 18 17 16 ] [ 15 14 13 12 ] ] [ [ 11 10 9 8 ] [ 7 6 5 4 ] [ 3 2 1 0 ] ] ]
-> [ 2 3 4 ] index 4 reverse' apply_rank .
+> [ 2 3 4 ] index 4 reverse' apply[] .
 ERROR: invalid rank: 4 > 3
 ```
 
-### pairwise_rank
+### pairwise[]
 
 ```nkt
 > : -neg - neg ;
-> [ 0 1 1 0 1 0 ] 0 -neg' pairwise_rank . \s
+> [ 0 1 1 0 1 0 ] 0 -neg' pairwise[] . \s
 [ 0 1 0 -1 1 -1 ]
-> [ 2 3 4 ] index 0 -neg' pairwise_rank . \s
+> [ 2 3 4 ] index 0 -neg' pairwise[] . \s
 [ [ [ 0 1 1 1 ] [ 1 1 1 1 ] [ 1 1 1 1 ] ] [ [ 1 1 1 1 ] [ 1 1 1 1 ] [ 1 1 1 1 ] ] ]
-> [ 2 3 4 ] index 1 -neg' pairwise_rank . \s
+> [ 2 3 4 ] index 1 -neg' pairwise[] . \s
 [ [ [ 0 1 2 3 ] [ 4 4 4 4 ] [ 4 4 4 4 ] ] [ [ 4 4 4 4 ] [ 4 4 4 4 ] [ 4 4 4 4 ] ] ]
-> [ 2 3 4 ] index 2 -neg' pairwise_rank . \s
+> [ 2 3 4 ] index 2 -neg' pairwise[] . \s
 [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 12 12 12 ] [ 12 12 12 12 ] [ 12 12 12 12 ] ] ]
-> [ 2 3 4 ] index 3 -neg' pairwise_rank . \s
+> [ 2 3 4 ] index 3 -neg' pairwise[] . \s
 [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
-> [ 2 3 4 ] index 4 -neg' pairwise_rank
+> [ 2 3 4 ] index 4 -neg' pairwise[]
 ERROR: invalid rank: 4 > 3
 > \s
 0: -neg'
@@ -593,10 +593,10 @@ ERROR: invalid rank: 4 > 3
 [ 100 101 102 103 104 105 106 107 108 109 ]
 > : centigrade 32 - 5 * 9. / ; 72 centigrade .
 22.2222222222222
-> : test_sum 0 +' fold_rank ;
+> : test_sum 0 +' fold[] ;
 > 10 index test_sum .
 45
-> : test_sums 0 +' scan_rank ; 
+> : test_sums 0 +' scan[] ; 
 > 10 index test_sums .
 [ 0 1 3 6 10 15 21 28 36 45 ]
 ```

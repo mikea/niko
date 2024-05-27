@@ -6,9 +6,9 @@
 
 : swap- swap - ;
 
-: fold 0 swap fold_rank ;
-: scan 0 swap scan_rank ;
-: pairwise 0 swap pairwise_rank ;
+: fold 0 swap fold[] ;
+: scan 0 swap scan[] ;
+: pairwise 0 swap pairwise[] ;
 
 : sum +' fold ;
 : sums +' scan ;

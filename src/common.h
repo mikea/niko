@@ -117,13 +117,17 @@ static_assert(sizeof(f64) == sizeof(i64));
 
 // LOOPS
 
-#define WRAP(i, n) ({ typeof(n) __n = n; ((((i)%__n) + __n)%__n); })
+#define WRAP(i, n)               \
+  ({                             \
+    typeof(n) __n = n;           \
+    ((((i) % __n) + __n) % __n); \
+  })
 
 #define _DO(var, n, l) for (size_t var = 0, l = n; var < l; var++)
-#define DO(var, n) _DO(var, n, UNIQUE(__limit))
+#define DO(var, n)     _DO(var, n, UNIQUE(__limit))
 
 #define _DOR(var, n, i) for (size_t i = n, var = n - 1; i > 0; i--, var--)
-#define DOR(var, n) _DOR(var, n, UNIQUE(__i))
+#define DOR(var, n)     _DOR(var, n, UNIQUE(__i))
 
 #define DO_BLOCK(var, l, block) \
   DO(var, l) { block; }

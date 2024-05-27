@@ -115,7 +115,7 @@ void     inter_free(inter_t* inter);
 DEF_CLEANUP(inter_t, inter_free);
 
 inter_t* inter_current();
-void inter_set_current(inter_t* inter);
+void     inter_set_current(inter_t* inter);
 
 void inter_load_prelude(inter_t* inter);
 

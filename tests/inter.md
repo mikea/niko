@@ -94,10 +94,10 @@
 [ 100 101 102 103 104 105 106 107 108 109 ]
 > : centigrade 32 - 5 * 9. / ; 72 centigrade .
 22.2222222222222
-> : test_sum 0 +' fold_rank ;
+> : test_sum 0 +' fold[] ;
 > 10 index test_sum .
 45
-> : sums 0 +' scan_rank ; 
+> : sums 0 +' scan[] ; 
 > 10 index sums .
 [ 0 1 3 6 10 15 21 28 36 45 ]
 > : test_1. 1. ;

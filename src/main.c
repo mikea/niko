@@ -13,9 +13,7 @@ INLINE void stack_print_repl(stack_t* stack) {
   }
 }
 
-void v() {
-  
-}
+void v() {}
 
 void repl(inter_t* inter) {
   size_t input_size = 0;
@@ -154,7 +152,7 @@ int main(int argc, char* argv[]) {
 
   own(inter_t) inter = inter_new();
   inter_set_current(inter);
-  
+
   if (!z) inter_load_prelude(inter);
 
   CATCH(e) {

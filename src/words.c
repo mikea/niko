@@ -435,7 +435,7 @@ DEF_WORD("\\s", slash_stack) { DO(i, stack_len(stack)) fprintf(inter->out, "%ld:
 
 #pragma region adverbs
 
-DEF_WORD("fold_rank", fold_rank) {
+DEF_WORD("fold[]", fold_cell) {
   POP(op);
   POP(r);
   POP(x);
@@ -449,7 +449,7 @@ DEF_WORD("fold_rank", fold_rank) {
   array_for_each_cell(x, as_size_t(r), __iter);
 }
 
-DEF_WORD("scan_rank", scan_rank) {
+DEF_WORD("scan[]", scan_cell) {
   POP(op);
   POP(r);
   POP(x);
@@ -467,7 +467,7 @@ DEF_WORD("scan_rank", scan_rank) {
   PUSH(result);
 }
 
-DEF_WORD("apply_rank", apply_rank) {
+DEF_WORD("apply[]", apply_cell) {
   POP(op);
   POP(r);
   POP(x);
@@ -484,7 +484,7 @@ DEF_WORD("apply_rank", apply_rank) {
   PUSH(result);
 }
 
-DEF_WORD("pairwise_rank", pairwise_rank) {
+DEF_WORD("pairwise[]", pairwise_cell) {
   POP(op);
   POP(r);
   POP(x);
