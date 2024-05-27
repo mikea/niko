@@ -167,14 +167,13 @@ void inter_token(inter_t* inter, token_t t) {
     case TOK_ERR:      panicf("unexpected token: '%pS'", &t.text);
     case TOK_ARR_OPEN: {
       assert(inter->arr_level < sizeof(inter->arr_marks) / sizeof(inter->arr_marks[0]));
-      inter->arr_marks[inter->arr_level++] = inter->stack->l;
+      inter->arr_marks[inter->arr_level++] = stack->l;
       return;
     }
     case TOK_ARR_CLOSE: {
-      assert(inter->arr_level);  // todo: report error
-      size_t   mark  = inter->arr_marks[--inter->arr_level];
-      stack_t* stack = inter->stack;
-      assert(stack->l >= mark);  // todo: report error
+      CHECK(inter->arr_level, "unbalanced ]");
+      size_t mark = inter->arr_marks[--inter->arr_level];
+      CHECK(stack->l >= mark, "stack underflow");
       size_t n       = stack->l - mark;
       own(array_t) a = concatenate(stack, shape_1d(&n));
       PUSH(a);

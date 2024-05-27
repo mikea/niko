@@ -1,7 +1,11 @@
-# Input
+# Interpreter and Language Tests
 
-## atoms: entering and printing
+## Input
+
+### atoms: entering and printing
+
 ### integers
+
 ```nkt
 > 1 .
 1
@@ -14,7 +18,9 @@
 > 0 .
 0
 ```
+
 ### floats
+
 ```nkt
 > 1. .
 1.
@@ -40,7 +46,9 @@
 > 9. .
 9.
 ```
+
 ### strings
+
 ```nkt
 > "" .
 ""
@@ -52,7 +60,9 @@
 [ 3 ]
 [ 12 ]
 ```
-## arrays
+
+### arrays
+
 ```nkt
 > [ ] .
 [ ]
@@ -77,9 +87,16 @@
 [ 2 ]
 ```
 
-# Compiler
+#### error handling
 
-## `:`
+```nkt
+> ]
+ERROR: unbalanced ]
+```
+
+## Compiler
+
+### `:`
 
 ```nkt
 > : test_1 1 ; test_1 .
@@ -105,7 +122,15 @@
 1.
 ```
 
-### redefining words
+```nkt
+> : test_one_one [ 1 1 ] ;
+> test_one_one .
+[ 1 1 ]
+> test_one_one' @ .
+[ [ 1 1 ] ]
+```
+
+#### redefining words
 
 ```nkt
 > : 4_2 42 ;
@@ -123,7 +148,7 @@ ERROR: `+` can't be redefined
 3
 ```
 
-### error handling
+#### error handling
 
 ```nkt
 > : abc :
@@ -133,7 +158,7 @@ ERROR: : can be used only in interpret mode
 1
 ```
 
-## `const`
+### `const`
 
 ```nkt
 > 42 const forty_two \s
@@ -152,7 +177,7 @@ ERROR: `forty_two` can't be redefined
 42
 ```
 
-## `var`
+### `var`
 
 ```nkt
 > [ 1 2 3 ] var one_two_three \s
@@ -164,7 +189,7 @@ ERROR: `forty_two` can't be redefined
 123
 ```
 
-## `literal`
+### `literal`
 
 ```nkt
 > 5 : plus_five literal + ;
@@ -181,9 +206,9 @@ error handling
 ERROR: literal can be used only in compilation mode
 ```
 
-# interpreter
+## Interpreter
 
-## `!`
+### `!`
 
 ```nkt
 > 3.1 var almost_pi almost_pi .
@@ -205,7 +230,7 @@ ERROR: literal can be used only in compilation mode
 6.2831852
 ```
 
-## `@`
+### `@`
 
 ```nkt
 > 2 const two
@@ -224,7 +249,8 @@ ERROR: literal can be used only in compilation mode
 [ 5 ]
 ```
 
-# error handling
+## Error Handling
+
 ```nkt
 > 1999912+
 ERROR: unknown word '1999912+'
