@@ -37,7 +37,7 @@ void global_dict_add_new(dict_entry_t e) { dict_push(&global_dict, (dict_entry_t
 
 DESTRUCTOR void global_dict_free() { dict_free(&global_dict); }
 
-array_t* concatenate(stack_t* stack, shape_t sh) {
+array_t* catenate(stack_t* stack, shape_t sh) {
   size_t len = shape_len(sh);
   if (!len) return array_alloc(T_I64, 0, sh);
   CHECK(len <= stack->l, "stack underflow");
@@ -176,7 +176,7 @@ void inter_token(inter_t* inter, token_t t) {
       size_t mark = inter->arr_marks[--inter->arr_level];
       CHECK(stack->l >= mark, "stack underflow");
       size_t n       = stack->l - mark;
-      own(array_t) a = concatenate(stack, shape_1d(&n));
+      own(array_t) a = catenate(stack, shape_1d(&n));
       PUSH(a);
       return;
     }

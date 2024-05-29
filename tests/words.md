@@ -182,16 +182,16 @@ ERROR: stack underflow
 ERROR: invalid rank: 5 > 3
 ```
 
-### `concat`
+### `cat`
 
 ```nkt
-> 1 2 3 3 concat .
+> 1 2 3 3 cat .
 [ 1 2 3 ]
-> 1 2 3 [ 2 3 ] concat .
+> 1 2 3 [ 2 3 ] cat .
 ERROR: stack underflow
-> 1 2 3 4 5 6 [ 2 3 ] concat .
+> 1 2 3 4 5 6 [ 2 3 ] cat .
 [ [ 1 2 3 ] [ 4 5 6 ] ]
-> [ 1 2 ] [ 3 4 ] [ 5 6 ] 3 concat dup . shape .
+> [ 1 2 ] [ 3 4 ] [ 5 6 ] 3 cat dup . shape .
 [ [ 1 2 ] [ 3 4 ] [ 5 6 ] ]
 [ 3 2 ]
 ```

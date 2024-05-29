@@ -27,7 +27,7 @@
 ## Fibonacci numbers
 
 ```nk
-: next_fib dup sum swap -1 [] swap 2 concat ;
+: next_fib dup sum swap -1 [] swap 2 cat ;
 : fib [ 0 1 ] swap next_fib' power 0 [] ;
 ```
 

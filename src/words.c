@@ -471,10 +471,10 @@ DEF_WORD("[]", cell) {
   PUSH(z);
 }
 
-DEF_WORD("concat", concat) {
+DEF_WORD("cat", cat) {
   POP(x);
   protected(shape_t) s = protect(as_shape(x));
-  own(array_t) y       = concatenate(stack, *s);
+  own(array_t) y       = catenate(stack, *s);
   PUSH(y);
 }
 
@@ -529,7 +529,7 @@ DEF_WORD("scan[]", scan_cell) {
     if (i > 0) inter_dict_entry(inter, e);
   }
   array_for_each_cell(x, rank, __iter);
-  own(array_t) result = concatenate(stack, shape_prefix(array_shape(x), x->r - rank));
+  own(array_t) result = catenate(stack, shape_prefix(array_shape(x), x->r - rank));
   PUSH(result);
 }
 
@@ -546,7 +546,7 @@ DEF_WORD("apply[]", apply_cell) {
     inter_dict_entry(inter, e);
   }
   array_for_each_cell(x, rank, __iter);
-  own(array_t) result = concatenate(stack, shape_prefix(array_shape(x), x->r - rank));
+  own(array_t) result = catenate(stack, shape_prefix(array_shape(x), x->r - rank));
   PUSH(result);
 }
 
@@ -565,7 +565,7 @@ DEF_WORD("pairwise[]", pairwise_cell) {
   }
   array_for_each_cell(x, rank, __iter);
   DROP;
-  own(array_t) result = concatenate(stack, shape_prefix(array_shape(x), x->r - rank));
+  own(array_t) result = catenate(stack, shape_prefix(array_shape(x), x->r - rank));
   PUSH(result);
 }
 
@@ -589,7 +589,7 @@ DEF_WORD("trace", trace) {
     inter_dict_entry(inter, e);
   }
 
-  own(array_t) result = concatenate(stack, *s);
+  own(array_t) result = catenate(stack, *s);
   PUSH(result);
 }
 

@@ -48,7 +48,7 @@ Words that starts from '\' are indended to be used during development
 |`ones`|`( s -> x )`|creates array with shape `s` filled with ones|
 |`index`|`( s -> x )`|creates array with shape `s` filled values from `0` to the length-1|
 |`pascal`|`( n -> x )`|creates `n*n` pascal matrix|
-|`concat`|`(... s -> x)`|creates array of shape `s` out of preceding stack items|
+|`cat`|`(... s -> x)`|creates array of shape `s` out of preceding stack items|
 
 ## Array Introspection
 
