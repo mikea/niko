@@ -132,5 +132,15 @@ static_assert(sizeof(f64) == sizeof(i64));
 #define DO_BLOCK(var, l, block) \
   DO(var, l) { block; }
 
+// tools
+
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
+
+#define max(x, y)      \
+  ({                   \
+    typeof(x) _x = x;  \
+    typeof(y) _y = y;  \
+    _x < _y ? _y : _x; \
+  })
+

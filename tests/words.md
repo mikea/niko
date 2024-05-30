@@ -85,31 +85,9 @@ ERROR: stack underflow
 [ 0 1 2 3 4 5 6 7 8 9 ]
 > [ 10 ] index .
 [ 0 1 2 3 4 5 6 7 8 9 ]
-> [ 2 3 ] index .
-[ [ 0 1 2 ] [ 3 4 5 ] ]
-```
-
-### pascal
-
-```nkt
-> 4 pascal .
-[ [ 1 1 1 1 ] [ 1 2 3 4 ] [ 1 3 6 10 ] [ 1 4 10 20 ] ]
 ```
 
 ## information about arrays
-
-### shape
-
-```nkt
-> 10 index shape .
-[ 10 ]
-> [ 2 3 4 5 ] index shape .
-[ 2 3 4 5 ]
-> 100 index shape .
-[ 100 ]
-> 10 index 1 + index shape .
-[ 1 2 3 4 5 6 7 8 9 10 ]
-```
 
 ### len
 
@@ -118,25 +96,19 @@ ERROR: stack underflow
 10
 > 100 index len .
 100
-> 10 index 1 + index len .
-3628800
 ```
 
 ## array manipulation
 
-### reshape
+### take
 
 ```nkt
-> 5 index 9 reshape .
+> 5 index 9 take .
 [ 0 1 2 3 4 0 1 2 3 ]
-> 5 index [ 8 ] reshape .
+> 5 index [ 8 ] take .
 [ 0 1 2 3 4 0 1 2 ]
-> 5 index 3 reshape .
+> 5 index 3 take .
 [ 0 1 2 ]
-> 5 index [ 3 4 ] reshape .
-[ [ 0 1 2 3 ] [ 4 0 1 2 ] [ 3 4 0 1 ] ]
-> 5 index [ 2 2 ] reshape .
-[ [ 0 1 ] [ 2 3 ] ]
 ```
 
 ### reverse
@@ -144,42 +116,21 @@ ERROR: stack underflow
 ```nkt
 > 5 index reverse .
 [ 4 3 2 1 0 ]
-> [ 2 3 ] index reverse .
-[ [ 5 4 3 ] [ 2 1 0 ] ]
 ```
 
 ### `[]`
 
 ```nkt
-> [ 2 3 4 ] index 0 [] .
-[ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ]
-> [ 2 3 4 ] index 1 [] .
-[ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ]
-> [ 2 3 4 ] index 2 [] .
-[ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ]
-> [ 2 3 4 ] index -11 [] .
-[ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ]
+> 5 index 0 [] .
+0
+> 5 index 1 [] .
+1
+> 5 index 2 [] .
+2
+> 5 index -11 [] .
+4
 > 100 index -1 [] .
 99
-```
-
-```nkt
-> [ 2 3 4 ] index [ 0 0 ] [] .
-[ 0 1 2 3 ]
-> [ 2 3 4 ] index [ -1 -1 ] [] .
-[ 20 21 22 23 ]
-```
-
-```nkt
-> [ 2 3 4 ] index [ 0 1 -1 ] [] .
-7
-```
-
-#### error handling
-
-```nkt
-> [ 2 3 4 ] index [ 1 2 3 4 5 ] [] .
-ERROR: invalid rank: 5 > 3
 ```
 
 ### `cat`
@@ -187,13 +138,14 @@ ERROR: invalid rank: 5 > 3
 ```nkt
 > 1 2 3 3 cat .
 [ 1 2 3 ]
+> [ 1 2 ] [ 3 4 ] 2 cat .
+[ [ 1 2 ] [ 3 4 ] ]
+> [ 1 2 ] [ 3 4 ] 2 cat 0 [] .
+[ 1 2 ]
+> [ 1 2 ] [ 3 4 ] 2 cat 0 [] len .
+2
 > 1 2 3 [ 2 3 ] cat .
-ERROR: stack underflow
-> 1 2 3 4 5 6 [ 2 3 ] cat .
-[ [ 1 2 3 ] [ 4 5 6 ] ]
-> [ 1 2 ] [ 3 4 ] [ 5 6 ] 3 cat dup . shape .
-[ [ 1 2 ] [ 3 4 ] [ 5 6 ] ]
-[ 3 2 ]
+ERROR: expected single value
 ```
 
 ### `repeat`
@@ -201,10 +153,6 @@ ERROR: stack underflow
 ```nkt
 > [ 1 2 3 ] [ 0 1 2 ] repeat .
 [ 2 3 3 ]
-> [ 2 3 4 ] index [ 0 1 ] repeat .
-[ [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
-> [ 2 3 4 ] index [ [ 0 1 0 ] [ 1 0 0 ] ] repeat .
-[ [ 4 5 6 7 ] [ 12 13 14 15 ] ]
 ```
 
 ## unary words
@@ -336,8 +284,6 @@ ERROR: stack underflow
 3
 > 10 index dup + .
 [ 0 2 4 6 8 10 12 14 16 18 ]
-> [ 2 3 ] index dup + .
-[ [ 0 2 4 ] [ 6 8 10 ] ]
 > 10 index 2 + .
 [ 2 3 4 5 6 7 8 9 10 11 ]
 > 2 10 index + .
@@ -356,19 +302,6 @@ ERROR: stack underflow
 [ 6. 7. ]
 ```
 
-subcells:
-
-```nkt
-> [ 2 3 4 ] index .
-[ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
-> [ 2 3 4 ] index 1 + .
-[ [ [ 1 2 3 4 ] [ 5 6 7 8 ] [ 9 10 11 12 ] ] [ [ 13 14 15 16 ] [ 17 18 19 20 ] [ 21 22 23 24 ] ] ]
-> [ 2 3 4 ] index [ 1 2 3 4 ] + .
-[ [ [ 1 3 5 7 ] [ 5 7 9 11 ] [ 9 11 13 15 ] ] [ [ 13 15 17 19 ] [ 17 19 21 23 ] [ 21 23 25 27 ] ] ]
-> [ 2 3 4 ] index [ [ 1 1 1 1 ] [ 2 2 2 2 ] [ 3 3 3 3 ] ] + .
-[ [ [ 1 2 3 4 ] [ 6 7 8 9 ] [ 11 12 13 14 ] ] [ [ 13 14 15 16 ] [ 18 19 20 21 ] [ 23 24 25 26 ] ] ]
-```
-
 type conversion:
 
 ```nkt
@@ -381,16 +314,11 @@ type conversion:
 error handling:
 
 ```nkt
-> [ 2 3 4 ] index [ 1 1 ] +
-ERROR: array shapes are incompatible: (2, 3, 4) vs (2)
+> 10 index [ 1 1 ] +
+ERROR: array lengths are incompatible: 10 vs 2
 > \s \c
 0: [ 1 1 ]
-1: [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
-> [ 2 3 4 ] index dup [ 4 3 2 ] reshape + .
-ERROR: array shapes are incompatible: (2, 3, 4) vs (4, 3, 2)
-> \s \c
-0: [ [ [ 0 1 ] [ 2 3 ] [ 4 5 ] ] [ [ 6 7 ] [ 8 9 ] [ 10 11 ] ] [ [ 12 13 ] [ 14 15 ] [ 16 17 ] ] [ [ 18 19 ] [ 20 21 ] [ 22 23 ] ] ]
-1: [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
+1: [ 0 1 2 3 4 5 6 7 8 9 ]
 > "abc" 2 +
 ERROR: c8 i64 are not supported
 > \s \c
@@ -410,7 +338,7 @@ ERROR: c8 i64 are not supported
 ### -
 
 ```nkt
-> 10 index 1 10 reshape - .
+> 10 index 1 10 take - .
 [ -1 0 1 2 3 4 5 6 7 8 ]
 ```
 
@@ -447,12 +375,10 @@ ERROR: c8 i64 are not supported
 cells:
 
 ```nkt
-> [ 2 3 ] index 1 = .
-[ [ 0 1 0 ] [ 0 0 0 ] ]
-> [ 2 3 ] index [ 2 2 2 ] = .
-[ [ 0 0 1 ] [ 0 0 0 ] ]
-> [ 3 3 ] index dup reverse = .
-[ [ 0 0 0 ] [ 0 1 0 ] [ 0 0 0 ] ]
+> 6 index 1 = .
+[ 0 1 0 0 0 0 ]
+> 6 index [ 3 3 3 3 3 3 ] = .
+[ 0 0 0 1 0 0 ]
 ```
 
 types:
@@ -531,80 +457,35 @@ types:
 
 ## higher order words
 
-### fold[]
+### fold
 
 ```nkt
-> [ 2 3 4 ] index 0 +' fold[] .
+> 24 index +' fold .
 276
-> [ 2 3 4 ] index 1 +' fold[] .
-[ 60 66 72 78 ]
-> [ 2 3 4 ] index 2 +' fold[] .
-[ [ 12 14 16 18 ] [ 20 22 24 26 ] [ 28 30 32 34 ] ]
-> [ 2 3 4 ] index 3 +' fold[] .
-[ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
 ```
 
-error handling
+### scan
 
 ```nkt
-> 10 index 0. +' fold[]
-ERROR: int scalar expected, got f64 instead
-> \s
-0: +'
-1: 0.
-2: [ 0 1 2 3 4 5 6 7 8 9 ]
+> 24 index +' scan .
+[ 0 1 3 6 10 15 21 28 36 45 55 66 78 91 105 120 136 153 171 190 210 231 253 276 ]
 ```
 
-### scan[]
+### apply
 
 ```nkt
-> [ 2 3 4 ] index 0 +' scan[] .
-[ [ [ 0 1 3 6 ] [ 10 15 21 28 ] [ 36 45 55 66 ] ] [ [ 78 91 105 120 ] [ 136 153 171 190 ] [ 210 231 253 276 ] ] ]
-> [ 2 3 4 ] index 1 +' scan[] .
-[ [ [ 0 1 2 3 ] [ 4 6 8 10 ] [ 12 15 18 21 ] ] [ [ 24 28 32 36 ] [ 40 45 50 55 ] [ 60 66 72 78 ] ] ]
-> [ 2 3 4 ] index 2 +' scan[] .
-[ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 14 16 18 ] [ 20 22 24 26 ] [ 28 30 32 34 ] ] ]
-> [ 2 3 4 ] index 3 +' scan[] .
-[ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
-> [ 2 3 4 ] index 4 +' scan[] .
-ERROR: invalid rank: 4 > 3
+> 5 index index' apply .
+[ [ ] [ 0 ] [ 0 1 ] [ 0 1 2 ] [ 0 1 2 3 ] ]
 ```
 
-### apply[]
-
-```nkt
-> [ 2 3 4 ] index 0 reverse' apply[] .
-[ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
-> [ 2 3 4 ] index 1 reverse' apply[] .
-[ [ [ 3 2 1 0 ] [ 7 6 5 4 ] [ 11 10 9 8 ] ] [ [ 15 14 13 12 ] [ 19 18 17 16 ] [ 23 22 21 20 ] ] ]
-> [ 2 3 4 ] index 2 reverse' apply[] .
-[ [ [ 11 10 9 8 ] [ 7 6 5 4 ] [ 3 2 1 0 ] ] [ [ 23 22 21 20 ] [ 19 18 17 16 ] [ 15 14 13 12 ] ] ]
-> [ 2 3 4 ] index 3 reverse' apply[] .
-[ [ [ 23 22 21 20 ] [ 19 18 17 16 ] [ 15 14 13 12 ] ] [ [ 11 10 9 8 ] [ 7 6 5 4 ] [ 3 2 1 0 ] ] ]
-> [ 2 3 4 ] index 4 reverse' apply[] .
-ERROR: invalid rank: 4 > 3
-```
-
-### pairwise[]
+### pairwise
 
 ```nkt
 > : -neg - neg ;
-> [ 0 1 1 0 1 0 ] 0 -neg' pairwise[] . \s
+> [ 0 1 1 0 1 0 ] -neg' pairwise . \s
 [ 0 1 0 -1 1 -1 ]
-> [ 2 3 4 ] index 0 -neg' pairwise[] . \s
-[ [ [ 0 1 1 1 ] [ 1 1 1 1 ] [ 1 1 1 1 ] ] [ [ 1 1 1 1 ] [ 1 1 1 1 ] [ 1 1 1 1 ] ] ]
-> [ 2 3 4 ] index 1 -neg' pairwise[] . \s
-[ [ [ 0 1 2 3 ] [ 4 4 4 4 ] [ 4 4 4 4 ] ] [ [ 4 4 4 4 ] [ 4 4 4 4 ] [ 4 4 4 4 ] ] ]
-> [ 2 3 4 ] index 2 -neg' pairwise[] . \s
-[ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 12 12 12 ] [ 12 12 12 12 ] [ 12 12 12 12 ] ] ]
-> [ 2 3 4 ] index 3 -neg' pairwise[] . \s
-[ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
-> [ 2 3 4 ] index 4 -neg' pairwise[]
-ERROR: invalid rank: 4 > 3
-> \s
-0: -neg'
-1: 4
-2: [ [ [ 0 1 2 3 ] [ 4 5 6 7 ] [ 8 9 10 11 ] ] [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
+> 24 index -neg' pairwise . \s
+[ 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ]
 ```
 
 ### power
@@ -625,31 +506,6 @@ ERROR: invalid rank: 4 > 3
 ```nkt
 > 1 10 2*' trace .
 [ 2 4 8 16 32 64 128 256 512 1024 ]
-> 1 [ 3 3 ] 2*' trace .
-[ [ 2 4 8 ] [ 16 32 64 ] [ 128 256 512 ] ]
-```
-
-## defining new words
-
-```nkt
-> : test_1 1 ; test_1 .
-1
-> 10 index test_1 + .
-[ 1 2 3 4 5 6 7 8 9 10 ]
-> : test_1+ test_1 + ; 10 index test_1+ .
-[ 1 2 3 4 5 6 7 8 9 10 ]
-> 10 index test_1+ .
-[ 1 2 3 4 5 6 7 8 9 10 ]
-> : 100+ 100 + ; 10 index 100+ .
-[ 100 101 102 103 104 105 106 107 108 109 ]
-> : centigrade 32 - 5 * 9. / ; 72 centigrade .
-22.2222222222222
-> : test_sum 0 +' fold[] ;
-> 10 index test_sum .
-45
-> : test_sums 0 +' scan[] ; 
-> 10 index test_sums .
-[ 0 1 3 6 10 15 21 28 36 45 ]
 ```
 
 ## error handling

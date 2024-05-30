@@ -28,7 +28,7 @@ if (DEFINED ENV{COVERAGE})
 endif()
 
 add_executable(niko 
-  src/main.c src/words.c src/print.c src/blas.c src/array.c src/inter.c src/panic.c
+  src/main.c src/words.c src/print.c src/array.c src/inter.c src/panic.c
   ${CMAKE_CURRENT_BINARY_DIR}/lexer.c
   ${CMAKE_CURRENT_BINARY_DIR}/prelude.h)
 target_link_libraries(niko m)

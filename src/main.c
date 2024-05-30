@@ -44,7 +44,7 @@ next:
 
 // test runner
 
-int test(inter_t* inter, const char* fname, bool v) {
+int test(inter_t* inter, const char* fname, bool v, bool f) {
   int ret        = 0;
   own(FILE) file = fopen(fname, "r");
   CHECK(file, "test: can't open file: %s", fname);
@@ -68,7 +68,7 @@ int test(inter_t* inter, const char* fname, bool v) {
   bool in_nkt           = false;
 
   while ((read = getline(&line, &len, file)) != -1) {
-    if (ret) return ret;
+    if (f && ret) return ret;
     line_no++;
     if (read == 0) continue;
 
@@ -129,6 +129,7 @@ void h(FILE* f, char* argv_0) {
   fprintf(f, "\nFLAGS:\n");
   fprintf(f, "    -z               Do not load the prelude\n");
   fprintf(f, "    -v               Verbose test execution\n");
+  fprintf(f, "    -f               Fail fast\n");
   fprintf(f, "    -h               Print help information\n");
   fprintf(f, "\nOPTIONS:\n");
   fprintf(f, "    -e <expr>        Evaluate niko expression\n");
@@ -143,14 +144,16 @@ int main(int argc, char* argv[]) {
   char *t = NULL, *e = NULL;
   bool  v = false;
   bool  z = false;
+  bool f = false;
 
   int opt;
-  while ((opt = getopt(argc, argv, "vzht:e:m:")) != -1) {
+  while ((opt = getopt(argc, argv, "fvzht:e:m:")) != -1) {
     switch (opt) {
       case 't': t = optarg; break;
       case 'v': v = true; break;
       case 'e': e = optarg; break;
       case 'z': z = true; break;
+      case 'f': f = true; break;
       case 'h': {
         h(stdout, argv[0]);
         return 0;
@@ -172,7 +175,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  if (t) return test(inter, t, v);
+  if (t) return test(inter, t, v, f);
   else if (e) inter_line(inter, e);
   else repl(inter);
 

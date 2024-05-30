@@ -4,7 +4,15 @@
         "*.h": "c",
         "typeinfo": "c",
         "random": "c",
-        "atomic": "c"
+        "atomic": "c",
+        "bit": "c",
+        "*.tcc": "c",
+        "complex": "c",
+        "functional": "c",
+        "string_view": "c",
+        "istream": "c",
+        "limits": "c",
+        "numeric": "c"
     },
     "C_Cpp.default.cStandard": "gnu23",
     "cmake.configureOnOpen": true,

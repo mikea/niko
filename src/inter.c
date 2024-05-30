@@ -37,43 +37,36 @@ void global_dict_add_new(dict_entry_t e) { dict_push(&global_dict, (dict_entry_t
 
 DESTRUCTOR void global_dict_free() { dict_free(&global_dict); }
 
-array_t* cat(stack_t* stack, shape_t sh) {
-  size_t len = shape_len(sh);
-  if (!len) return array_alloc(T_I64, 0, sh);
-  CHECK(len <= stack->l, "stack underflow");
+array_t* cat(stack_t* stack, size_t n) {
+  if (!n) return array_alloc(T_I64, 0, 0);
+  CHECK(n <= stack->l, "stack underflow");
 
-  bool all_common            = true;
-  borrow(array_t) top        = stack_peek(stack, 0);
-  const shape_t common_shape = array_shape(top);
-  const type_t  t            = top->t;
-  DO(i, len) {
+  bool same_type     = true;
+  borrow(array_t) top = stack_peek(stack, 0);
+  const type_t t      = top->t;
+  flags_t       f      = top->f;
+  DO(i, n) {
     own(array_t) e  = stack_i(stack, i);
-    all_common     &= e->t == t;
-    all_common     &= shape_eq(common_shape, array_shape(e));
+    same_type     &= e->t == t;
+    f              &= e->f;
   }
 
-  own(array_t) a;
-  if (!all_common) {
-    a = array_alloc(T_ARR, len, sh);
-    DO(i, len) { ((array_t**)array_mut_data(a))[i] = stack_i(stack, len - i - 1); }
-  } else {
-    own(shape_t) new_shape = shape_extend(sh, common_shape);
-    a                      = array_alloc(t, shape_len(*new_shape), *new_shape);
-    size_t stride          = type_sizeof(t, shape_len(common_shape));
-    assert(array_data_sizeof(a) == stride * len);
-    DO(i, len) {
-      own(array_t) e = stack_i(stack, len - i - 1);
-      assert(array_data_sizeof(e) == stride);
-      if (t == T_ARR) {
-        // DBG("%ld", stride);
-        // array_inc_ref((array_t*)array_data_t_arr(e));
-        array_inc_ref(e);
-      }
-      memcpy(array_mut_data(a) + i * stride, array_data(e), stride);
+  array_t* a;
+  if (same_type && (f & FLAG_ATOM)) {
+    if (t == T_ARR) {
+      DBG("%ld", n);
     }
+    assert(t != T_ARR);
+    a = array_alloc(t, n, 0);
+    void* ptr = array_mut_data(a);
+    size_t s = type_sizeof(t, 1);
+    DO(i, n) { memcpy(ptr + s * i, array_data(stack_peek(stack, n -i -1)), s); }
+  } else {
+    a = array_alloc(T_ARR, n, 0);
+    DO_MUT_ARRAY(a, t_arr, i, p) { *p = stack_i(stack, n - i - 1); }
   }
-  DO(i, len) stack_drop(stack);
-  return array_inc_ref(a);
+  DO(i, n) stack_drop(stack);
+  return a;
 }
 
 // interpreter
@@ -113,26 +106,26 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
     case T_FFI: {
       t_ffi f;
 
-      switch (a->r) {
-        case 0: {
+      switch (a->n) {
+        case 1: {
           f = *array_data_t_ffi(a);
           CHECK(f, "not implemented");
           return f(inter, stack);
         }
-        case 1: {
+        case T_MAX: {
           borrow(array_t) x = stack_peek(stack, 0);
           f                 = (array_data_t_ffi(a))[x->t];
           CHECK(f, "%pT is not supported", &x->t);
           return f(inter, stack);
         }
-        case 2: {
+        case T_MAX* T_MAX: {
           borrow(array_t) y = stack_peek(stack, 0);
           borrow(array_t) x = stack_peek(stack, 1);
           f                 = ((t_ffi(*)[T_MAX])array_data(a))[x->t][y->t];
           CHECK(f, "%pT %pT are not supported", &x->t, &y->t);
           return f(inter, stack);
         }
-        default: panicf("unexpected ffi rank: %ld", a->r);
+        default: panicf("unexpected ffi length: %ld", a->n);
       }
     }
     case T_ARR: {
@@ -180,8 +173,7 @@ void inter_token(inter_t* inter, token_t t) {
       CHECK(inter->arr_level, "unbalanced ]");
       size_t mark = inter->arr_marks[--inter->arr_level];
       CHECK(stack->l >= mark, "stack underflow");
-      size_t n       = stack->l - mark;
-      own(array_t) a = cat(stack, shape_1d(&n));
+      own(array_t) a = cat(stack, stack->l - mark);
       PUSH(a);
       return;
     }
@@ -193,33 +185,32 @@ void inter_token(inter_t* inter, token_t t) {
       if (inter->mode == MODE_INTERPRET || (entry->f & ENTRY_IMM)) {
         inter_dict_entry(inter, e);
       } else {
-        own(array_t) a = array_new_scalar_t_dict_entry(e);
+        own(array_t) a = array_new_atom_t_dict_entry(e);
         PUSH(a);
       }
 
       return;
     }
     case TOK_I64: {
-      own(array_t) a = array_new_scalar_t_i64(t.val.i);
+      own(array_t) a = array_new_atom_t_i64(t.val.i);
       PUSH(a);
       return;
     }
     case TOK_F64: {
-      own(array_t) a = array_new_scalar_t_f64(t.val.d);
+      own(array_t) a = array_new_atom_t_f64(t.val.d);
       PUSH(a);
       return;
     }
     case TOK_STR: {
       size_t l       = t.val.s.l;
-      dim_t  d       = l;
-      own(array_t) a = array_new_t_c8(l, shape_1d(&d), t.val.s.p);
+      own(array_t) a = array_new_t_c8(l, t.val.s.p);
       PUSH(a);
       return;
     }
     case TOK_QUOTE: {
       size_t e = inter_find_entry_idx(inter, t.val.s);
       CHECK(e < inter->dict.s, "unknown word '%pS'", &t.text);
-      own(array_t) a  = array_new_scalar_t_dict_entry(e);
+      own(array_t) a  = array_new_atom_t_dict_entry(e);
       a->f           |= FLAG_QUOTE;
       PUSH(a);
       return;
@@ -295,7 +286,7 @@ DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
 
 DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
   CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
-  own(array_t) a     = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->data);
+  own(array_t) a     = array_new(T_ARR, inter->comp_stack->l, 0, inter->comp_stack->data);
   dict_entry_t* prev = inter_find_entry(inter, to_str(inter->comp));
   if (prev) {
     array_dec_ref(prev->v);
@@ -308,7 +299,7 @@ DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
   inter->comp_stack->l = 0;
   inter->mode          = MODE_INTERPRET;
 
-  prev = inter_find_entry(inter, to_str(inter->comp));
+  prev                 = inter_find_entry(inter, to_str(inter->comp));
   string_free(inter->comp);
 }
 

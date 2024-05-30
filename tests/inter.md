@@ -56,9 +56,9 @@
 "abc"
 > "this is test" .
 "this is test"
-> "abc" shape . "this is test" shape .
-[ 3 ]
-[ 12 ]
+> "abc" len . "this is test" len .
+3
+12
 ```
 
 ### arrays
@@ -70,21 +70,21 @@
 [ 1 2 3 ]
 > [ [ 1 2 3 ] [ 4 5 6 ] ] .
 [ [ 1 2 3 ] [ 4 5 6 ] ]
-> [ [ 1 2 3 ] [ 4 5 6 ] ] shape .
-[ 2 3 ]
+> [ [ 1 2 3 ] [ 4 5 6 ] ] len .
+2
 > [ 1. 2. ] .
 [ 1. 2. ]
-> [ [ 1. 2. 3. ] [ 4. 5. 6. ] ] shape .
-[ 2 3 ]
-> [ "abc" "def" ] dup . shape .
+> [ [ 1. 2. 3. ] [ 4. 5. 6. ] ] len .
+2
+> [ "abc" "def" ] dup . len .
 [ "abc" "def" ]
-[ 2 3 ]
-> [ "" "1" "12" "123" ] dup . shape .
+2
+> [ "" "1" "12" "123" ] dup . len .
 [ "" "1" "12" "123" ]
-[ 4 ]
-> [ [ 1. 2. 3. ] [ 4 5 6 ] ] dup . shape .
+4
+> [ [ 1. 2. 3. ] [ 4 5 6 ] ] dup . len .
 [ [ 1. 2. 3. ] [ 4 5 6 ] ]
-[ 2 ]
+2
 ```
 
 #### error handling
@@ -111,10 +111,10 @@ ERROR: unbalanced ]
 [ 100 101 102 103 104 105 106 107 108 109 ]
 > : centigrade 32 - 5 * 9. / ; 72 centigrade .
 22.2222222222222
-> : test_sum 0 +' fold[] ;
+> : test_sum +' fold ;
 > 10 index test_sum .
 45
-> : sums 0 +' scan[] ; 
+> : sums +' scan ; 
 > 10 index sums .
 [ 0 1 3 6 10 15 21 28 36 45 ]
 > : test_1. 1. ;

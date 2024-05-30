@@ -67,7 +67,7 @@ INLINE          borrow(array_t) stack_peek(stack_t* s, size_t i) {
 }
 INLINE array_t* stack_i(stack_t* s, size_t i) { return array_inc_ref(stack_peek(s, i)); }
 
-array_t* cat(stack_t* stack, shape_t sh);
+array_t* cat(stack_t* stack, size_t n);
 
 INLINE void __push_back(void* ctx, void* x) { array_dec_ref((array_t*)stack_push(ctx, x)); }
 

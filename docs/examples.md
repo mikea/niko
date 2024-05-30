@@ -73,23 +73,16 @@ single iteration: `x1=x-f(x)/f'(x)` in this case is `x=x-(x^2-2)/2x`:
 ```
 
 ```nkt
-> 100 index 2 + 10 next_prime' power head .
-31
-> 25 index 2 + 7 next_prime' trace dup .
-[ [ 3 5 7 9 11 13 15 17 19 21 23 25 ] [ 5 7 11 13 17 19 23 25 ] [ 7 11 13 17 19 23 ] [ 11 13 17 19 23 ] [ 13 17 19 23 ] [ 17 19 23 ] [ 19 23 ] ]
-> dup shape .
-[ 7 ]
-> 0 [] \s
-0: [ 3 5 7 9 11 13 15 17 19 21 23 25 ]
-> shape .
-[ ???? ]
+> [ 2 3 4 5 6 7 ] next_prime .
+[ 3 5 7 ]
 ```
 
 $p_n < n(log n + log log n), n>=6$
 
 ```nk
 : prime_upper_bound dup log log over log + * ceil ;
-: prime dup prime_upper_bound index 2 + swap 1 - next_prime' power 0 [] ;
+: prime dup prime_upper_bound index 2 + swap 1 - next_prime' power head ;
+: primes dup prime_upper_bound index 2 + swap 1 - next_prime' trace head' apply ;
 ```
 
 ```nkt
@@ -103,6 +96,8 @@ $p_n < n(log n + log log n), n>=6$
 71
 > 100 prime .
 541
+> 20 primes .
+[ 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 ]
 ```
 
 ## Common Patterns
@@ -130,7 +125,7 @@ $p_n < n(log n + log log n), n>=6$
 ### Problem 2
 
 ```nk
-: fibs [ 0 1 ] swap next_fib' trace 1 head' apply[] ;
+: fibs [ 0 1 ] swap next_fib' trace head' apply ;
 ```
 
 ```nkt

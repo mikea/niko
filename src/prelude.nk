@@ -1,14 +1,10 @@
 : min & ;
 : max | ;
 
-: zeros 0 swap reshape ;
-: ones 1 swap reshape ;
+: zeros 0 swap take ;
+: ones 1 swap take ;
 
 : swap- swap - ;
-
-: fold 0 swap fold[] ;
-: scan 0 swap scan[] ;
-: pairwise 0 swap pairwise[] ;
 
 : sum +' fold ;
 : sums +' scan ;

@@ -47,7 +47,6 @@ Words that starts from '\' are indended to be used during development
 |`zeros`|`( s -> x)`|creates array with shape `s` filled with zeros|
 |`ones`|`( s -> x)`|creates array with shape `s` filled with ones|
 |`index`|`( s -> x)`|creates array with shape `s` filled values from `0` to the length-1|
-|`pascal`|`( n -> x)`|creates `n*n` pascal matrix|
 |`cat`|`(... s -> x)`|creates array of shape `s` out of preceding stack items|
 
 ## Array Introspection
@@ -61,7 +60,7 @@ Words that starts from '\' are indended to be used during development
 
 |Word|Signature|Description|
 |---|---|---|
-|`reshape`|`(x s -> y)`|reshapes `x` according to the shape `s` repeating or truncating if necessary|
+|`take`|`(x s -> y)`|takes `x` according to the shape `s` repeating or truncating if necessary|
 |`reverse`|`(x -> y)`|reverses all values in the array `x` keeping its shape|
 |`repeat`|`(x n -> y)`|repeat cells of `x` according to values of `n`|
 

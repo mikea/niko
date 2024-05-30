@@ -7,13 +7,11 @@
 // common utilities
 
 void global_dict_add_ffi1(const char* n, t_ffi ffi[T_MAX]) {
-  size_t d = T_MAX;
-  global_dict_add_new((dict_entry_t){string_from_c(n), array_new(T_FFI, T_MAX, shape_1d(&d), ffi)});
+  global_dict_add_new((dict_entry_t){string_from_c(n), array_new(T_FFI, T_MAX, 0, ffi)});
 }
 
 void global_dict_add_ffi2(const char* n, t_ffi ffi[T_MAX][T_MAX]) {
-  size_t dims[2] = {T_MAX, T_MAX};
-  global_dict_add_new((dict_entry_t){string_from_c(n), array_new(T_FFI, T_MAX * T_MAX, (shape_t){2, dims}, ffi)});
+  global_dict_add_new((dict_entry_t){string_from_c(n), array_new(T_FFI, T_MAX * T_MAX, 0, ffi)});
 }
 
 #pragma region stack
@@ -92,11 +90,11 @@ t_ffi not_table[T_MAX];
 
 GEN_THREAD1(not, not_table);
 
-#define GEN_NOT(t)                                                                        \
-  DEF_WORD_HANDLER_1_1(not_##t) {                                                         \
-    own(array_t) out                          = array_alloc(T_I64, x->n, array_shape(x)); \
-    DO(i, x->n)(array_mut_data_t_i64(out))[i] = !((const t*)array_data(x))[i];            \
-    return array_inc_ref(out);                                                            \
+#define GEN_NOT(t)                                                              \
+  DEF_WORD_HANDLER_1_1(not_##t) {                                               \
+    own(array_t) out                          = array_alloc(T_I64, x->n, x->f); \
+    DO(i, x->n)(array_mut_data_t_i64(out))[i] = !((const t*)array_data(x))[i];  \
+    return array_inc_ref(out);                                                  \
   }
 
 GEN_NOT(t_i64);
@@ -161,7 +159,7 @@ CONSTRUCTOR void reg_abs() {
 #define GEN_SPEC1(name, xt, yt, op)                                        \
   DEF_WORD_HANDLER(name##_##xt) {                                          \
     POP(x);                                                                \
-    own(array_t) y = array_alloc(TYPE_ENUM(yt), x->n, array_shape(x));     \
+    own(array_t) y = array_alloc(TYPE_ENUM(yt), x->n, x->f);               \
     DO(i, x->n) { array_mut_data_##yt(y)[i] = op(array_data_##xt(x)[i]); } \
     PUSH(y);                                                               \
     return;                                                                \
@@ -236,14 +234,14 @@ typedef void (*binop_kernel_t)(const void* restrict x,
                                size_t out_n);
 
 void w_binop(stack_t* stack, type_t t, binop_kernel_t kernel) {
-  shape_t ys = array_shape(stack_peek(stack, 0));
-  shape_t xs = array_shape(stack_peek(stack, 1));
-  CHECK(shapes_are_compatible(xs, ys), "array shapes are incompatible: %pH vs %pH", &xs, &ys);
+  size_t yn = stack_peek(stack, 0)->n;
+  size_t xn = stack_peek(stack, 1)->n;
+  CHECK(yn == xn || yn == 1 || xn == 1, "array lengths are incompatible: %ld vs %ld", xn, yn);
 
   POP(y);
   POP(x);
 
-  own(array_t) out = array_alloc_shape(t, shape_max(xs, ys));
+  own(array_t) out = array_alloc(t, max(xn, yn), x->f & y->f);
   kernel(array_data(x), x->n, array_data(y), y->n, array_mut_data(out), out->n);
   PUSH(out);
 }
@@ -429,24 +427,12 @@ CONSTRUCTOR void register_less() {
 #pragma region array_create
 
 DEF_WORD_1_1("index", index) {
-  own(shape_t) s = as_shape(x);
-  own(array_t) y = array_alloc(T_I64, shape_len(*s), *s);
+  size_t n       = as_size_t(x);
+  own(array_t) y = array_alloc(T_I64, n, 0);
   DO_MUT_ARRAY(y, t_i64, i, ptr) { (*ptr) = i; }
   return array_inc_ref(y);
 }
 
-DEF_WORD("pascal", pascal) {
-  POP(x);
-  size_t n        = as_size_t(x);
-  dim_t  dims[2]  = {n, n};
-  own(array_t) y  = array_alloc(T_I64, n * n, shape_create(2, dims));
-  t_i64* ptr      = array_mut_data(y);
-
-  DO(i, n) ptr[i] = ptr[i * n]                         = 1;
-  DO(i, n) DO(j, n) if (i > 0 && j > 0) ptr[i * n + j] = ptr[i * n + j - 1] + ptr[(i - 1) * n + j];
-
-  PUSH(y);
-}
 
 #pragma endregion array_create
 
@@ -454,64 +440,60 @@ DEF_WORD("pascal", pascal) {
 
 DEF_WORD("reverse", reverse) {
   POP(x);
-  own(array_t) y = array_alloc(x->t, x->n, array_shape(x));
+  own(array_t) y = array_alloc(x->t, x->n, x->f);
   DO(i, x->n) { memcpy(array_mut_data_i(y, i), array_data_i(x, x->n - i - 1), type_sizeof(x->t, 1)); }
   PUSH(y);
 }
 
-DEF_WORD("reshape", reshape) {
-  POP(x);
+DEF_WORD("take", take) {
   POP(y);
-  own(shape_t) s = as_shape(x);
-  own(array_t) z = array_alloc(y->t, shape_len(*s), *s);
-  size_t ys      = type_sizeof(y->t, y->n);
-  DO(i, type_sizeof(y->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)array_data(y))[i % ys]; }
+  POP(x);
+  size_t n       = as_size_t(y);
+  own(array_t) z = array_alloc(x->t, n, 0);
+  size_t ys      = type_sizeof(x->t, x->n);
+  DO(i, type_sizeof(x->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)array_data(x))[i % ys]; }
   PUSH(z);
 }
 
-DEF_WORD_1_1("shape", shape) {
-  dim_t d        = x->r;
-  own(array_t) y = array_alloc(T_I64, x->r, shape_1d(&d));
-  DO_MUT_ARRAY(y, t_i64, i, p) { *p = array_dims(x)[i]; }
-  return array_inc_ref(y);
-}
-DEF_WORD_1_1("len", len) { return array_inc_ref(array_move(array_new_scalar_t_i64(x->n))); }
+DEF_WORD_1_1("len", len) { return array_inc_ref(array_move(array_new_atom_t_i64(x->n))); }
 
 DEF_WORD("[]", cell) {
   POP(y);
-  CHECK(y->r <= 1, "array rank <=1 expected");
+  CHECK(y->n >= 1, "expected length > 0");
   CHECK(y->t == T_I64, "i64 array expected");
   POP(x);
-  own(array_t) z = array_get_cell(x, y->n, array_data_t_i64(y));
+
+  size_t i =  WRAP(*array_data_t_i64(y), x->n);
+  own(array_t) z;
+  if (x->t == T_ARR) {
+    z = array_inc_ref(*(array_data_t_arr(x) + i));
+  } else {
+    z = array_new_atom(x->t, array_data_i(x, i));
+  }
   PUSH(z);
 }
 
 DEF_WORD("cat", cat) {
   POP(x);
-  protected(shape_t) s = protect(as_shape(x));
-  own(array_t) y       = cat(stack, *s);
+  own(array_t) y = cat(stack, as_size_t(x));
   PUSH(y);
 }
 
 DEF_WORD("repeat", repeat) {
   POP(y);
   CHECK(y->t == T_I64, "i64 array expected");
-  size_t l = 0;
+  size_t n = 0;
   DO_ARRAY(y, t_i64, i, p) {
     CHECK(*p >= 0, "non-negative values expected");
-    l += *p;
+    n += *p;
   }
   POP(x);
+  assert(x->t != T_ARR);  // not implemented
 
-  shape_t xs = array_shape(x);
-  shape_t ys = array_shape(y);
-  CHECK(shape_is_prefix(xs, ys), "incompatible shapes: %pH vs %pH", &xs, &ys);
-  shape_t cell     = shape_suffix(xs, xs.r - ys.r);
-  own(shape_t) res = shape_extend(shape_1d(&l), cell);
-  own(array_t) z   = array_alloc(x->t, shape_len(*res), *res);
-  void*       dst  = array_mut_data(z);
-  const void* src  = array_data(x);
-  size_t      s    = type_sizeof(x->t, shape_len(cell));
+  own(array_t) z  = array_alloc(x->t, n, 0);
+  void*       dst = array_mut_data(z);
+  const void* src = array_data(x);
+  size_t      s   = type_sizeof(x->t, 1);
   DO_ARRAY(y, t_i64, i, p) {
     DO(j, *p) {
       memcpy(dst, src, s);
@@ -546,9 +528,50 @@ DEF_WORD("\\s", slash_stack) { DO(i, stack_len(stack)) fprintf(inter->out, "%ld:
 
 #pragma region adverbs
 
-DEF_WORD("fold[]", fold_cell) {
+DEF_WORD("fold", fold_cell) {
   POP(op);
-  POP(r);
+  POP(x);
+
+  t_dict_entry e = as_dict_entry(op);
+  void         __iter(size_t i, array_t * slice) {
+    PUSH(slice);
+    if (i > 0) inter_dict_entry(inter, e);
+  }
+  array_for_each_atom(x, __iter);
+}
+
+DEF_WORD("scan", scan) {
+  POP(op);
+  POP(x);
+
+  t_dict_entry e = as_dict_entry(op);
+
+  void __iter(size_t i, array_t * slice) {
+    if (i > 0) DUP;
+    PUSH(slice);
+    if (i > 0) inter_dict_entry(inter, e);
+  }
+  array_for_each_atom(x, __iter);
+  own(array_t) result = cat(stack, x->n);
+  PUSH(result);
+}
+
+DEF_WORD("apply", apply_cell) {
+  POP(op);
+  POP(x);
+
+  t_dict_entry e = as_dict_entry(op);
+  void         __iter(size_t i, array_t * slice) {
+    PUSH(slice);
+    inter_dict_entry(inter, e);
+  }
+  array_for_each_atom(x, __iter);
+  own(array_t) result = cat(stack, x->n);
+  PUSH(result);
+}
+
+DEF_WORD("pairwise", pairwise_cell) {
+  POP(op);
   POP(x);
 
   t_dict_entry e = as_dict_entry(op);
@@ -556,60 +579,11 @@ DEF_WORD("fold[]", fold_cell) {
   void __iter(size_t i, array_t * slice) {
     PUSH(slice);
     if (i > 0) inter_dict_entry(inter, e);
-  }
-  array_for_each_cell(x, as_size_t(r), __iter);
-}
-
-DEF_WORD("scan[]", scan_cell) {
-  POP(op);
-  POP(r);
-  POP(x);
-
-  t_dict_entry e    = as_dict_entry(op);
-  size_t       rank = as_size_t(r);
-
-  void __iter(size_t i, array_t * slice) {
-    if (i > 0) DUP;
-    PUSH(slice);
-    if (i > 0) inter_dict_entry(inter, e);
-  }
-  array_for_each_cell(x, rank, __iter);
-  own(array_t) result = cat(stack, shape_prefix(array_shape(x), x->r - rank));
-  PUSH(result);
-}
-
-DEF_WORD("apply[]", apply_cell) {
-  POP(op);
-  POP(r);
-  POP(x);
-
-  t_dict_entry e    = as_dict_entry(op);
-  size_t       rank = as_size_t(r);
-  void __iter(size_t i, array_t * slice) {
-    PUSH(slice);
-    inter_dict_entry(inter, e);
-  }
-  array_for_each_cell(x, rank, __iter);
-  own(array_t) result = cat(stack, shape_prefix(array_shape(x), x->r - rank));
-  PUSH(result);
-}
-
-DEF_WORD("pairwise[]", pairwise_cell) {
-  POP(op);
-  POP(r);
-  POP(x);
-
-  t_dict_entry e    = as_dict_entry(op);
-  size_t       rank = as_size_t(r);
-
-  void __iter(size_t i, array_t * slice) {
-    PUSH(slice);
-    if (i > 0) inter_dict_entry(inter, e);
     PUSH(slice);
   }
-  array_for_each_cell(x, rank, __iter);
+  array_for_each_atom(x, __iter);
   DROP;
-  own(array_t) result = cat(stack, shape_prefix(array_shape(x), x->r - rank));
+  own(array_t) result = cat(stack, x->n);
   PUSH(result);
 }
 
@@ -623,18 +597,34 @@ DEF_WORD("power", power) {
 
 DEF_WORD("trace", trace) {
   POP(op);
-  POP(y);
+  POP(x);
 
   t_dict_entry e = as_dict_entry(op);
-  own(shape_t) s = as_shape(y);
+  size_t       n = as_size_t(x);
 
-  DO(i, shape_len(*s)) {
+  DO(i, n) {
     if (i > 0) DUP;
     inter_dict_entry(inter, e);
   }
 
-  own(array_t) result = cat(stack, *s);
+  own(array_t) result = cat(stack, n);
   PUSH(result);
+}
+
+DEF_WORD("tr", tr) {
+  POP(op);
+  POP(x);
+
+  t_dict_entry e = as_dict_entry(op);
+  size_t       n = as_size_t(x);
+
+  DO(i, n) {
+    if (i > 0) DUP;
+    inter_dict_entry(inter, e);
+  }
+
+  // own(array_t) result = cat(stack, n);
+  // PUSH(result);
 }
 
 #pragma endregion adverbs
@@ -648,14 +638,13 @@ DEF_WORD(".", dot) {
 
 DEF_WORD_1_1("load_text", load_text) {
   CHECK(x->t == T_C8, "c8 array expected");
-  CHECK(x->r >= 1, "rank >= 1 expected");
   str_t name       = str_new_len(array_data_t_c8(x), x->n);
   own(char) c_name = str_toc(name);
   own(FILE) file   = fopen(c_name, "r");
   CHECK(file, "failed to open file %s", c_name);
   CHECK(!fseek(file, 0, SEEK_END), "failed to seek file");
   size_t n       = ftell(file);
-  own(array_t) y = array_alloc(T_C8, n, shape_1d(&n));
+  own(array_t) y = array_alloc(T_C8, n, 0);
   rewind(file);
   size_t read = fread(array_mut_data(y), 1, n, file);
   CHECK(n == read, "truncated read");

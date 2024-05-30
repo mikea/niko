@@ -11,7 +11,7 @@
 
 int p_modifier = -1;
 
-size_t print_ptr(FILE* f, type_t t, flag_t fl, const void* ptr) {
+size_t print_ptr(FILE* f, type_t t, flags_t fl, const void* ptr) {
   switch (t) {
     case T_I64: return fprintf(f, "%ld", *(i64*)ptr);
     case T_F64: {
@@ -33,25 +33,24 @@ size_t print_ptr(FILE* f, type_t t, flag_t fl, const void* ptr) {
   UNREACHABLE;
 }
 
-size_t print_array_impl(FILE* f, type_t t, flag_t fl, shape_t s, const void* x, size_t w) {
-  if (s.r == 0) return print_ptr(f, t, fl, x);
+size_t print_array_impl(FILE* f, type_t t, flags_t fl, size_t n, const void* x, size_t w) {
+  if (fl & FLAG_ATOM) return print_ptr(f, t, fl, x);
   size_t c = 0;
-  if (s.r == 1 && t == T_C8) {
+  if (t == T_C8) {
     c += fprintf(f, "\"");
-    DO(i, *s.d) putc(((const char*)x)[i], f);
-    c += *s.d;
+    DO(i, n) putc(((const char*)x)[i], f);
+    c += n;
     c += fprintf(f, "\"");
     return c;
   }
   c                 += fprintf(f, "[ ");
-  shape_t sub_shape  = (shape_t){s.r - 1, s.d + 1};
-  size_t  stride     = type_sizeof(t, shape_len(sub_shape));
-  DO(i, *s.d) {
+  size_t stride = type_sizeof(t, 1);
+  DO(i, n) {
     if (w < c + 4) {
       c += fprintf(f, "... ");
       break;
     }
-    c += print_array_impl(f, t, fl, sub_shape, x + stride * i, w - c - 2);
+    c += print_ptr(f, t, fl, x + stride * i);
     c += fprintf(f, " ");
   }
   c += fprintf(f, "]");
@@ -61,7 +60,7 @@ size_t print_array_impl(FILE* f, type_t t, flag_t fl, shape_t s, const void* x, 
 int printf_array(FILE* f, const struct printf_info* info, const void* const* args) {
   assert(info->user == p_modifier);  // p modifier expected
   const array_t* a = *((const array_t**)(args[0]));
-  return print_array_impl(f, a->t, a->f, array_shape(a), array_data(a), info->width ? info->width : SIZE_MAX);
+  return print_array_impl(f, a->t, a->f, a->n, array_data(a), info->width ? info->width : SIZE_MAX);
 }
 
 int printf_str(FILE* f, const struct printf_info* info, const void* const* args) {
@@ -69,18 +68,6 @@ int printf_str(FILE* f, const struct printf_info* info, const void* const* args)
   const str_t* s = *((const str_t**)(args[0]));
   str_fprint(*s, f);
   return s->l;
-}
-
-int printf_shape(FILE* f, const struct printf_info* info, const void* const* args) {
-  assert(info->user == p_modifier);  // p modifier expected
-  const shape_t* s = *((const shape_t**)(args[0]));
-  size_t         c = fprintf(f, "(");
-  DO(i, s->r) {
-    if (i > 0) c += fprintf(f, ", ");
-    c += fprintf(f, "%ld", s->d[i]);
-  }
-  c += fprintf(f, ")");
-  return c;
 }
 
 int printf_type(FILE* f, const struct printf_info* info, const void* const* args) {
@@ -97,7 +84,6 @@ int single_pointer_arginfo(const struct printf_info* __info, size_t n, int* argt
 ATTR(constructor(9999)) void register_printf_extensions() {
   register_printf_specifier('A', printf_array, single_pointer_arginfo);
   register_printf_specifier('S', printf_str, single_pointer_arginfo);
-  register_printf_specifier('H', printf_shape, single_pointer_arginfo);
   register_printf_specifier('T', printf_type, single_pointer_arginfo);
   p_modifier = register_printf_modifier(L"p");
 }
