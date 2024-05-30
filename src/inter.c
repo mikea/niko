@@ -53,10 +53,7 @@ array_t* cat(stack_t* stack, size_t n) {
 
   array_t* a;
   if (same_type && (f & FLAG_ATOM)) {
-    if (t == T_ARR) {
-      DBG("%ld", n);
-    }
-    assert(t != T_ARR);
+    assert(t != T_ARR);  // not implemented
     a = array_alloc(t, n, 0);
     void* ptr = array_mut_data(a);
     size_t s = type_sizeof(t, 1);
@@ -296,7 +293,7 @@ DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
     dict_push(&inter->dict, (dict_entry_t){copy(inter->comp), array_inc_ref(a)});
   }
 
-  inter->comp_stack->l = 0;
+  stack_clear(inter->comp_stack);
   inter->mode          = MODE_INTERPRET;
 
   prev                 = inter_find_entry(inter, to_str(inter->comp));
