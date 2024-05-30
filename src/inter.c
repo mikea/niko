@@ -37,7 +37,7 @@ void global_dict_add_new(dict_entry_t e) { dict_push(&global_dict, (dict_entry_t
 
 DESTRUCTOR void global_dict_free() { dict_free(&global_dict); }
 
-array_t* catenate(stack_t* stack, shape_t sh) {
+array_t* cat(stack_t* stack, shape_t sh) {
   size_t len = shape_len(sh);
   if (!len) return array_alloc(T_I64, 0, sh);
   CHECK(len <= stack->l, "stack underflow");
@@ -64,6 +64,11 @@ array_t* catenate(stack_t* stack, shape_t sh) {
     DO(i, len) {
       own(array_t) e = stack_i(stack, len - i - 1);
       assert(array_data_sizeof(e) == stride);
+      if (t == T_ARR) {
+        // DBG("%ld", stride);
+        // array_inc_ref((array_t*)array_data_t_arr(e));
+        array_inc_ref(e);
+      }
       memcpy(array_mut_data(a) + i * stride, array_data(e), stride);
     }
   }
@@ -176,7 +181,7 @@ void inter_token(inter_t* inter, token_t t) {
       size_t mark = inter->arr_marks[--inter->arr_level];
       CHECK(stack->l >= mark, "stack underflow");
       size_t n       = stack->l - mark;
-      own(array_t) a = catenate(stack, shape_1d(&n));
+      own(array_t) a = cat(stack, shape_1d(&n));
       PUSH(a);
       return;
     }
@@ -291,7 +296,6 @@ DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
 DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
   CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
   own(array_t) a     = array_new_1d(T_ARR, inter->comp_stack->l, inter->comp_stack->data);
-
   dict_entry_t* prev = inter_find_entry(inter, to_str(inter->comp));
   if (prev) {
     array_dec_ref(prev->v);
@@ -303,6 +307,8 @@ DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
 
   inter->comp_stack->l = 0;
   inter->mode          = MODE_INTERPRET;
+
+  prev = inter_find_entry(inter, to_str(inter->comp));
   string_free(inter->comp);
 }
 

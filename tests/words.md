@@ -196,6 +196,17 @@ ERROR: stack underflow
 [ 3 2 ]
 ```
 
+### `repeat`
+
+```nkt
+> [ 1 2 3 ] [ 0 1 2 ] repeat .
+[ 2 3 3 ]
+> [ 2 3 4 ] index [ 0 1 ] repeat .
+[ [ [ 12 13 14 15 ] [ 16 17 18 19 ] [ 20 21 22 23 ] ] ]
+> [ 2 3 4 ] index [ [ 0 1 0 ] [ 1 0 0 ] ] repeat .
+[ [ 4 5 6 7 ] [ 12 13 14 15 ] ]
+```
+
 ## unary words
 
 ### not
@@ -250,15 +261,15 @@ ERROR: stack underflow
 
 ```nkt
 > 1.5 floor .
-1.
+1
 > 1.5 ceil .
-2.
+2
 > -1.5 floor .
--2.
+-2
 > -1.5 trunc .
--1.
+-1
 > 1.5 round .
-2.
+2
 ```
 
 ### rest
@@ -537,7 +548,7 @@ error handling
 
 ```nkt
 > 10 index 0. +' fold[]
-ERROR: int scalar expected
+ERROR: int scalar expected, got f64 instead
 > \s
 0: +'
 1: 0.

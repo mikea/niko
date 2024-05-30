@@ -50,9 +50,6 @@ Let's apply newton method to calculating `sqrt(2)`.
 We need to solve `x^2-2=0`, 
 single iteration: `x1=x-f(x)/f'(x)` in this case is `x=x-(x^2-2)/2x`:
 
-dup dup * 2 - swap (x^2 x)
-dup 2 * rot swap / - (x x^2/2x  )
-
 ```nk
 : sqrt2_step dup dup * 2 - swap dup 2 * rot swap / - ;
 ```
@@ -66,6 +63,46 @@ dup 2 * rot swap / - (x x^2/2x  )
 1.41421568627451
 > 1. 10 sqrt2_step' power .
 1.41421356237309
+```
+
+## Prime Numbers
+
+```nk
+: head 0 [] ;
+: next_prime dup dup 0 [] mod not not repeat ;
+```
+
+```nkt
+> 100 index 2 + 10 next_prime' power head .
+31
+> 25 index 2 + 7 next_prime' trace dup .
+[ [ 3 5 7 9 11 13 15 17 19 21 23 25 ] [ 5 7 11 13 17 19 23 25 ] [ 7 11 13 17 19 23 ] [ 11 13 17 19 23 ] [ 13 17 19 23 ] [ 17 19 23 ] [ 19 23 ] ]
+> dup shape .
+[ 7 ]
+> 0 [] \s
+0: [ 3 5 7 9 11 13 15 17 19 21 23 25 ]
+> shape .
+[ ???? ]
+```
+
+$p_n < n(log n + log log n), n>=6$
+
+```nk
+: prime_upper_bound dup log log over log + * ceil ;
+: prime dup prime_upper_bound index 2 + swap 1 - next_prime' power 0 [] ;
+```
+
+```nkt
+> 20 prime_upper_bound .
+82
+> 100 prime_upper_bound .
+614
+> 1000 prime_upper_bound .
+8841
+> 20 prime .
+71
+> 100 prime .
+541
 ```
 
 ## Common Patterns
@@ -93,7 +130,6 @@ dup 2 * rot swap / - (x x^2/2x  )
 ### Problem 2
 
 ```nk
-: head 0 [] ;
 : fibs [ 0 1 ] swap next_fib' trace 1 head' apply[] ;
 ```
 
@@ -103,4 +139,12 @@ dup 2 * rot swap / - (x x^2/2x  )
 > 40 fibs dup 4000000 < 
 > over 2 mod not & * sum .
 4613732
+```
+
+### Problem 7
+
+
+```nkt
+> 1001 prime .
+7927
 ```

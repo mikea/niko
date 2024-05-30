@@ -158,14 +158,16 @@ CONSTRUCTOR void reg_abs() {
 
 // sqrt, sin, et. al.
 
-#define GEN_FLOAT1_SPEC(name, t, op)                                                        \
-  DEF_WORD_HANDLER(name##_##t) {                                                            \
-    POP(x);                                                                                 \
-    own(array_t) out                            = array_alloc(T_F64, x->n, array_shape(x)); \
-    DO(i, x->n)((t_f64*)array_mut_data(out))[i] = op(((const t*)array_data(x))[i]);         \
-    PUSH(out);                                                                              \
-    return;                                                                                 \
+#define GEN_SPEC1(name, xt, yt, op)                                        \
+  DEF_WORD_HANDLER(name##_##xt) {                                          \
+    POP(x);                                                                \
+    own(array_t) y = array_alloc(TYPE_ENUM(yt), x->n, array_shape(x));     \
+    DO(i, x->n) { array_mut_data_##yt(y)[i] = op(array_data_##xt(x)[i]); } \
+    PUSH(y);                                                               \
+    return;                                                                \
   }
+
+#define GEN_FLOAT1_SPEC(name, t, op) GEN_SPEC1(name, t, t_f64, op)
 
 #define GEN_FLOAT(name, op)                    \
   t_ffi name##_table[T_MAX];                   \
@@ -186,12 +188,10 @@ GEN_FLOAT(asinh, asinh)
 GEN_FLOAT(atan, atan)
 GEN_FLOAT(atanh, atanh)
 GEN_FLOAT(cbrt, cbrt)
-GEN_FLOAT(ceil, ceil)
 GEN_FLOAT(cos, cos)
 GEN_FLOAT(cosh, cosh)
 GEN_FLOAT(erf, erf)
 GEN_FLOAT(exp, exp)
-GEN_FLOAT(floor, floor)
 GEN_FLOAT(bessel1_0, j0)
 GEN_FLOAT(bessel1_1, j1)
 GEN_FLOAT(bessel2_0, y0)
@@ -201,13 +201,28 @@ GEN_FLOAT(log, log)
 GEN_FLOAT(log10, log10)
 GEN_FLOAT(log1p, log1p)
 GEN_FLOAT(log2, log2)
-GEN_FLOAT(round, round)
 GEN_FLOAT(sin, sin)
 GEN_FLOAT(sinh, sinh)
 GEN_FLOAT(sqrt, sqrt)
 GEN_FLOAT(tan, tan)
 GEN_FLOAT(tanh, tanh)
-GEN_FLOAT(trunc, trunc)
+
+#define GEN_ROUND(name, op)                    \
+  t_ffi name##_table[T_MAX];                   \
+  GEN_SPEC1(name, t_f64, t_i64, op)            \
+  GEN_SPEC1(name, t_i64, t_i64, op)            \
+  GEN_THREAD1(name, name##_table)              \
+  CONSTRUCTOR void reg_##name() {              \
+    name##_table[T_I64] = name##_t_i64;        \
+    name##_table[T_F64] = name##_t_f64;        \
+    name##_table[T_ARR] = name##_t_arr;        \
+    global_dict_add_ffi1(#name, name##_table); \
+  }
+
+GEN_ROUND(ceil, ceil)
+GEN_ROUND(floor, floor)
+GEN_ROUND(round, round)
+GEN_ROUND(trunc, trunc)
 
 #pragma endregion math
 
@@ -474,8 +489,38 @@ DEF_WORD("[]", cell) {
 DEF_WORD("cat", cat) {
   POP(x);
   protected(shape_t) s = protect(as_shape(x));
-  own(array_t) y       = catenate(stack, *s);
+  own(array_t) y       = cat(stack, *s);
   PUSH(y);
+}
+
+DEF_WORD("repeat", repeat) {
+  POP(y);
+  CHECK(y->t == T_I64, "i64 array expected");
+  size_t l = 0;
+  DO_ARRAY(y, t_i64, i, p) {
+    CHECK(*p >= 0, "non-negative values expected");
+    l += *p;
+  }
+  POP(x);
+
+  shape_t xs = array_shape(x);
+  shape_t ys = array_shape(y);
+  CHECK(shape_is_prefix(xs, ys), "incompatible shapes: %pH vs %pH", &xs, &ys);
+  shape_t cell     = shape_suffix(xs, xs.r - ys.r);
+  own(shape_t) res = shape_extend(shape_1d(&l), cell);
+  own(array_t) z   = array_alloc(x->t, shape_len(*res), *res);
+  void*       dst  = array_mut_data(z);
+  const void* src  = array_data(x);
+  size_t      s    = type_sizeof(x->t, shape_len(cell));
+  DO_ARRAY(y, t_i64, i, p) {
+    DO(j, *p) {
+      memcpy(dst, src, s);
+      dst += s;
+    }
+    src += s;
+  }
+
+  PUSH(z);
 }
 
 #pragma endregion array_ops
@@ -529,7 +574,7 @@ DEF_WORD("scan[]", scan_cell) {
     if (i > 0) inter_dict_entry(inter, e);
   }
   array_for_each_cell(x, rank, __iter);
-  own(array_t) result = catenate(stack, shape_prefix(array_shape(x), x->r - rank));
+  own(array_t) result = cat(stack, shape_prefix(array_shape(x), x->r - rank));
   PUSH(result);
 }
 
@@ -540,13 +585,12 @@ DEF_WORD("apply[]", apply_cell) {
 
   t_dict_entry e    = as_dict_entry(op);
   size_t       rank = as_size_t(r);
-
   void __iter(size_t i, array_t * slice) {
     PUSH(slice);
     inter_dict_entry(inter, e);
   }
   array_for_each_cell(x, rank, __iter);
-  own(array_t) result = catenate(stack, shape_prefix(array_shape(x), x->r - rank));
+  own(array_t) result = cat(stack, shape_prefix(array_shape(x), x->r - rank));
   PUSH(result);
 }
 
@@ -565,7 +609,7 @@ DEF_WORD("pairwise[]", pairwise_cell) {
   }
   array_for_each_cell(x, rank, __iter);
   DROP;
-  own(array_t) result = catenate(stack, shape_prefix(array_shape(x), x->r - rank));
+  own(array_t) result = cat(stack, shape_prefix(array_shape(x), x->r - rank));
   PUSH(result);
 }
 
@@ -589,7 +633,7 @@ DEF_WORD("trace", trace) {
     inter_dict_entry(inter, e);
   }
 
-  own(array_t) result = catenate(stack, *s);
+  own(array_t) result = cat(stack, *s);
   PUSH(result);
 }
 

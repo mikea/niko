@@ -45,8 +45,8 @@ INLINE shape_t* as_shape(const array_t* x) {
 }
 
 INLINE size_t as_size_t(array_t* a) {
-  CHECK(a->r == 0, "scalar expected");
-  CHECK(a->t == T_I64, "int scalar expected");
+  CHECK(a->r == 0, "scalar expected, got rank %ld", a->r);
+  CHECK(a->t == T_I64, "int scalar expected, got %pT instead", &a->t);
   i64 i = *array_data_t_i64(a);
   CHECK(i >= 0, "non-negative scalar expected");
   return i;

@@ -90,10 +90,13 @@ INLINE shape_t* shape_extend(shape_t outer, shape_t inner) {
 INLINE shape_t shape_suffix(shape_t s, size_t r) { return (shape_t){r, s.d + s.r - r}; }
 INLINE shape_t shape_prefix(shape_t s, size_t r) { return (shape_t){r, s.d}; }
 
-INLINE bool shape_is_cell(shape_t outer, shape_t inner) {
+INLINE bool shape_is_suffix(shape_t outer, shape_t inner) {
   return outer.r >= inner.r && !memcmp(outer.d + (outer.r - inner.r), inner.d, dims_sizeof(inner.r));
 }
-INLINE bool    shapes_are_compatible(shape_t s1, shape_t s2) { return shape_is_cell(s1, s2) || shape_is_cell(s2, s1); }
+INLINE bool shape_is_prefix(shape_t outer, shape_t inner) {
+  return outer.r >= inner.r && !memcmp(outer.d, inner.d, dims_sizeof(inner.r));
+}
+INLINE bool shapes_are_compatible(shape_t s1, shape_t s2) { return shape_is_suffix(s1, s2) || shape_is_suffix(s2, s1); }
 INLINE shape_t shape_max(shape_t s1, shape_t s2) {
   assert(shapes_are_compatible(s1, s2));
   return s1.r >= s2.r ? s1 : s2;
@@ -116,6 +119,7 @@ typedef struct array_t array_t;
 
 array_t* array_alloc(type_t t, size_t n, shape_t s);
 void     array_free(array_t* a);
+array_t* array_new_slice(array_t* x, size_t n, shape_t s, const void* p);
 
 INLINE array_t* array_alloc_shape(type_t t, shape_t s) { return array_alloc(t, shape_len(s), s); }
 INLINE bool __array_data_simd_aligned(type_t t, size_t n) { return n >= 2 * SIMD_REG_WIDTH_BYTES / type_sizeof(t, 1); }
@@ -170,18 +174,6 @@ INLINE array_t* array_new_1d(type_t t, size_t n, const void* x) {
   dim_t d = n;
   return array_new(t, n, shape_1d(&d), x);
 }
-INLINE array_t* array_new_slice(array_t* x, size_t n, shape_t s, const void* p) {
-  array_inc_ref(x);
-  array_t* y = malloc(sizeof(array_t) + dims_sizeof(s.r));
-  y->t       = x->t;
-  y->rc      = 1;
-  y->n       = n;
-  y->r       = s.r;
-  y->p       = (void*)p;
-  y->owner   = x;
-  memcpy(y + 1, s.d, dims_sizeof(s.r));
-  return y;
-}
 INLINE array_t* array_new_copy(const array_t* a) { return array_new(a->t, a->n, array_shape(a), array_data(a)); }
 INLINE array_t* array_cow(array_t* a) {
   if (a->rc == 1) return (array_t*)a;
@@ -222,11 +214,11 @@ TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 #define DO_ARRAY(a, t, i, p)               _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), const t* restrict p = (const t*)array_data(a))
 
 INLINE void array_for_each_cell(array_t* x, size_t r, void (*callback)(size_t i, array_t* slice)) {
+  // DBG("array_for_each_cell %ld %ld", r, x->r);
   CHECK(r <= x->r, "invalid rank: %ld > %ld", r, x->r);
   shape_t cell    = shape_suffix(array_shape(x), r);
   size_t  l       = shape_len(cell);
   size_t  stride  = type_sizeof(x->t, l);
-
   const void* ptr = array_data(x);
   DO(i, x->n / l) {
     own(array_t) y = array_new_slice(x, l, cell, ptr + stride * i);

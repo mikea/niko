@@ -44,7 +44,8 @@ next:
 
 // test runner
 
-void test(inter_t* inter, const char* fname, bool v) {
+int test(inter_t* inter, const char* fname, bool v) {
+  int ret        = 0;
   own(FILE) file = fopen(fname, "r");
   CHECK(file, "test: can't open file: %s", fname);
 
@@ -67,6 +68,7 @@ void test(inter_t* inter, const char* fname, bool v) {
   bool in_nkt           = false;
 
   while ((read = getline(&line, &len, file)) != -1) {
+    if (ret) return ret;
     line_no++;
     if (read == 0) continue;
 
@@ -79,27 +81,35 @@ void test(inter_t* inter, const char* fname, bool v) {
       } else {
         if (out) free(out);
         inter_line_capture_out(inter, line, &out, &out_size);
-        if (out_size > 0) fprintf(stderr, "ERROR %s:%ld : unexpected output: '%s'\n", fname, line_no, out);
+        if (out_size > 0) {
+          fprintf(stderr, "ERROR %s:%ld : unexpected output: '%s'\n", fname, line_no, out);
+          ret = 1;
+        }
       }
     } else if (in_nkt) {
       if (str_starts_with(l, code_end)) {
         inter_reset(inter);
-        if (rest_out && *rest_out)
+        if (rest_out && *rest_out) {
           fprintf(stderr, "ERROR %s:%ld : unmatched output: '%s'\n", fname, in_line_no, rest_out);
+          ret = 1;
+        }
         rest_out = NULL;
         in_nkt   = false;
       } else if (*line == '>') {
         if (v) fprintf(stderr, "%s", line);
-        if (rest_out && *rest_out)
+        if (rest_out && *rest_out) {
           fprintf(stderr, "ERROR %s:%ld : unmatched output: '%s'\n", fname, in_line_no, rest_out);
+          ret = 1;
+        }
         in_line_no = line_no;
         if (out) free(out);
         inter_line_capture_out(inter, line + 1, &out, &out_size);
         rest_out = out;
         continue;
-      } else if (memcmp(line, rest_out, read)) {
+      } else if (rest_out == NULL || memcmp(line, rest_out, read)) {
         fprintf(stderr, "ERROR %s:%ld : mismatched output, expected: '%s' actual: '%s' \n", fname, in_line_no, line,
                 rest_out);
+        ret      = 1;
         rest_out = NULL;
       } else {
         rest_out += read;
@@ -108,6 +118,8 @@ void test(inter_t* inter, const char* fname, bool v) {
     if (str_ends_with(l, nkt_start)) in_nkt = true;
     else if (str_ends_with(l, nk_start)) in_nk = true;
   }
+
+  return ret;
 }
 
 void h(FILE* f, char* argv_0) {
@@ -160,7 +172,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  if (t) test(inter, t, v);
+  if (t) return test(inter, t, v);
   else if (e) inter_line(inter, e);
   else repl(inter);
 
