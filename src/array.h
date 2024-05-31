@@ -157,6 +157,6 @@ INLINE void array_for_each_atom(array_t* x, void (*callback)(size_t i, array_t* 
       callback(i, y);
     }
   } else {
-    DO_ARRAY(x, t_arr, i, p) callback(i, array_inc_ref(*p));
+    DO_ARRAY(x, t_arr, i, p) callback(i, *p);
   }
 }

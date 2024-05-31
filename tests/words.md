@@ -476,6 +476,9 @@ types:
 ```nkt
 > 5 index index' apply .
 [ [ ] [ 0 ] [ 0 1 ] [ 0 1 2 ] [ 0 1 2 3 ] ]
+> : head 0 [] ;
+> [ [ 1 1. ] [ 2 2. ] ] head' apply .
+[ 1 2 ]
 ```
 
 ### pairwise
