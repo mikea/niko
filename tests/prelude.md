@@ -20,6 +20,7 @@
 
 # higher order words
 ## fold
+
 ```nkt
 > 10 index +' fold .
 45
