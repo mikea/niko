@@ -94,6 +94,17 @@
 ERROR: unbalanced ]
 ```
 
+### comments
+
+```nkt
+> 1 ( this is comment ) .
+1
+> 1 (thisiscommenttoo) .
+1
+> 1 () .
+1
+```
+
 ## Compiler
 
 ### `:`

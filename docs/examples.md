@@ -98,7 +98,11 @@ $p_n < n(log n + log log n), n>=6$
 ```
 
 ```nk
-: next_primes dup 0 [] 2dup mod not not rot swap repeat ;
+: next_primes ( tail -> prime tail )
+    dup 0 [] 2dup mod not not rot swap repeat ;
+
+: primes_helper ( steps max_n -> primes )
+    index 2 + over next_primes' ,power drop ;
 ```
 
 ```nkt
@@ -110,6 +114,12 @@ $p_n < n(log n + log log n), n>=6$
 0: [ 5 7 ]
 1: 3
 2: 2
+> \c
+> 3 10 primes_helper \s
+0: 5
+1: 3
+2: 2
+3: 3
 ```
 
 ```nk
