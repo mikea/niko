@@ -5,6 +5,7 @@ perf.data.*
 callgrind.*
 cachegrind.*
 vgcore.*
+.cache/
 
 # Prerequisites
 *.d
