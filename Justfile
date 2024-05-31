@@ -6,7 +6,7 @@ watch +WATCH_TARGET='test':
 build BUILD_TYPE="Debug":
     mkdir -p bin build/{{BUILD_TYPE}}
     rm -rf bin/niko
-    cmake -B build/{{BUILD_TYPE}} -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} -G Ninja
+    CMAKE_EXPORT_COMPILE_COMMANDS=1 cmake -B build/{{BUILD_TYPE}} -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} -G Ninja
     cmake --build build/{{BUILD_TYPE}}
     cp build/{{BUILD_TYPE}}/niko bin/niko
 
