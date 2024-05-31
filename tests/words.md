@@ -76,6 +76,34 @@ ERROR: stack underflow
 2: 1
 ```
 
+### `2dup`
+
+```nkt
+> 0 1 2dup 4 cat .
+[ 0 1 0 1 ]
+```
+
+### `2swap`
+
+```nkt
+> 0 1 2 3 2swap 4 cat .
+[ 2 3 0 1 ]
+```
+
+### `2drop`
+
+```nkt
+> 0 1 2 3 2drop 2 cat .
+[ 0 1 ]
+```
+
+### `2over`
+
+```nkt
+> 0 1 2 3 2over 6 cat .
+[ 0 1 2 3 0 1 ]
+```
+
 ## creating arrays
 
 ### index

@@ -82,7 +82,6 @@ $p_n < n(log n + log log n), n>=6$
 ```nk
 : prime_upper_bound dup log log over log + * ceil ;
 : prime dup prime_upper_bound index 2 + swap 1 - next_prime' ,power head ;
-: primes dup prime_upper_bound index 2 + swap 1 - next_prime' ,trace head' ,apply ;
 ```
 
 ```nkt
@@ -96,9 +95,32 @@ $p_n < n(log n + log log n), n>=6$
 71
 > 100 prime .
 541
+```
+
+```nk
+: next_primes dup 0 [] 2dup mod not not rot swap repeat ;
+```
+
+```nkt
+> [ 2 3 4 5 6 7 ] next_primes \s
+0: [ 3 5 7 ]
+1: 2
+> \c
+> [ 2 3 4 5 6 7 ] 2 next_primes' ,power \s
+0: [ 5 7 ]
+1: 3
+2: 2
+```
+
+```nk
+: primes dup prime_upper_bound index 2 + swap 1 - next_prime' ,trace head' ,apply ;
+```
+
+```nkt
 > 20 primes .
 [ 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 ]
 ```
+
 
 ## Common Patterns
 

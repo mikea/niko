@@ -34,11 +34,15 @@ Words that starts from '\' are indended to be used during development
 |`drop`|`(x ->)`|removes top item from the stack|
 |`nip`|`(x y -> y)`|drops the second item on the stack|
 |`dup`|`(x -> x x)`| duplicates top entry of the stack|
-| `over`|`(x y -> x y x)`|places a copy of the second item on top of the stack|
+|`over`|`(x y -> x y x)`|places a copy of the second item on top of the stack|
 |`rot`|`(x y z -> z x y)`|rotates top three items on the stack|
 |`swap`|`(x y -> y x)`|exchanges top to items of the stack|
 |`tuck`|`(x y -> y x y)`|places a copy of the top of the stack below the second item|
 |`pick`|`( n -> x)`| places a copy of `n`-th element on top of the stack. `0 pick` equals `dup`|
+|`2drop`|`(x y ->)`| |
+|`2dup`|`(x y -> x y x y)`| |
+|`2swap`|`(x1 x2 y1 y2 -> y1 y2 x1 x2)`| |
+|`2over`|`(x1 x2 y1 y2 -> x1 x2 y1 y2 x1 x2)`| |
 
 ## Creating Arrays
 

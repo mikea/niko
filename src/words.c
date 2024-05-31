@@ -60,6 +60,32 @@ DEF_WORD("pick", pick) {
   PUSH(array_move(stack_i(stack, as_size_t(n))));
 }
 
+DEF_WORD("2dup", _2dup) {   
+  PUSH(stack_peek(stack, 1));
+  PUSH(stack_peek(stack, 1));
+}
+
+DEF_WORD("2swap", _2swap) {   
+  POP(y2);
+  POP(y1);
+  POP(x2);
+  POP(x1);
+  PUSH(y1);
+  PUSH(y2);
+  PUSH(x1);
+  PUSH(x2);
+}
+
+DEF_WORD("2drop", _2drop) {   
+  DROP;
+  DROP;
+}
+
+DEF_WORD("2over", _2over) {   
+  PUSH(stack_peek(stack, 3));
+  PUSH(stack_peek(stack, 3));
+}
+
 #pragma endregion stack
 
 INLINE void thread1(inter_t* inter, stack_t* stack, const array_t* x, t_ffi ffi_table[T_MAX]) {
