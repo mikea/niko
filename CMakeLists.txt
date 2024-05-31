@@ -50,8 +50,8 @@ add_definitions(-DBUILD_TYPE="${CMAKE_BUILD_TYPE}")
 # generate lexer
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lexer.c
-  COMMAND re2c -i --case-ranges -o ${CMAKE_CURRENT_BINARY_DIR}/lexer.c ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.re
-  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.re
+  COMMAND re2c -i --case-ranges -o ${CMAKE_CURRENT_BINARY_DIR}/lexer.c ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.c
+  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.c
   COMMENT "Generating lexer.c"
   VERBATIM
 )
