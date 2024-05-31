@@ -457,57 +457,57 @@ types:
 
 ## higher order words
 
-### fold
+### ,fold
 
 ```nkt
-> 24 index +' fold .
+> 24 index +' ,fold .
 276
 ```
 
-### scan
+### ,scan
 
 ```nkt
-> 24 index +' scan .
+> 24 index +' ,scan .
 [ 0 1 3 6 10 15 21 28 36 45 55 66 78 91 105 120 136 153 171 190 210 231 253 276 ]
 ```
 
 ### apply
 
 ```nkt
-> 5 index index' apply .
+> 5 index index' ,apply .
 [ [ ] [ 0 ] [ 0 1 ] [ 0 1 2 ] [ 0 1 2 3 ] ]
 > : head 0 [] ;
-> [ [ 1 1. ] [ 2 2. ] ] head' apply .
+> [ [ 1 1. ] [ 2 2. ] ] head' ,apply .
 [ 1 2 ]
 ```
 
-### pairwise
+### ,pairwise
 
 ```nkt
 > : -neg - neg ;
-> [ 0 1 1 0 1 0 ] -neg' pairwise . \s
+> [ 0 1 1 0 1 0 ] -neg' ,pairwise . \s
 [ 0 1 0 -1 1 -1 ]
-> 24 index -neg' pairwise . \s
+> 24 index -neg' ,pairwise . \s
 [ 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ]
 ```
 
-### power
+### ,power
 
 ```nk
 : 2* 2 * ;
 ```
 
 ```nkt
-> 1 10 2*' power .
+> 1 10 2*' ,power .
 1024
-> [ 1 2 ] 10 2*' power .
+> [ 1 2 ] 10 2*' ,power .
 [ 1024 2048 ]
 ```
 
-### trace
+### ,trace
 
 ```nkt
-> 1 10 2*' trace .
+> 1 10 2*' ,trace .
 [ 2 4 8 16 32 64 128 256 512 1024 ]
 ```
 

@@ -19,32 +19,32 @@
 ```
 
 # higher order words
-## fold
+## ,fold
 
 ```nkt
-> 10 index +' fold .
+> 10 index +' ,fold .
 45
-> 10000 ones +' fold .
+> 10000 ones +' ,fold .
 10000
-> 10 index 1 + *' fold .
+> 10 index 1 + *' ,fold .
 3628800
 ```
 
-## scan
+## ,scan
 
 ```nkt
-> 10 index +' scan .
+> 10 index +' ,scan .
 [ 0 1 3 6 10 15 21 28 36 45 ]
-> 1000 ones +' scan +' fold .
+> 1000 ones +' ,scan +' ,fold .
 500500
-> 10 index 0. + +' scan .
+> 10 index 0. + +' ,scan .
 [ 0. 1. 3. 6. 10. 15. 21. 28. 36. 45. ]
 ```
 
-## pairwise
+## ,pairwise
 
 ```nkt
-> 10 index +' pairwise .
+> 10 index +' ,pairwise .
 [ 0 1 3 5 7 9 11 13 15 17 ]
 ```
 

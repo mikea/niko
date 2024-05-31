@@ -28,7 +28,7 @@
 
 ```nk
 : next_fib dup sum swap -1 [] swap 2 cat ;
-: fib [ 0 1 ] swap next_fib' power 0 [] ;
+: fib [ 0 1 ] swap next_fib' ,power 0 [] ;
 ```
 
 ```nkt
@@ -36,7 +36,7 @@
 [ 1 2 ]
 > [ 1 2 ] next_fib .
 [ 2 3 ]
-> [ 1 1 ] 10 next_fib' power .
+> [ 1 1 ] 10 next_fib' ,power .
 [ 89 144 ]
 > 10 fib .
 55
@@ -59,9 +59,9 @@ single iteration: `x1=x-f(x)/f'(x)` in this case is `x=x-(x^2-2)/2x`:
 1.5
 > 1.5 sqrt2_step .
 1.41666666666667
-> 1. 3 sqrt2_step' power .
+> 1. 3 sqrt2_step' ,power .
 1.41421568627451
-> 1. 10 sqrt2_step' power .
+> 1. 10 sqrt2_step' ,power .
 1.41421356237309
 ```
 
@@ -81,8 +81,8 @@ $p_n < n(log n + log log n), n>=6$
 
 ```nk
 : prime_upper_bound dup log log over log + * ceil ;
-: prime dup prime_upper_bound index 2 + swap 1 - next_prime' power head ;
-: primes dup prime_upper_bound index 2 + swap 1 - next_prime' trace head' apply ;
+: prime dup prime_upper_bound index 2 + swap 1 - next_prime' ,power head ;
+: primes dup prime_upper_bound index 2 + swap 1 - next_prime' ,trace head' ,apply ;
 ```
 
 ```nkt
@@ -105,9 +105,9 @@ $p_n < n(log n + log log n), n>=6$
 ### Conditional execution
 
 ```nkt
-> 10 0 cos' power .
+> 10 0 cos' ,power .
 10
-> 10 1 cos' power .
+> 10 1 cos' ,power .
 -0.839071529076452
 ```
 
@@ -125,7 +125,7 @@ $p_n < n(log n + log log n), n>=6$
 ### Problem 2
 
 ```nk
-: fibs [ 0 1 ] swap next_fib' trace head' apply ;
+: fibs [ 0 1 ] swap next_fib' ,trace head' ,apply ;
 ```
 
 ```nkt

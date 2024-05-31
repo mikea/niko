@@ -528,7 +528,7 @@ DEF_WORD("\\s", slash_stack) { DO(i, stack_len(stack)) fprintf(inter->out, "%ld:
 
 #pragma region adverbs
 
-DEF_WORD("fold", fold_cell) {
+DEF_WORD(",fold", fold) {
   POP(op);
   POP(x);
 
@@ -540,7 +540,7 @@ DEF_WORD("fold", fold_cell) {
   array_for_each_atom(x, __iter);
 }
 
-DEF_WORD("scan", scan) {
+DEF_WORD(",scan", scan) {
   POP(op);
   POP(x);
 
@@ -556,7 +556,7 @@ DEF_WORD("scan", scan) {
   PUSH(result);
 }
 
-DEF_WORD("apply", apply_cell) {
+DEF_WORD(",apply", apply) {
   POP(op);
   POP(x);
 
@@ -570,7 +570,7 @@ DEF_WORD("apply", apply_cell) {
   PUSH(result);
 }
 
-DEF_WORD("pairwise", pairwise_cell) {
+DEF_WORD(",pairwise", pairwise) {
   POP(op);
   POP(x);
 
@@ -587,7 +587,7 @@ DEF_WORD("pairwise", pairwise_cell) {
   PUSH(result);
 }
 
-DEF_WORD("power", power) {
+DEF_WORD(",power", power) {
   POP(op);
   POP(n);
 
@@ -595,7 +595,7 @@ DEF_WORD("power", power) {
   DO(i, as_size_t(n)) { inter_dict_entry(inter, e); }
 }
 
-DEF_WORD("trace", trace) {
+DEF_WORD(",trace", trace) {
   POP(op);
   POP(x);
 

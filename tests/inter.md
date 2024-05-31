@@ -111,10 +111,10 @@ ERROR: unbalanced ]
 [ 100 101 102 103 104 105 106 107 108 109 ]
 > : centigrade 32 - 5 * 9. / ; 72 centigrade .
 22.2222222222222
-> : test_sum +' fold ;
+> : test_sum +' ,fold ;
 > 10 index test_sum .
 45
-> : sums +' scan ; 
+> : sums +' ,scan ; 
 > 10 index sums .
 [ 0 1 3 6 10 15 21 28 36 45 ]
 > : test_1. 1. ;

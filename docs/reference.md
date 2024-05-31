@@ -131,16 +131,12 @@ Words that starts from '\' are indended to be used during development
 
 |Word|Signature|Description|
 |---|---|---|
-|`fold`|`(x op' -> y)`| fold cells of rank `0` using `op`|
-|`fold[]`|`(x r op' -> y)`| fold cells of rank `r` using `op`|
-|`scan`|`(x op' -> y)`| fold cells of rank `0` using `op` organizing all intermediate results in `x`'s shape|
-|`scan[]`|`(x r op' -> y)`| fold cells of rank `r` using `op` organizing all intermediate results in `x`'s shape|
-|`apply`|`(x r op' -> y)`| applies `op` to cells of rank `0` organizing results into `x`'s shape|
-|`apply[]`|`(x r op' -> y)`| applies `op` to cells of rank `r` organizing results into `x`'s shape|
-|`power`|`(x n op' -> y)`|applies `op` `n` times to `x`|
-|`trace`|`(x s op' -> y)`|applies `op` multiple times to `x` and organizes intermediate results into `s` shape|
-|`pairwise`|`(x op' -> y)`| applies `op` to consequent pais of `x` leaving first element unchanged|
-|`pairwise[]`|`(x r op' -> y)`| applies `op` to consequent pais of cells of rank `r` leaving first element unchanged|
+|`,fold`|`(x op' -> y)`| ,fold cells of rank `0` using `op`|
+|`,scan`|`(x op' -> y)`| ,fold cells of rank `0` using `op` organizing all intermediate results in `x`'s shape|
+|`,apply`|`(x r op' -> y)`| applies `op` to cells of rank `0` organizing results into `x`'s shape|
+|`,power`|`(x n op' -> y)`|applies `op` `n` times to `x`|
+|`,trace`|`(x s op' -> y)`|applies `op` multiple times to `x` and organizes intermediate results into `s` shape|
+|`,pairwise`|`(x op' -> y)`| applies `op` to consequent pais of `x` leaving first element unchanged|
 
 ## Input/Output
 
