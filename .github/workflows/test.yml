@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "master" ]
 
-env:
-  USE_LAPACK_64: ON
-
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -20,7 +17,7 @@ jobs:
       run: |
         sudo apt remove needrestart
         sudo apt update
-        sudo apt install --no-install-recommends --no-upgrade -y just re2c libopenblas64-dev liblapacke64-dev libopenblas-dev liblapacke-dev valgrind ninja-build libjemalloc-dev
+        sudo apt install --no-install-recommends --no-upgrade -y just re2c valgrind ninja-build libjemalloc-dev
 
     - name: Debug
       run: |
