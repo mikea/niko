@@ -18,6 +18,7 @@ jobs:
 
     - name: Install dependecies
       run: |
+        sudo apt remove needrestart
         sudo apt update
         sudo apt install --no-install-recommends --no-upgrade -y just re2c libopenblas64-dev liblapacke64-dev libopenblas-dev liblapacke-dev valgrind ninja-build libjemalloc-dev
 
