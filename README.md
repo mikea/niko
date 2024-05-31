@@ -1,13 +1,12 @@
 # Niko
 
-Niko is a stack-oriented vector programming language. 
-It is inspired by Forth, Lisp and by modern array languages. 
+Niko is a stack-oriented concatenative vector programming language. 
 
 ## Building and Running
 
-Dependencies: `gcc`, `glibc`, `re2c`.
-
-TODO
+- Dependencies: `apt install just re2c valgrind ninja-build libjemalloc-dev`
+- `just release`
+- `bin/niko`
 
 ## Language Overview
 
