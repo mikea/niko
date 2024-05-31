@@ -22,9 +22,7 @@ array_t* array_alloc(type_t t, size_t n, flags_t f) {
 array_t* array_new(type_t t, size_t n, flags_t f, const void* x) {
   array_t* a = array_alloc(t, n, f);
   memcpy(array_mut_data(a), x, type_sizeof(t, n));
-  if (t == T_ARR) {
-    DO_MUT_ARRAY(a, t_arr, i, p) array_inc_ref(*p);
-  }
+  if (t == T_ARR) DO_MUT_ARRAY(a, t_arr, i, p) array_inc_ref(*p);
   return a;
 }
 

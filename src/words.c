@@ -433,7 +433,6 @@ DEF_WORD_1_1("index", index) {
   return array_inc_ref(y);
 }
 
-
 #pragma endregion array_create
 
 #pragma region array_ops
@@ -463,13 +462,10 @@ DEF_WORD("[]", cell) {
   CHECK(y->t == T_I64, "i64 array expected");
   POP(x);
 
-  size_t i =  WRAP(*array_data_t_i64(y), x->n);
+  size_t i = WRAP(*array_data_t_i64(y), x->n);
   own(array_t) z;
-  if (x->t == T_ARR) {
-    z = array_inc_ref(*(array_data_t_arr(x) + i));
-  } else {
-    z = array_new_atom(x->t, array_data_i(x, i));
-  }
+  if (x->t == T_ARR) z = array_inc_ref(*(array_data_t_arr(x) + i));
+  else z = array_new_atom(x->t, array_data_i(x, i));
   PUSH(z);
 }
 
@@ -482,24 +478,32 @@ DEF_WORD("cat", cat) {
 DEF_WORD("repeat", repeat) {
   POP(y);
   CHECK(y->t == T_I64, "i64 array expected");
+  DO_ARRAY(y, t_i64, i, p) { CHECK(*p >= 0, "non-negative values expected"); }
   size_t n = 0;
-  DO_ARRAY(y, t_i64, i, p) {
-    CHECK(*p >= 0, "non-negative values expected");
-    n += *p;
-  }
+  DO_ARRAY(y, t_i64, i, p) { n += *p; }
   POP(x);
   assert(x->t != T_ARR);  // not implemented
 
-  own(array_t) z  = array_alloc(x->t, n, 0);
-  void*       dst = array_mut_data(z);
-  const void* src = array_data(x);
-  size_t      s   = type_sizeof(x->t, 1);
-  DO_ARRAY(y, t_i64, i, p) {
-    DO(j, *p) {
-      memcpy(dst, src, s);
-      dst += s;
+  own(array_t) z = array_alloc(x->t, n, 0);
+
+  if (x->t == T_I64) {
+    i64*       dst = array_mut_data_t_i64(z);
+    const i64* src = array_data_t_i64(x);
+    DO_ARRAY(y, t_i64, i, p) {
+      DO(j, *p) { *dst++ = *src; }
+      src++;
     }
-    src += s;
+  } else {
+    void*       dst = array_mut_data(z);
+    const void* src = array_data(x);
+    size_t      s   = type_sizeof(x->t, 1);
+    DO_ARRAY(y, t_i64, i, p) {
+      DO(j, *p) {
+        memcpy(dst, src, s);
+        dst += s;
+      }
+      src += s;
+    }
   }
 
   PUSH(z);

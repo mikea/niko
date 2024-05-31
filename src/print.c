@@ -43,8 +43,8 @@ size_t print_array_impl(FILE* f, type_t t, flags_t fl, size_t n, const void* x, 
     c += fprintf(f, "\"");
     return c;
   }
-  c                 += fprintf(f, "[ ");
-  size_t stride = type_sizeof(t, 1);
+  c             += fprintf(f, "[ ");
+  size_t stride  = type_sizeof(t, 1);
   DO(i, n) {
     if (w < c + 4) {
       c += fprintf(f, "... ");

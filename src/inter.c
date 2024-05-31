@@ -41,23 +41,23 @@ array_t* cat(stack_t* stack, size_t n) {
   if (!n) return array_alloc(T_I64, 0, 0);
   CHECK(n <= stack->l, "stack underflow");
 
-  bool same_type     = true;
+  bool same_type      = true;
   borrow(array_t) top = stack_peek(stack, 0);
   const type_t t      = top->t;
-  flags_t       f      = top->f;
+  flags_t      f      = top->f;
   DO(i, n) {
     own(array_t) e  = stack_i(stack, i);
-    same_type     &= e->t == t;
+    same_type      &= e->t == t;
     f              &= e->f;
   }
 
   array_t* a;
   if (same_type && (f & FLAG_ATOM)) {
     assert(t != T_ARR);  // not implemented
-    a = array_alloc(t, n, 0);
-    void* ptr = array_mut_data(a);
-    size_t s = type_sizeof(t, 1);
-    DO(i, n) { memcpy(ptr + s * i, array_data(stack_peek(stack, n -i -1)), s); }
+    a          = array_alloc(t, n, 0);
+    void*  ptr = array_mut_data(a);
+    size_t s   = type_sizeof(t, 1);
+    DO(i, n) { memcpy(ptr + s * i, array_data(stack_peek(stack, n - i - 1)), s); }
   } else {
     a = array_alloc(T_ARR, n, 0);
     DO_MUT_ARRAY(a, t_arr, i, p) { *p = stack_i(stack, n - i - 1); }
@@ -294,9 +294,9 @@ DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
   }
 
   stack_clear(inter->comp_stack);
-  inter->mode          = MODE_INTERPRET;
+  inter->mode = MODE_INTERPRET;
 
-  prev                 = inter_find_entry(inter, to_str(inter->comp));
+  prev        = inter_find_entry(inter, to_str(inter->comp));
   string_free(inter->comp);
 }
 

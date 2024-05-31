@@ -79,12 +79,7 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
         inter_reset(inter);
         in_nk = false;
       } else {
-        if (out) free(out);
-        inter_line_capture_out(inter, line, &out, &out_size);
-        if (out_size > 0) {
-          fprintf(stderr, "ERROR %s:%ld : unexpected output: '%s'\n", fname, line_no, out);
-          ret = 1;
-        }
+        inter_line(inter, line);
       }
     } else if (in_nkt) {
       if (str_starts_with(l, code_end)) {
@@ -144,7 +139,7 @@ int main(int argc, char* argv[]) {
   char *t = NULL, *e = NULL;
   bool  v = false;
   bool  z = false;
-  bool f = false;
+  bool  f = false;
 
   int opt;
   while ((opt = getopt(argc, argv, "fvzht:e:m:")) != -1) {

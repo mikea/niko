@@ -35,8 +35,11 @@ valgrind-expr EXPR="10000000 zeros": build
 
 callgrind EXPR="10000000 zeros": release
     rm -f callgrind.out.* cachegrind.out.*
-    # 
     valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes bin/niko -e "{{EXPR}}"
+
+callgrind-test FILE: (build "Release")
+    rm -f callgrind.out.* cachegrind.out.*
+    valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes bin/niko -t "{{FILE}}"
 
 cachegrind EXPR="10000000 zeros": release
     rm -f callgrind.out.* cachegrind.out.*

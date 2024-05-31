@@ -136,6 +136,14 @@ $p_n < n(log n + log log n), n>=6$
 4613732
 ```
 
+### Problem 3
+
+```nkt
+> 600851475143 
+> 1000 primes over over mod not repeat .
+[ 71 839 1471 6857 ]
+```
+
 ### Problem 7
 
 
@@ -143,3 +151,5 @@ $p_n < n(log n + log log n), n>=6$
 > 1001 prime .
 7927
 ```
+
+### Problem 10

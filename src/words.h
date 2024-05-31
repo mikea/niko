@@ -13,9 +13,9 @@
   }                                                           \
   INLINE array_t* n##_impl(inter_t* inter, const array_t* x)
 
-#define REGISTER_WORD_FLAGS(w, n, f)                                                         \
-  void             w_##n(inter_t* inter, stack_t* stack);                                    \
-  CONSTRUCTOR void __register_w_##n() {                                                      \
+#define REGISTER_WORD_FLAGS(w, n, f)                                                       \
+  void             w_##n(inter_t* inter, stack_t* stack);                                  \
+  CONSTRUCTOR void __register_w_##n() {                                                    \
     global_dict_add_new((dict_entry_t){string_from_c(w), array_new_atom_t_ffi(w_##n), f}); \
   }
 

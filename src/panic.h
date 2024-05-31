@@ -53,12 +53,8 @@ INLINE void __panic_message_cleanup(str_t*) { string_free(__panic_message); }
     _x;                              \
   })
 
-#define __protect_unwind(x)      \
-  _Generic((x),                  \
-      FILE *: FILE_unwind,       \
-      char*: char_unwind,        \
-      array_t*: array_t_unwind,  \
-      default: "unexpected")
+#define __protect_unwind(x) \
+  _Generic((x), FILE *: FILE_unwind, char*: char_unwind, array_t*: array_t_unwind, default: "unexpected")
 
 #define PROTECT_UNWIND(x, ctx)                         \
   ({                                                   \

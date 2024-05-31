@@ -143,4 +143,3 @@ static_assert(sizeof(f64) == sizeof(i64));
     typeof(y) _y = y;  \
     _x < _y ? _y : _x; \
   })
-
