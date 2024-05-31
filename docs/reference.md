@@ -144,21 +144,12 @@ Words that starts from '\' are indended to be used during development
 
 ## Input/Output
 
-### `.`
-
-`x ->`
-
-## BLAS/LAPACK
-
-### Low-level words
-
 |Word|Signature|Description|
 |---|---|---|
-|`blas_gemm`|`(x y -> x * y)`|matrix multiplication
-|`lapack_getrf`|`(x -> x ipiv info)`|matrix factorization
-|`lapack_getri`|`(x ipiv -> x)`|matrix inversion
+|`.`|`(x ->)`|printlns x|
+|`load_text`|`(x -> y)`|loads file with the name x|
 
-# Constants
+## Constants
 |Word|Description|
 |---|---|
 |`E`|base of natural logarithm
