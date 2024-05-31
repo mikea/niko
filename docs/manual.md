@@ -94,11 +94,24 @@ Following element types are supported:
 #### Characters
 
 Characters are 8-bit. 
-Arrays of characters are called strings and are entered using quotes: `"abc"`.
+Arrays of characters are called strings and are entered using quotes: 
+
+```nkt
+> "abc" .
+"abc"
+```
 
 #### Integers
 
-Integers are 64-bit wide: `0`, `1024`, `-25`.
+Integers are signed, 64-bit wide and do not
+contain dot symbol: 
+
+```nkt
+> 0 1024 -42 . . .
+-42
+1024
+0
+```
 
 #### Floats
 
