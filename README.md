@@ -1,11 +1,11 @@
 # Niko
 
-Niko is a stack-oriented array programming language. 
-It is primarily inspired by Forth, Lisp and only then by modern array languages. 
+Niko is a stack-oriented vector programming language. 
+It is inspired by Forth, Lisp and by modern array languages. 
 
 ## Building and Running
 
-Dependencies: `gcc`, `glibc`, `re2c`, `openblas` (or other blas/lapack package).
+Dependencies: `gcc`, `glibc`, `re2c`.
 
 TODO
 
