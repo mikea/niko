@@ -47,17 +47,6 @@ add_definitions(-DCOMPILE_TIME="${COMPILE_TIME}")
 add_definitions(-DGIT_DESCRIBE="${GIT_DESCRIBE}")
 add_definitions(-DBUILD_TYPE="${CMAKE_BUILD_TYPE}")
 
-# Configure BLAS/LAPACK
-find_package(BLAS REQUIRED)
-find_package(LAPACK REQUIRED)
-add_definitions(-DLAPACK_ILP64)
-
-if (DEFINED ENV{USE_LAPACK_64})
-  target_link_libraries(niko blas64 lapack64 lapacke64)
-else()
-  target_link_libraries(niko blas lapack lapacke)
-endif()
-
 # generate lexer
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lexer.c
