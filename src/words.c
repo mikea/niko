@@ -531,38 +531,6 @@ CONSTRUCTOR void register_repeat() {
   repeat_table[T_ARR][T_I64] = repeat_t_arr;
   global_dict_add_ffi2("repeat", repeat_table);
 }
-// DEF_WORD("repeat", repeat) {
-//   POP(y);
-//   CHECK(y->t == T_I64, "i64 array expected");
-//   DO_ARRAY(y, t_i64, i, p) { CHECK(*p >= 0, "non-negative values expected"); }
-//   size_t n = 0;
-//   DO_ARRAY(y, t_i64, i, p) { n += *p; }
-//   POP(x);
-//   assert(x->t != T_ARR);  // not implemented
-
-//   own(array_t) z = array_alloc(x->t, n, 0);
-
-//   if (x->t == T_I64) {
-//     i64*       dst = array_mut_data_t_i64(z);
-//     const i64* src = array_data_t_i64(x);
-//     DO_ARRAY(y, t_i64, i, p) {
-//       DO(j, *p) { *dst++ = *(src + i); }
-//     }
-//   } else {
-//     void*       dst = array_mut_data(z);
-//     const void* src = array_data(x);
-//     size_t      s   = type_sizeof(x->t, 1);
-//     DO_ARRAY(y, t_i64, i, p) {
-//       DO(j, *p) {
-//         memcpy(dst, src, s);
-//         dst += s;
-//       }
-//       src += s;
-//     }
-//   }
-
-//   PUSH(z);
-// }
 
 #pragma endregion array_ops
 
