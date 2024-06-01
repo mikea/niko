@@ -11,22 +11,22 @@ typedef enum { T_C8, T_I64, T_F64, T_ARR, T_FFI, T_DICT_ENTRY } type_t;
 #define T_MAX (T_DICT_ENTRY + 1)
 
 typedef char t_c8;
-#define t_c8_enum T_C8
+#define t_c8_enum    T_C8
 #define t_c8_copy(x) (x)
 
 typedef int64_t t_i64;
-#define t_i64_enum T_I64
-#define t_i64_simd vmax_i64
+#define t_i64_enum    T_I64
+#define t_i64_simd    vmax_i64
 #define t_i64_copy(x) (x)
 
 typedef double t_f64;
-#define t_f64_enum T_F64
-#define t_f64_simd vmax_f64
+#define t_f64_enum    T_F64
+#define t_f64_simd    vmax_f64
 #define t_f64_copy(x) (x)
 
 struct array_t;
 typedef struct array_t* t_arr;
-#define t_arr_enum T_ARR
+#define t_arr_enum    T_ARR
 #define t_arr_copy(x) (array_inc_ref(x))
 
 struct inter;
