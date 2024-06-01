@@ -181,6 +181,12 @@ ERROR: expected single value
 ```nkt
 > [ 1 2 3 ] [ 0 1 2 ] repeat .
 [ 2 3 3 ]
+> [ 1. 2. ] [ 2 3 ] repeat .
+[ 1. 1. 2. 2. 2. ]
+> "abc" [ 3 2 1 ] repeat .
+"aaabbc"
+> [ [ 1 2 ] [ 3 4 5 ] ] [ 2 2 ] repeat .
+[ [ 1 2 ] [ 1 2 ] [ 3 4 5 ] [ 3 4 5 ] ]
 ```
 
 ## unary words
@@ -530,6 +536,14 @@ types:
 1024
 > [ 1 2 ] 10 2*' ,power .
 [ 1024 2048 ]
+```
+
+### `,collect`
+
+```nkt
+> : d2* dup 2 * ;
+> 1 10 d2*' ,collect .
+[ 1 2 4 8 16 32 64 128 256 512 ]
 ```
 
 ### ,trace

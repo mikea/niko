@@ -95,6 +95,7 @@ $p_n < n(log n + log log n), n>=6$
 71
 > 100 prime .
 541
+>\s
 ```
 
 ```nk
@@ -102,35 +103,28 @@ $p_n < n(log n + log log n), n>=6$
     dup 0 [] 2dup mod not not rot swap repeat ;
 
 : primes_helper ( steps max_n -> primes )
-    index 2 + over next_primes' ,power drop ;
+    index 2 + swap next_primes' ,collect ;
 ```
 
 ```nkt
-> [ 2 3 4 5 6 7 ] next_primes \s
+> [ 2 3 4 5 6 7 ] next_primes \s \c
 0: [ 3 5 7 ]
 1: 2
-> \c
-> [ 2 3 4 5 6 7 ] 2 next_primes' ,power \s
-0: [ 5 7 ]
-1: 3
-2: 2
-> \c
-> 3 10 primes_helper \s
-0: 5
-1: 3
-2: 2
-3: 3
+> [ 2 3 4 5 6 7 ] 2 next_primes' ,collect . \s
+[ 2 3 ]
+> 3 10 primes_helper . \s
+[ 2 3 5 ]
 ```
 
 ```nk
-: primes dup prime_upper_bound index 2 + swap 1 - next_prime' ,trace head' ,apply ;
+: primes (n -> list_of_n_primes) 
+    dup prime_upper_bound primes_helper ;
 ```
 
 ```nkt
-> 20 primes .
-[ 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 ]
+> 20 primes . \s
+[ 2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 ]
 ```
-
 
 ## Common Patterns
 
@@ -177,7 +171,6 @@ $p_n < n(log n + log log n), n>=6$
 ```
 
 ### Problem 7
-
 
 ```nkt
 > 1001 prime .

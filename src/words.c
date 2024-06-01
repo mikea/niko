@@ -60,12 +60,12 @@ DEF_WORD("pick", pick) {
   PUSH(array_move(stack_i(stack, as_size_t(n))));
 }
 
-DEF_WORD("2dup", _2dup) {   
+DEF_WORD("2dup", _2dup) {
   PUSH(stack_peek(stack, 1));
   PUSH(stack_peek(stack, 1));
 }
 
-DEF_WORD("2swap", _2swap) {   
+DEF_WORD("2swap", _2swap) {
   POP(y2);
   POP(y1);
   POP(x2);
@@ -76,12 +76,12 @@ DEF_WORD("2swap", _2swap) {
   PUSH(x2);
 }
 
-DEF_WORD("2drop", _2drop) {   
+DEF_WORD("2drop", _2drop) {
   DROP;
   DROP;
 }
 
-DEF_WORD("2over", _2over) {   
+DEF_WORD("2over", _2over) {
   PUSH(stack_peek(stack, 3));
   PUSH(stack_peek(stack, 3));
 }
@@ -501,39 +501,68 @@ DEF_WORD("cat", cat) {
   PUSH(y);
 }
 
-DEF_WORD("repeat", repeat) {
-  POP(y);
-  CHECK(y->t == T_I64, "i64 array expected");
-  DO_ARRAY(y, t_i64, i, p) { CHECK(*p >= 0, "non-negative values expected"); }
-  size_t n = 0;
-  DO_ARRAY(y, t_i64, i, p) { n += *p; }
-  POP(x);
-  assert(x->t != T_ARR);  // not implemented
-
-  own(array_t) z = array_alloc(x->t, n, 0);
-
-  if (x->t == T_I64) {
-    i64*       dst = array_mut_data_t_i64(z);
-    const i64* src = array_data_t_i64(x);
-    DO_ARRAY(y, t_i64, i, p) {
-      DO(j, *p) { *dst++ = *src; }
-      src++;
-    }
-  } else {
-    void*       dst = array_mut_data(z);
-    const void* src = array_data(x);
-    size_t      s   = type_sizeof(x->t, 1);
-    DO_ARRAY(y, t_i64, i, p) {
-      DO(j, *p) {
-        memcpy(dst, src, s);
-        dst += s;
-      }
-      src += s;
-    }
+#define GEN_REPEAT_SPECIALIZATION(xt)                                            \
+  DEF_WORD_HANDLER(repeat_##xt) {                                                \
+    POP(y);                                                                      \
+    DO_ARRAY(y, t_i64, i, p) { CHECK(*p >= 0, "non-negative values expected"); } \
+    size_t n = 0;                                                                \
+    DO_ARRAY(y, t_i64, i, p) { n += *p; }                                        \
+    POP(x);                                                                      \
+    own(array_t) z = array_alloc(x->t, n, 0);                                    \
+    xt*       dst  = array_mut_data_##xt(z);                                     \
+    const xt* src  = array_data_##xt(x);                                         \
+    DO_ARRAY(y, t_i64, i, p) {                                                   \
+      DO(j, *p) { *dst++ = xt##_copy(*(src + i)); }                              \
+    }                                                                            \
+    PUSH(z);                                                                     \
   }
 
-  PUSH(z);
+GEN_REPEAT_SPECIALIZATION(t_c8);
+GEN_REPEAT_SPECIALIZATION(t_i64);
+GEN_REPEAT_SPECIALIZATION(t_f64);
+GEN_REPEAT_SPECIALIZATION(t_arr);
+
+t_ffi repeat_table[T_MAX][T_MAX] = {};
+
+CONSTRUCTOR void register_repeat() {
+  repeat_table[T_C8][T_I64]  = repeat_t_c8;
+  repeat_table[T_I64][T_I64] = repeat_t_i64;
+  repeat_table[T_F64][T_I64] = repeat_t_f64;
+  repeat_table[T_ARR][T_I64] = repeat_t_arr;
+  global_dict_add_ffi2("repeat", repeat_table);
 }
+// DEF_WORD("repeat", repeat) {
+//   POP(y);
+//   CHECK(y->t == T_I64, "i64 array expected");
+//   DO_ARRAY(y, t_i64, i, p) { CHECK(*p >= 0, "non-negative values expected"); }
+//   size_t n = 0;
+//   DO_ARRAY(y, t_i64, i, p) { n += *p; }
+//   POP(x);
+//   assert(x->t != T_ARR);  // not implemented
+
+//   own(array_t) z = array_alloc(x->t, n, 0);
+
+//   if (x->t == T_I64) {
+//     i64*       dst = array_mut_data_t_i64(z);
+//     const i64* src = array_data_t_i64(x);
+//     DO_ARRAY(y, t_i64, i, p) {
+//       DO(j, *p) { *dst++ = *(src + i); }
+//     }
+//   } else {
+//     void*       dst = array_mut_data(z);
+//     const void* src = array_data(x);
+//     size_t      s   = type_sizeof(x->t, 1);
+//     DO_ARRAY(y, t_i64, i, p) {
+//       DO(j, *p) {
+//         memcpy(dst, src, s);
+//         dst += s;
+//       }
+//       src += s;
+//     }
+//   }
+
+//   PUSH(z);
+// }
 
 #pragma endregion array_ops
 
@@ -623,6 +652,17 @@ DEF_WORD(",power", power) {
 
   t_dict_entry e = as_dict_entry(op);
   DO(i, as_size_t(n)) { inter_dict_entry(inter, e); }
+}
+
+DEF_WORD(",collect", collect) {
+  POP(op);
+  POP(x);
+  t_dict_entry e = as_dict_entry(op);
+  size_t       n = as_size_t(x);
+  DO(i, n) { inter_dict_entry(inter, e); }
+  DROP;
+  own(array_t) result = cat(stack, n);
+  PUSH(result);
 }
 
 DEF_WORD(",trace", trace) {

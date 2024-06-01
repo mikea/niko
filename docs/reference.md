@@ -139,6 +139,7 @@ Words that starts from '\' are indended to be used during development
 |`,scan`|`(x op' -> y)`| ,fold cells of rank `0` using `op` organizing all intermediate results in `x`'s shape|
 |`,apply`|`(x r op' -> y)`| applies `op` to cells of rank `0` organizing results into `x`'s shape|
 |`,power`|`(x n op' -> y)`|applies `op` `n` times to `x`|
+|`,collect`|`(n op' -> y)`|run `op` `n` times then drop top and cat top `n` stack items|
 |`,trace`|`(x s op' -> y)`|applies `op` multiple times to `x` and organizes intermediate results into `s` shape|
 |`,pairwise`|`(x op' -> y)`| applies `op` to consequent pais of `x` leaving first element unchanged|
 
