@@ -154,7 +154,7 @@ TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 #define DO_MUT_ARRAY(a, t, i, p)           _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), t* restrict p = (t*)array_mut_data(a))
 #define DO_ARRAY(a, t, i, p)               _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), const t* restrict p = (const t*)array_data(a))
 
-template<typename Fn>
+template <typename Fn>
 INLINE void array_for_each_atom(array_t* x, Fn callback) {
   size_t      stride = type_sizeof(x->t, 1);
   const void* ptr    = array_data(x);

@@ -1,8 +1,8 @@
 #include "inter.h"
 #include "memory.h"
 #include "prelude.h"
-#include "words.h"
 #include "print.h"
+#include "words.h"
 
 #include <iostream>
 #include <sstream>
@@ -250,9 +250,7 @@ std::string inter_line_capture_out(inter_t* inter, const char* line) {
   try {
     inter_line(inter, line);
     return buf.str();
-  } catch (std::exception& e) { 
-    return std::format("ERROR: {}\n", e.what());
-   }
+  } catch (std::exception& e) { return std::format("ERROR: {}\n", e.what()); }
 }
 
 void inter_load_prelude(inter_t* inter) {

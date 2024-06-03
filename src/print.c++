@@ -1,7 +1,7 @@
 #include <sstream>
 
-#include "print.h"
 #include "inter.h"
+#include "print.h"
 
 using std::format_to;
 
@@ -15,21 +15,21 @@ ttT T format_atom(type_t t, flags_t f, const void* ptr, T out) {
       if (strchr(s, '.') || strchr(s, 'e')) return format_to(out, "{}", s);
       else return format_to(out, "{}.", s);
     }
-    case T_C8:         NOT_IMPLEMENTED; 
+    case T_C8:         NOT_IMPLEMENTED;
     case T_ARR:        return format_to(out, "{}", *(array_t**)ptr);
     case T_FFI:        NOT_IMPLEMENTED;  // return fprintf(f, "<native_function>");
     case T_DICT_ENTRY: {
-        size_t        idx = *(t_dict_entry*)ptr;
-        dict_entry_t* e   = &inter_current()->dict.d[idx];
-        if (f & FLAG_QUOTE) return format_to(out, "{}'", e->k);
-        else return format_to(out, "{}", e->k);
+      size_t        idx = *(t_dict_entry*)ptr;
+      dict_entry_t* e   = &inter_current()->dict.d[idx];
+      if (f & FLAG_QUOTE) return format_to(out, "{}'", e->k);
+      else return format_to(out, "{}", e->k);
     }
   }
   UNREACHABLE;
 }
 
 std::format_context::iterator std::formatter<array_t*>::format(const array_t* a, std::format_context& ctx) const {
-  if (a->f & flags_t::FLAG_ATOM) return format_atom(a->t,  a->f,array_data(a), ctx.out());
+  if (a->f & flags_t::FLAG_ATOM) return format_atom(a->t, a->f, array_data(a), ctx.out());
   if (a->t == type_t::T_C8) return format_to(ctx.out(), "\"{}\"", std::string_view(array_data_t_c8(a), a->n));
   std::string out    = "[ ";
   size_t      stride = type_sizeof(a->t, 1);

@@ -105,7 +105,8 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
         rest_out   = out;
         continue;
       } else if (!rest_out.size() || memcmp(line, rest_out.begin(), read)) {
-        std::cerr << "ERROR " << fname << ":" << in_line_no << " : mismatched output, expected: '" << line <<"' actual: '" <<rest_out <<"'\n";
+        std::cerr << "ERROR " << fname << ":" << in_line_no << " : mismatched output, expected: '" << line
+                  << "' actual: '" << rest_out << "'\n";
         ret      = 1;
         rest_out = "";
       } else {

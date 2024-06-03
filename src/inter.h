@@ -79,7 +79,9 @@ INLINE void array_t_cleanup_protected_push(array_t** p) {
   *p = NULL;
 }
 
-#define POP(x)  own(array_t) x = stack_pop(stack); defer_catch(stack_push(stack, x))
+#define POP(x)                       \
+  own(array_t) x = stack_pop(stack); \
+  defer_catch(stack_push(stack, x))
 #define PUSH(x) stack_push(stack, x)
 #define DUP     PUSH(stack_peek(stack, 0))
 #define DROP    stack_drop(stack)
@@ -130,5 +132,5 @@ void inter_load_prelude(inter_t* inter);
 void inter_reset(inter_t* inter);
 void inter_dict_entry(inter_t* inter, t_dict_entry e);
 
-void inter_line(inter_t* inter, const char* s);
+void        inter_line(inter_t* inter, const char* s);
 std::string inter_line_capture_out(inter_t* inter, const char* line);

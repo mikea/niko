@@ -21,7 +21,7 @@ clean:
     rm -rf bin build callgrind.out.* perf.data perf.data.old vgcore.*
 
 format:
-    clang-format -i src/*.c src/*.h
+    clang-format -i src/*.c++ src/*.h
 
 coverage: clean
     COVERAGE=ON just test
