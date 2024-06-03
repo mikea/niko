@@ -4,10 +4,10 @@
 #include "inter.h"
 
 // %pp - void*
-// %pA - array_t*
-// %pS - str_t*/string_t*
+// {} - array_t*
+// {} - str_t*/string_t*
 // %pH - shape_t*
-// %pT - type_t*
+// {} - type_t*
 
 int p_modifier = -1;
 
@@ -21,13 +21,13 @@ size_t print_ptr(FILE* f, type_t t, flags_t fl, const void* ptr) {
       else return fprintf(f, "%s.", s);
     }
     case T_C8:         UNREACHABLE;
-    case T_ARR:        return fprintf(f, "%pA", *(array_t**)ptr);
+    case T_ARR:        return fprintf(f, "{}", *(array_t**)ptr);
     case T_FFI:        return fprintf(f, "<native_function>");
     case T_DICT_ENTRY: {
       size_t        idx = *(t_dict_entry*)ptr;
       dict_entry_t* e   = &inter_current()->dict.d[idx];
-      if (fl & FLAG_QUOTE) return fprintf(f, "%pS'", &(e->k));
-      else return fprintf(f, "%pS", &(e->k));
+      if (fl & FLAG_QUOTE) return fprintf(f, "{}'", &(e->k));
+      else return fprintf(f, "{}", &(e->k));
     }
   }
   UNREACHABLE;

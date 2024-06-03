@@ -4,10 +4,10 @@ array_t* array_alloc(type_t t, size_t n, flags_t f) {
   array_t* a;
 
   if (__array_data_simd_aligned(t, n)) {
-    a    = malloc(sizeof(array_t));
+    a    = (array_t*)malloc(sizeof(array_t));
     a->p = aligned_alloc(SIMD_REG_WIDTH_BYTES, SIMD_ALIGN_BYTES(type_sizeof(t, n)));
   } else {
-    a    = malloc(sizeof(array_t) + type_sizeof(t, n));
+    a    = (array_t*)malloc(sizeof(array_t) + type_sizeof(t, n));
     a->p = (void*)(a + 1);
   }
 
@@ -28,10 +28,10 @@ array_t* array_new(type_t t, size_t n, flags_t f, const void* x) {
 
 array_t* array_new_slice(array_t* x, size_t n, const void* p) {
   array_inc_ref(x);
-  array_t* y = malloc(sizeof(array_t));
+  array_t* y = (array_t*)malloc(sizeof(array_t));
 
   y->t       = x->t;
-  y->f       = 0;
+  y->f       = (flags_t)0;
   y->rc      = 1;
   y->n       = n;
   y->p       = (void*)p;

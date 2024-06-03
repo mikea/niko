@@ -23,18 +23,18 @@ INLINE void        str_print(const str_t s) { str_fprint(s, stdout); }
 INLINE char        str_i(const str_t s, size_t i) { return *(s.p + i); }
 INLINE const char* str_end(const str_t s) { return s.p + s.l; }
 INLINE char*       str_toc(str_t s) {
-  char* c = malloc(s.l + 1);
+  char* c = (char*)malloc(s.l + 1);
   memcpy(c, s.p, s.l);
   c[s.l] = 0;
   return c;
 }
 INLINE str_t str_memmem(const str_t h, const str_t n) {
   void* p = memmem(h.p, h.l, n.p, n.l);
-  return p ? str_new(p, str_end(h)) : str_empty();
+  return p ? str_new((const char*)p, str_end(h)) : str_empty();
 }
 INLINE str_t str_memchr(const str_t h, char n) {
-  void* p = memchr(h.p, n, h.l);
-  return p ? str_new(p, str_end(h)) : str_empty();
+  const void* p = memchr(h.p, n, h.l);
+  return p ? str_new((const char*)p, str_end(h)) : str_empty();
 }
 INLINE str_t str_skip(const str_t s, size_t b) {
   assert(b <= s.l);
@@ -71,11 +71,9 @@ INLINE PRINTF(1, 2) string_t string_newf(const char* format, ...) {
 }
 INLINE str_t    to_str(string_t s) { return (str_t){s.l, s.p}; }
 INLINE string_t str_copy(const str_t s) {
-  char* p = malloc(s.l);
+  char* p = (char*)malloc(s.l);
   memcpy(p, s.p, s.l);
   return (string_t){.l = s.l, .p = p};
 }
 INLINE string_t string_copy(const string_t s) { return str_copy(to_str(s)); }
 INLINE string_t string_from_c(const char* s) { return str_copy(str_from_c(s)); }
-
-#define copy(x) _Generic((x), str_t: str_copy, string_t: string_copy, default: "unexpected")(x)

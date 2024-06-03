@@ -2,16 +2,17 @@
 #include <math.h>
 
 #include "niko.h"
+#include "print.h"
 #include "words.h"
 
 // common utilities
 
 void global_dict_add_ffi1(const char* n, t_ffi ffi[T_MAX]) {
-  global_dict_add_new((dict_entry_t){string_from_c(n), array_new(T_FFI, T_MAX, 0, ffi)});
+  global_dict_add_new((dict_entry_t){string_from_c(n), array_new(T_FFI, T_MAX, (flags_t)0, ffi)});
 }
 
 void global_dict_add_ffi2(const char* n, t_ffi ffi[T_MAX][T_MAX]) {
-  global_dict_add_new((dict_entry_t){string_from_c(n), array_new(T_FFI, T_MAX * T_MAX, 0, ffi)});
+  global_dict_add_new((dict_entry_t){string_from_c(n), array_new(T_FFI, T_MAX * T_MAX, (flags_t)0, ffi)});
 }
 
 #pragma region stack
@@ -262,7 +263,7 @@ typedef void (*binop_kernel_t)(const void* restrict x,
 void w_binop(stack_t* stack, type_t t, binop_kernel_t kernel) {
   size_t yn = stack_peek(stack, 0)->n;
   size_t xn = stack_peek(stack, 1)->n;
-  CHECK(yn == xn || yn == 1 || xn == 1, "array lengths are incompatible: %ld vs %ld", xn, yn);
+  CHECK(yn == xn || yn == 1 || xn == 1, "array lengths are incompatible: {} vs {}", xn, yn);
 
   POP(y);
   POP(x);
@@ -275,9 +276,9 @@ void w_binop(stack_t* stack, type_t t, binop_kernel_t kernel) {
 #define GEN_BINOP_KERNEL(name, a_t, b_t, y_t, op)                                                                 \
   void name(const void* restrict a_ptr, size_t a_n, const void* restrict b_ptr, size_t b_n, void* restrict y_ptr, \
             size_t y_n) {                                                                                         \
-    y_t* restrict y       = y_ptr;                                                                                \
-    const a_t* restrict a = a_ptr;                                                                                \
-    const b_t* restrict b = b_ptr;                                                                                \
+    y_t* restrict y       = (y_t*)y_ptr;                                                                          \
+    const a_t* restrict a = (a_t*)a_ptr;                                                                          \
+    const b_t* restrict b = (b_t*)b_ptr;                                                                          \
     if (y_n == a_n && y_n == b_n) DO(i, y_n) y[i] = op(a[i], b[i]);                                               \
     else if (a_n == 1 && y_n == b_n) DO(i, y_n) y[i] = op(a[0], b[i]);                                            \
     else if (b_n == 1 && y_n == a_n) DO(i, y_n) y[i] = op(a[i], b[0]);                                            \
@@ -454,7 +455,7 @@ CONSTRUCTOR void register_less() {
 
 DEF_WORD_1_1("index", index) {
   size_t n       = as_size_t(x);
-  own(array_t) y = array_alloc(T_I64, n, 0);
+  own(array_t) y = array_alloc(T_I64, n, (flags_t)0);
   DO_MUT_ARRAY(y, t_i64, i, ptr) { (*ptr) = i; }
   return array_inc_ref(y);
 }
@@ -474,7 +475,7 @@ DEF_WORD("take", take) {
   POP(y);
   POP(x);
   size_t n       = as_size_t(y);
-  own(array_t) z = array_alloc(x->t, n, 0);
+  own(array_t) z = array_alloc(x->t, n, (flags_t)0);
   size_t ys      = type_sizeof(x->t, x->n);
   DO(i, type_sizeof(x->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)array_data(x))[i % ys]; }
   PUSH(z);
@@ -508,7 +509,7 @@ DEF_WORD("cat", cat) {
     size_t n = 0;                                                                \
     DO_ARRAY(y, t_i64, i, p) { n += *p; }                                        \
     POP(x);                                                                      \
-    own(array_t) z = array_alloc(x->t, n, 0);                                    \
+    own(array_t) z = array_alloc(x->t, n, (flags_t)0);                           \
     xt*       dst  = array_mut_data_##xt(z);                                     \
     const xt* src  = array_data_##xt(x);                                         \
     DO_ARRAY(y, t_i64, i, p) {                                                   \
@@ -549,7 +550,9 @@ DEF_WORD("\\i", slash_info) {
 
 DEF_WORD("\\c", slash_clear) { inter_reset(inter); }
 DEF_WORD("\\mem", slash_mem) { malloc_stats_print(NULL, NULL, NULL); }
-DEF_WORD("\\s", slash_stack) { DO(i, stack_len(stack)) fprintf(inter->out, "%ld: %pA\n", i, stack_peek(stack, i)); }
+DEF_WORD("\\s", slash_stack) {
+  DO(i, stack_len(stack)) { (*inter->out) << std::format("{}: {}\n", i, stack_peek(stack, i)); }
+}
 
 #pragma endregion slash_words
 
@@ -559,12 +562,12 @@ DEF_WORD(",fold", fold) {
   POP(op);
   POP(x);
 
-  t_dict_entry e = as_dict_entry(op);
-  void         __iter(size_t i, array_t * slice) {
+  t_dict_entry e    = as_dict_entry(op);
+  auto         iter = [=](size_t i, array_t* slice) {
     PUSH(slice);
     if (i > 0) inter_dict_entry(inter, e);
-  }
-  array_for_each_atom(x, __iter);
+  };
+  array_for_each_atom(x, iter);
 }
 
 DEF_WORD(",scan", scan) {
@@ -573,12 +576,12 @@ DEF_WORD(",scan", scan) {
 
   t_dict_entry e = as_dict_entry(op);
 
-  void __iter(size_t i, array_t * slice) {
+  auto iter      = [=](size_t i, array_t* slice) {
     if (i > 0) DUP;
     PUSH(slice);
     if (i > 0) inter_dict_entry(inter, e);
-  }
-  array_for_each_atom(x, __iter);
+  };
+  array_for_each_atom(x, iter);
   own(array_t) result = cat(stack, x->n);
   PUSH(result);
 }
@@ -587,12 +590,12 @@ DEF_WORD(",apply", apply) {
   POP(op);
   POP(x);
 
-  t_dict_entry e = as_dict_entry(op);
-  void         __iter(size_t i, array_t * slice) {
+  t_dict_entry e    = as_dict_entry(op);
+  auto         iter = [=](size_t i, array_t* slice) {
     PUSH(slice);
     inter_dict_entry(inter, e);
-  }
-  array_for_each_atom(x, __iter);
+  };
+  array_for_each_atom(x, iter);
   own(array_t) result = cat(stack, x->n);
   PUSH(result);
 }
@@ -603,12 +606,12 @@ DEF_WORD(",pairwise", pairwise) {
 
   t_dict_entry e = as_dict_entry(op);
 
-  void __iter(size_t i, array_t * slice) {
+  auto iter      = [=](size_t i, array_t* slice) {
     PUSH(slice);
     if (i > 0) inter_dict_entry(inter, e);
     PUSH(slice);
-  }
-  array_for_each_atom(x, __iter);
+  };
+  array_for_each_atom(x, iter);
   DROP;
   own(array_t) result = cat(stack, x->n);
   PUSH(result);
@@ -671,7 +674,7 @@ DEF_WORD("tr", tr) {
 
 DEF_WORD(".", dot) {
   POP(x);
-  fprintf(inter->out, "%pA\n", x);
+  (*inter->out) << std::format("{}\n", x);
 }
 
 DEF_WORD_1_1("load_text", load_text) {
@@ -682,7 +685,7 @@ DEF_WORD_1_1("load_text", load_text) {
   CHECK(file, "failed to open file %s", c_name);
   CHECK(!fseek(file, 0, SEEK_END), "failed to seek file");
   size_t n       = ftell(file);
-  own(array_t) y = array_alloc(T_C8, n, 0);
+  own(array_t) y = array_alloc(T_C8, n, (flags_t)0);
   rewind(file);
   size_t read = fread(array_mut_data(y), 1, n, file);
   CHECK(n == read, "truncated read");

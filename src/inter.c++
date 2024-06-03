@@ -2,18 +2,22 @@
 #include "memory.h"
 #include "prelude.h"
 #include "words.h"
+#include "print.h"
+
+#include <iostream>
+#include <sstream>
 
 dict_t global_dict;
 
 inter_t* inter_new() {
-  inter_t* inter    = calloc(1, sizeof(inter_t));
+  inter_t* inter    = (inter_t*)calloc(1, sizeof(inter_t));
   inter->stack      = stack_new();
   inter->comp_stack = stack_new();
-  inter->out        = stdout;
+  inter->out        = &std::cout;
   dict_reserve(&inter->dict, global_dict.s);
   DO(i, global_dict.s) {
     dict_entry_t* e = &global_dict.d[i];
-    dict_push(&inter->dict, (dict_entry_t){copy(e->k), array_inc_ref(e->v), e->f});
+    dict_push(&inter->dict, (dict_entry_t){string_copy(e->k), array_inc_ref(e->v), e->f});
   }
   return inter;
 }
@@ -33,12 +37,14 @@ void inter_free(inter_t* inter) {
   free(inter);
 }
 
-void global_dict_add_new(dict_entry_t e) { dict_push(&global_dict, (dict_entry_t){e.k, e.v, e.f | ENTRY_SYS}); }
+void global_dict_add_new(dict_entry_t e) {
+  dict_push(&global_dict, (dict_entry_t){e.k, e.v, e.f | entry_flags::ENTRY_SYS});
+}
 
 DESTRUCTOR void global_dict_free() { dict_free(&global_dict); }
 
 array_t* cat(stack_t* stack, size_t n) {
-  if (!n) return array_alloc(T_I64, 0, 0);
+  if (!n) return array_alloc(T_I64, 0, (flags_t)0);
   CHECK(n <= stack->l, "stack underflow");
 
   bool same_type      = true;
@@ -48,18 +54,18 @@ array_t* cat(stack_t* stack, size_t n) {
   DO(i, n) {
     own(array_t) e  = stack_i(stack, i);
     same_type      &= e->t == t;
-    f              &= e->f;
+    f               = f & e->f;
   }
 
   array_t* a;
   if (same_type && (f & FLAG_ATOM)) {
     assert(t != T_ARR);  // not implemented
-    a          = array_alloc(t, n, 0);
+    a          = array_alloc(t, n, (flags_t)0);
     void*  ptr = array_mut_data(a);
     size_t s   = type_sizeof(t, 1);
     DO(i, n) { memcpy(ptr + s * i, array_data(stack_peek(stack, n - i - 1)), s); }
   } else {
-    a = array_alloc(T_ARR, n, 0);
+    a = array_alloc(T_ARR, n, (flags_t)0);
     DO_MUT_ARRAY(a, t_arr, i, p) { *p = stack_i(stack, n - i - 1); }
   }
   DO(i, n) stack_drop(stack);
@@ -98,7 +104,7 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
     return;
   }
   array_t* a = e->v;
-  // DBG("%pS %pA", &e->k, a);
+  // DBG("{} {}", &e->k, a);
   switch (a->t) {
     case T_FFI: {
       t_ffi f;
@@ -112,17 +118,17 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
         case T_MAX: {
           borrow(array_t) x = stack_peek(stack, 0);
           f                 = (array_data_t_ffi(a))[x->t];
-          CHECK(f, "%pT is not supported", &x->t);
+          CHECK(f, "{} is not supported", x->t);
           return f(inter, stack);
         }
         case T_MAX* T_MAX: {
           borrow(array_t) y = stack_peek(stack, 0);
           borrow(array_t) x = stack_peek(stack, 1);
           f                 = ((t_ffi(*)[T_MAX])array_data(a))[x->t][y->t];
-          CHECK(f, "%pT %pT are not supported", &x->t, &y->t);
+          CHECK(f, "{} {} are not supported", x->t, y->t);
           return f(inter, stack);
         }
-        default: panicf("unexpected ffi length: %ld", a->n);
+        default: panicf("unexpected ffi length: {}", a->n);
       }
     }
     case T_ARR: {
@@ -156,11 +162,11 @@ str_t inter_next_word(inter_t* inter) {
 }
 
 void inter_token(inter_t* inter, token_t t) {
-  stack_t* stack = inter->mode == MODE_COMPILE ? inter->comp_stack : inter->stack;
+  stack_t* stack = inter->mode == inter_t::MODE_COMPILE ? inter->comp_stack : inter->stack;
 
   switch (t.tok) {
     case TOK_EOF:      return;
-    case TOK_ERR:      panicf("unexpected token: '%pS'", &t.text);
+    case TOK_ERR:      panicf("unexpected token: '{}'", t.text);
     case TOK_ARR_OPEN: {
       assert(inter->arr_level < sizeof(inter->arr_marks) / sizeof(inter->arr_marks[0]));
       inter->arr_marks[inter->arr_level++] = stack->l;
@@ -176,10 +182,10 @@ void inter_token(inter_t* inter, token_t t) {
     }
     case TOK_WORD: {
       size_t e = inter_find_entry_idx(inter, t.text);
-      CHECK(e < inter->dict.s, "unknown word '%pS'", &t.text);
+      CHECK(e < inter->dict.s, "unknown word '{}'", t.text);
       dict_entry_t* entry = inter_lookup_entry(inter, e);
 
-      if (inter->mode == MODE_INTERPRET || (entry->f & ENTRY_IMM)) {
+      if (inter->mode == inter_t::MODE_INTERPRET || (entry->f & ENTRY_IMM)) {
         inter_dict_entry(inter, e);
       } else {
         own(array_t) a = array_new_atom_t_dict_entry(e);
@@ -206,9 +212,9 @@ void inter_token(inter_t* inter, token_t t) {
     }
     case TOK_QUOTE: {
       size_t e = inter_find_entry_idx(inter, t.val.s);
-      CHECK(e < inter->dict.s, "unknown word '%pS'", &t.text);
-      own(array_t) a  = array_new_atom_t_dict_entry(e);
-      a->f           |= FLAG_QUOTE;
+      CHECK(e < inter->dict.s, "unknown word '{}'", t.text);
+      own(array_t) a = array_new_atom_t_dict_entry(e);
+      a->f           = a->f | FLAG_QUOTE;
       PUSH(a);
       return;
     }
@@ -237,18 +243,16 @@ void inter_line(inter_t* inter, const char* s) {
   }
 }
 
-void inter_line_capture_out(inter_t* inter, const char* line, char** out, size_t* out_size) {
-  CATCH(e) {
-    free(*out);
-    *out_size  = asprintf(out, "ERROR: %pS\n", &e);
-    inter->out = stdout;
-    return;
-  }
-
-  protected(FILE) fout = protect(open_memstream(out, out_size));
-  inter->out           = fout;
-  inter_line(inter, line);
-  inter->out = stdout;
+std::string inter_line_capture_out(inter_t* inter, const char* line) {
+  std::ostringstream buf;
+  inter->out = &buf;
+  defer { inter->out = &std::cout; };
+  try {
+    inter_line(inter, line);
+    return buf.str();
+  } catch (std::exception& e) { 
+    return std::format("ERROR: {}\n", e.what());
+   }
 }
 
 void inter_load_prelude(inter_t* inter) {
@@ -261,7 +265,7 @@ void inter_reset(inter_t* inter) {
   stack_clear(inter->stack);
   stack_clear(inter->comp_stack);
   inter->arr_level = 0;
-  inter->mode      = MODE_INTERPRET;
+  inter->mode      = inter_t::MODE_INTERPRET;
 }
 
 #pragma region words
@@ -269,55 +273,55 @@ void inter_reset(inter_t* inter) {
 #pragma region immediate
 
 DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
-  CHECK(inter->mode == MODE_INTERPRET, ": can be used only in interpret mode");
+  CHECK(inter->mode == inter_t::MODE_INTERPRET, ": can be used only in interpret mode");
   str_t        next = inter_next_word(inter);
   t_dict_entry prev = inter_find_entry_idx(inter, next);
   if (prev < inter->dict.s) {
     dict_entry_t* e = &inter->dict.d[prev];
-    if (e->f & (ENTRY_CONST | ENTRY_SYS)) panicf("`%pS` can't be redefined", &next);
+    if (e->f & (ENTRY_CONST | ENTRY_SYS)) panicf("`{}` can't be redefined", next);
   }
-  inter->mode = MODE_COMPILE;
+  inter->mode = inter_t::MODE_COMPILE;
   assert(stack_is_empty(inter->comp_stack));
-  inter->comp = copy(next);
+  inter->comp = str_copy(next);
 }
 
 DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
-  CHECK(inter->mode == MODE_COMPILE, ": can be used only in compile mode");
-  own(array_t) a     = array_new(T_ARR, inter->comp_stack->l, 0, inter->comp_stack->data);
+  CHECK(inter->mode == inter_t::MODE_COMPILE, ": can be used only in compile mode");
+  own(array_t) a     = array_new(T_ARR, inter->comp_stack->l, (flags_t)0, inter->comp_stack->data);
   dict_entry_t* prev = inter_find_entry(inter, to_str(inter->comp));
   if (prev) {
     array_dec_ref(prev->v);
-    prev->v  = array_inc_ref(a);
-    prev->f &= ~ENTRY_VAR;
+    prev->v = array_inc_ref(a);
+    prev->f = (entry_flags)(prev->f & ~ENTRY_VAR);
   } else {
-    dict_push(&inter->dict, (dict_entry_t){copy(inter->comp), array_inc_ref(a)});
+    dict_push(&inter->dict, (dict_entry_t){string_copy(inter->comp), array_inc_ref(a)});
   }
 
   stack_clear(inter->comp_stack);
-  inter->mode = MODE_INTERPRET;
+  inter->mode = inter_t::MODE_INTERPRET;
 
   prev        = inter_find_entry(inter, to_str(inter->comp));
   string_free(inter->comp);
 }
 
 DEF_WORD_FLAGS("const", _const, ENTRY_IMM) {
-  CHECK(inter->mode == MODE_INTERPRET, "const can be used only in interpret mode");
+  CHECK(inter->mode == inter_t::MODE_INTERPRET, "const can be used only in interpret mode");
   str_t next = inter_next_word(inter);
-  if (inter_find_entry_idx(inter, next) < inter->dict.s) panicf("`%pS` can't be redefined", &next);
+  if (inter_find_entry_idx(inter, next) < inter->dict.s) panicf("`{}` can't be redefined", next);
   POP(x);
-  dict_push(&inter->dict, (dict_entry_t){copy(next), array_inc_ref(x), ENTRY_CONST});
+  dict_push(&inter->dict, (dict_entry_t){str_copy(next), array_inc_ref(x), ENTRY_CONST});
 }
 
 DEF_WORD_FLAGS("var", _var, ENTRY_IMM) {
-  CHECK(inter->mode == MODE_INTERPRET, "var can be used only in interpret mode");
+  CHECK(inter->mode == inter_t::MODE_INTERPRET, "var can be used only in interpret mode");
   str_t next = inter_next_word(inter);
-  if (inter_find_entry_idx(inter, next) < inter->dict.s) panicf("`%pS` can't be redefined", &next);
+  if (inter_find_entry_idx(inter, next) < inter->dict.s) panicf("`{}` can't be redefined", next);
   POP(x);
-  dict_push(&inter->dict, (dict_entry_t){copy(next), array_inc_ref(x), ENTRY_VAR});
+  dict_push(&inter->dict, (dict_entry_t){str_copy(next), array_inc_ref(x), ENTRY_VAR});
 }
 
 DEF_WORD_FLAGS("literal", literal, ENTRY_IMM) {
-  CHECK(inter->mode == MODE_COMPILE, "literal can be used only in compilation mode");
+  CHECK(inter->mode == inter_t::MODE_COMPILE, "literal can be used only in compilation mode");
   POP(x);
   stack_push(inter->comp_stack, x);
 }
@@ -328,10 +332,10 @@ DEF_WORD("!", store) {
   POP(v);
   POP(x);
   dict_entry_t* e = inter_lookup_entry(inter, as_dict_entry(v));
-  CHECK(e->f & ENTRY_VAR || !e->f, "%pA is not a valid store target", v);
+  CHECK(e->f & ENTRY_VAR || !e->f, "{} is not a valid store target", v);
   array_dec_ref(e->v);
-  e->v  = array_inc_ref(x);
-  e->f |= ENTRY_VAR;
+  e->v = array_inc_ref(x);
+  e->f = e->f | ENTRY_VAR;
 }
 
 DEF_WORD("@", load) {
@@ -341,7 +345,7 @@ DEF_WORD("@", load) {
 }
 
 DEF_WORD("exit", exit) {
-  fprintf(inter->out, "bye\n");
+  (*inter->out) << "bye\n";
   exit(0);
 }
 

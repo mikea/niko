@@ -1,17 +1,22 @@
 cmake_minimum_required(VERSION 3.27)
 
-project(niko VERSION 0.1 DESCRIPTION "niko programming language" LANGUAGES C)
+project(niko VERSION 0.1 DESCRIPTION "niko programming language" LANGUAGES C CXX)
 
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 add_definitions(-D_GNU_SOURCE)
 
+set (CMAKE_CXX_STANDARD 23)
+
 add_compile_options(
   -mavx2
-  -std=gnu2x 
   -mmemset-strategy=vector_loop:-1:noalign
-  -Wall
-  -Werror=implicit-fallthrough -Werror=switch -Werror=return-type
-  -Wno-psabi 
+  # -Wall
+  # -Werror=implicit-fallthrough -Werror=switch -Werror=return-type
+  # todo
+  -Wno-narrowing 
+  -Wno-pointer-arith
+  # -fpermissive
+  # -Wno-psabi 
   -fno-math-errno -fno-trapping-math -fno-omit-frame-pointer -fverbose-asm)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-inline-small-functions -Og")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -g -Wno-unknown-pragmas")
@@ -28,8 +33,8 @@ if (DEFINED ENV{COVERAGE})
 endif()
 
 add_executable(niko 
-  src/main.c src/words.c src/print.c src/array.c src/inter.c src/panic.c
-  ${CMAKE_CURRENT_BINARY_DIR}/lexer.c
+  src/main.c++ src/inter.c++ src/array.c++ src/words.c++ src/print.c++
+  ${CMAKE_CURRENT_BINARY_DIR}/lexer.c++
   ${CMAKE_CURRENT_BINARY_DIR}/prelude.h)
 target_link_libraries(niko m)
 target_link_libraries(niko jemalloc)
@@ -49,10 +54,10 @@ add_definitions(-DBUILD_TYPE="${CMAKE_BUILD_TYPE}")
 
 # generate lexer
 add_custom_command(
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lexer.c
-  COMMAND re2c -i --case-ranges -o ${CMAKE_CURRENT_BINARY_DIR}/lexer.c ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.c
-  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.c
-  COMMENT "Generating lexer.c"
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lexer.c++
+  COMMAND re2c -i --case-ranges -o ${CMAKE_CURRENT_BINARY_DIR}/lexer.c++ ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.c++
+  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.c++
+  COMMENT "Generating lexer.c++"
   VERBATIM
 )
 

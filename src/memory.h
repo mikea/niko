@@ -1,7 +1,5 @@
 #pragma once
 
-#include "panic.h"
-
 #define ALIGNED(n) ATTR(aligned(n))
 
 #define __ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
@@ -20,7 +18,6 @@
     *p = NULL;                                                \
   }                                                           \
   INLINE void t##_cleanup_protected(t** p) {                  \
-    unwind_handler_pop(t##_unwind, *p);                       \
     t##_free(*p);                                             \
     *p = NULL;                                                \
   }
@@ -28,11 +25,8 @@
 DEF_CLEANUP(char, free)
 DEF_CLEANUP(FILE, fclose)
 
-INLINE void      string_t_cleanup(string_t* s) { string_free(*s); }
-typedef string_t own_string_t;
-
 #define own(t)    CLEANUP(t##_cleanup) own_##t
 #define borrow(t) t*
 
 #define protected(t)  CLEANUP(t##_cleanup_protected) t*
-#define protect(expr) PROTECT_UNWIND(expr, NULL)
+#define protect(expr) (expr)

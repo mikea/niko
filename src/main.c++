@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <getopt.h>
 #include <unistd.h>
 
@@ -34,11 +36,13 @@ next:
     }
 
     if (getline(&input, &input_size, stdin) <= 0) return;
-    CATCH(e) {
-      fprintf(stderr, "ERROR: %pS\n", &e);
+
+    try {
+      inter_line(inter, input);
+    } catch (std::exception& e) {
+      std::cerr << "ERROR: " << e.what() << "\n";
       goto next;
     }
-    inter_line(inter, input);
   }
 }
 
@@ -55,17 +59,17 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
   size_t read;
   size_t line_no = 0;
 
-  own(char) out  = NULL;
-  size_t out_size;
-  char*  rest_out       = NULL;
-  size_t in_line_no     = 0;
+  std::string      out;
+  size_t           out_size;
+  std::string_view rest_out;
+  size_t           in_line_no = 0;
 
-  const str_t nkt_start = str_from_c("```nkt\n");
-  const str_t nk_start  = str_from_c("```nk\n");
-  const str_t code_end  = str_from_c("```");
+  const str_t nkt_start       = str_from_c("```nkt\n");
+  const str_t nk_start        = str_from_c("```nk\n");
+  const str_t code_end        = str_from_c("```");
 
-  bool in_nk            = false;
-  bool in_nkt           = false;
+  bool in_nk                  = false;
+  bool in_nkt                 = false;
 
   while ((read = getline(&line, &len, file)) != -1) {
     if (f && ret) return ret;
@@ -84,30 +88,28 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
     } else if (in_nkt) {
       if (str_starts_with(l, code_end)) {
         inter_reset(inter);
-        if (rest_out && *rest_out) {
-          fprintf(stderr, "ERROR %s:%ld : unmatched output: '%s'\n", fname, in_line_no, rest_out);
+        if (rest_out.size()) {
+          std::cerr << "ERROR " << fname << ":" << in_line_no << " : unmatched output: '" << rest_out << "'\n";
           ret = 1;
         }
-        rest_out = NULL;
+        rest_out = "";
         in_nkt   = false;
       } else if (*line == '>') {
         if (v) fprintf(stderr, "%s", line);
-        if (rest_out && *rest_out) {
-          fprintf(stderr, "ERROR %s:%ld : unmatched output: '%s'\n", fname, in_line_no, rest_out);
+        if (rest_out.size()) {
+          std::cerr << "ERROR " << fname << ":" << in_line_no << " : unmatched output: '" << rest_out << "'\n";
           ret = 1;
         }
         in_line_no = line_no;
-        if (out) free(out);
-        inter_line_capture_out(inter, line + 1, &out, &out_size);
-        rest_out = out;
+        out        = inter_line_capture_out(inter, line + 1);
+        rest_out   = out;
         continue;
-      } else if (rest_out == NULL || memcmp(line, rest_out, read)) {
-        fprintf(stderr, "ERROR %s:%ld : mismatched output, expected: '%s' actual: '%s' \n", fname, in_line_no, line,
-                rest_out);
+      } else if (!rest_out.size() || memcmp(line, rest_out.begin(), read)) {
+        std::cerr << "ERROR " << fname << ":" << in_line_no << " : mismatched output, expected: '" << line <<"' actual: '" <<rest_out <<"'\n";
         ret      = 1;
-        rest_out = NULL;
+        rest_out = "";
       } else {
-        rest_out += read;
+        rest_out = rest_out.substr(read);
       }
     }
     if (str_ends_with(l, nkt_start)) in_nkt = true;
@@ -165,14 +167,14 @@ int main(int argc, char* argv[]) {
 
   if (!z) inter_load_prelude(inter);
 
-  CATCH(e) {
-    fprintf(stderr, "ERROR: %pS", &e);
+  try {
+    if (t) return test(inter, t, v, f);
+    else if (e) inter_line(inter, e);
+    else repl(inter);
+
+    return 0;
+  } catch (std::exception& e) {
+    std::cerr << "ERROR: " << e.what() << "\n";
     return 1;
   }
-
-  if (t) return test(inter, t, v, f);
-  else if (e) inter_line(inter, e);
-  else repl(inter);
-
-  return 0;
 }

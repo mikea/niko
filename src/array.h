@@ -29,9 +29,9 @@ typedef struct array_t* t_arr;
 #define t_arr_enum    T_ARR
 #define t_arr_copy(x) (array_inc_ref(x))
 
-struct inter;
-struct stack;
-typedef void (*t_ffi)(struct inter* inter, struct stack* s);
+struct inter_t;
+struct stack_t;
+typedef void (*t_ffi)(inter_t* inter, stack_t* s);
 #define t_ffi_enum T_FFI
 
 typedef i64 t_dict_entry;
@@ -53,10 +53,12 @@ typedef i64 t_dict_entry;
 static size_t type_sizeof_table[T_MAX] = TYPE_ROW_FOREACH(sizeof);
 INLINE size_t type_sizeof(type_t t, size_t n) { return n * type_sizeof_table[t]; }
 
-static const char* type_name_table[T_MAX] = TYPE_ROW("c8", "i64", "f64", "arr", "ffi", "dict");
-INLINE const char* type_name(type_t t) { return type_name_table[t]; }
+static const std::string_view type_name_table[T_MAX] = TYPE_ROW("c8", "i64", "f64", "arr", "ffi", "dict");
+INLINE const std::string_view type_name(type_t t) { return type_name_table[t]; }
 
 typedef enum flags { FLAG_ATOM = 1, FLAG_QUOTE = 2 } flags_t;
+inline flags operator|(flags a, flags b) { return static_cast<flags>(static_cast<int>(a) | static_cast<int>(b)); }
+inline flags operator&(flags a, flags b) { return static_cast<flags>(static_cast<int>(a) & static_cast<int>(b)); }
 
 // array: (header, dims, data)
 struct array_t {
@@ -124,14 +126,14 @@ INLINE array_t* array_cow(array_t* a) {
 
 INLINE array_t* array_new_atom(type_t t, const void* x) { return array_new(t, 1, FLAG_ATOM, x); }
 
-#define __DEF_TYPE_HELPER(t)                                                                       \
-  INLINE array_t* array_new_atom_##t(t v) { return array_new_atom(TYPE_ENUM(t), &v); }             \
-  INLINE array_t* array_new_##t(size_t n, const t* x) { return array_new(TYPE_ENUM(t), n, 0, x); } \
-  INLINE const t* array_data_##t(const array_t* a) {                                               \
-    return (const t*)array_data(__array_assert_type(a, TYPE_ENUM(t)));                             \
-  }                                                                                                \
-  INLINE t* array_mut_data_##t(array_t* a) {                                                       \
-    return (t*)array_mut_data((array_t*)__array_assert_type(a, TYPE_ENUM(t)));                     \
+#define __DEF_TYPE_HELPER(t)                                                                                \
+  INLINE array_t* array_new_atom_##t(t v) { return array_new_atom(TYPE_ENUM(t), &v); }                      \
+  INLINE array_t* array_new_##t(size_t n, const t* x) { return array_new(TYPE_ENUM(t), n, (flags_t)0, x); } \
+  INLINE const t* array_data_##t(const array_t* a) {                                                        \
+    return (const t*)array_data(__array_assert_type(a, TYPE_ENUM(t)));                                      \
+  }                                                                                                         \
+  INLINE t* array_mut_data_##t(array_t* a) {                                                                \
+    return (t*)array_mut_data((array_t*)__array_assert_type(a, TYPE_ENUM(t)));                              \
   }
 
 TYPE_FOREACH(__DEF_TYPE_HELPER)
@@ -152,7 +154,8 @@ TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 #define DO_MUT_ARRAY(a, t, i, p)           _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), t* restrict p = (t*)array_mut_data(a))
 #define DO_ARRAY(a, t, i, p)               _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), const t* restrict p = (const t*)array_data(a))
 
-INLINE void array_for_each_atom(array_t* x, void (*callback)(size_t i, array_t* atom)) {
+template<typename Fn>
+INLINE void array_for_each_atom(array_t* x, Fn callback) {
   size_t      stride = type_sizeof(x->t, 1);
   const void* ptr    = array_data(x);
   if (x->t != T_ARR) {

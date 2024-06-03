@@ -7,10 +7,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <algorithm>
+#include <format>
+
+using std::max;
+
 typedef unsigned char byte;
 typedef int64_t       i64;
 typedef double        f64;
 static_assert(sizeof(f64) == sizeof(i64));
+
+#define restrict __restrict__
+#define ttT      template <typename T>
 
 #define ATTR(attr)    __attribute__((attr))
 #define CLEANUP(func) ATTR(cleanup(func))
@@ -65,7 +73,7 @@ static_assert(sizeof(f64) == sizeof(i64));
   } name##_t;                                                           \
   INLINE void name##_reserve(name##_t* v, size_t c) {                   \
     v->c = v->c > c ? v->c : c;                                         \
-    v->d = reallocarray(v->d, sizeof(t), v->c);                         \
+    v->d = (t*)reallocarray(v->d, sizeof(t), v->c);                     \
   }                                                                     \
   INLINE void name##_grow(name##_t* v) { name##_reserve(v, v->c + 1); } \
   INLINE void name##_shrink(name##_t* v) {                              \
@@ -137,9 +145,29 @@ static_assert(sizeof(f64) == sizeof(i64));
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-#define max(x, y)      \
-  ({                   \
-    typeof(x) _x = x;  \
-    typeof(y) _y = y;  \
-    _x < _y ? _y : _x; \
-  })
+// assertions
+#define panicf(...) throw std::runtime_error(std::format(__VA_ARGS__))
+
+#define CHECK(cond, ...) \
+  if (unlikely(!(cond))) panicf(__VA_ARGS__)
+
+// defer
+
+struct defer_dummy {};
+template <class F>
+struct deferrer {
+  F f;
+  ~deferrer() { f(); }
+};
+template <class F>
+deferrer<F> operator*(defer_dummy, F f) {
+  return {f};
+}
+#define DEFER_(LINE) zz_defer##LINE
+#define DEFER(LINE)  DEFER_(LINE)
+#define defer        auto DEFER(UNIQUE(defer)) = defer_dummy{}* [&]()
+
+#define defer_catch(s)                      \
+  defer {                                   \
+    if (std::uncaught_exceptions()) { s; }; \
+  };

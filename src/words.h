@@ -1,6 +1,7 @@
 #pragma once
 
 #include "inter.h"
+#include "print.h"
 
 #define DEF_WORD_HANDLER(name) void name(inter_t* inter, stack_t* stack)
 
@@ -19,7 +20,7 @@
     global_dict_add_new((dict_entry_t){string_from_c(w), array_new_atom_t_ffi(w_##n), f}); \
   }
 
-#define REGISTER_WORD(w, n) REGISTER_WORD_FLAGS(w, n, 0)
+#define REGISTER_WORD(w, n) REGISTER_WORD_FLAGS(w, n, (entry_flags)0)
 
 #define DEF_WORD(w, n) \
   REGISTER_WORD(w, n)  \
@@ -35,7 +36,7 @@
 
 INLINE size_t as_size_t(const array_t* a) {
   CHECK(a->n == 1, "expected single value");
-  CHECK(a->t == T_I64, "expected int, got %pT instead", &a->t);
+  CHECK(a->t == T_I64, "expected int, got {} instead", a->t);
   i64 i = *array_data_t_i64(a);
   CHECK(i >= 0, "expected non-negative value");
   return i;
