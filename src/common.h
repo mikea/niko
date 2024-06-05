@@ -10,8 +10,13 @@
 #include <algorithm>
 #include <format>
 #include <iostream>
+#include <ostream>
 
+using std::cerr;
+using std::cout;
 using std::max;
+using std::print;
+using std::println;
 #define mv(x) std::move(x)
 
 typedef unsigned char byte;
@@ -50,15 +55,15 @@ static_assert(sizeof(f64) == sizeof(i64));
     abort();                 \
   } while (0)
 
-#define _DBG(x) std::print(std::cerr, " {} = {}", #x, (x));
+#define _DBG(x) print(cerr, " {} = {}", #x, (x));
 
 #define DBG(...)                                          \
   ({                                                      \
     do {                                                  \
-      std::print(std::cerr, "{}:{}", __FILE__, __LINE__); \
+      print(cerr, "{}:{}", __FILE__, __LINE__); \
       APPLY(_DBG, __VA_ARGS__)                            \
-      std::println(std::cerr);                            \
-      std::cerr.flush();                                  \
+      println(cerr);                            \
+      cerr.flush();                                  \
     } while (0);                                          \
   })
 

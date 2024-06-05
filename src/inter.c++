@@ -223,7 +223,7 @@ void inter_line(inter_t* inter, const char* s) {
 std::string inter_line_capture_out(inter_t* inter, const char* line) {
   std::ostringstream buf;
   inter->out = &buf;
-  defer { inter->out = &std::cout; };
+  defer { inter->out = &cout; };
   try {
     inter_line(inter, line);
     return buf.str();

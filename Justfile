@@ -13,7 +13,7 @@ build BUILD_TYPE="Debug":
 release: (build "Release") _test
 
 run: test
-    rlwrap bin/niko
+    bin/niko
 
 test: build _test
 

@@ -110,7 +110,7 @@ struct inter_t {
   string_t      comp;
   size_t        arr_level = 0;
   size_t        arr_marks[256]{};
-  std::ostream* out  = &std::cout;
+  std::ostream* out  = &cout;
   const char*   line = nullptr;
 
   inter_t();

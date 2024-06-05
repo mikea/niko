@@ -35,10 +35,10 @@ std::format_context::iterator std::formatter<array_p>::format(const array_p& a, 
   size_t      stride = type_sizeof(a->t, 1);
   const void* ptr    = array_data(a.get());
   DO(i, a->n) {
-    // if (w < c + 4) {
-    //   c += fprintf(f, "... ");
-    //   break;
-    // }
+    if (width && width < out.size() + 4) {
+      out += "... ";
+      break;
+    }
     format_atom(a->t, a->f, ptr + stride * i, std::back_inserter(out));
     out += " ";
   }

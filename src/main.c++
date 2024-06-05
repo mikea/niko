@@ -10,9 +10,8 @@
 
 INLINE void stack_print_repl(stack_t& stack) {
   DO(i, stack.len()) {
-    if (i > 0) printf(" ");
-    // printf("%25pA", stack->data[i]);
-    NOT_IMPLEMENTED;
+    if (i > 0) print(cout, " ");
+    print(cout, "{:25}", stack[i]);
   }
 }
 
@@ -41,7 +40,7 @@ next:
     try {
       inter_line(inter, input);
     } catch (std::exception& e) {
-      std::cerr << "ERROR: " << e.what() << "\n";
+      cerr << "ERROR: " << e.what() << "\n";
       goto next;
     }
   }
@@ -90,7 +89,7 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
       if (str_starts_with(l, code_end)) {
         inter_reset(inter);
         if (rest_out.size()) {
-          std::cerr << "ERROR " << fname << ":" << in_line_no << " : unmatched output: '" << rest_out << "'\n";
+          cerr << "ERROR " << fname << ":" << in_line_no << " : unmatched output: '" << rest_out << "'\n";
           ret = 1;
         }
         rest_out = "";
@@ -98,7 +97,7 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
       } else if (*line == '>') {
         if (v) fprintf(stderr, "%s", line);
         if (rest_out.size()) {
-          std::cerr << "ERROR " << fname << ":" << in_line_no << " : unmatched output: '" << rest_out << "'\n";
+          cerr << "ERROR " << fname << ":" << in_line_no << " : unmatched output: '" << rest_out << "'\n";
           ret = 1;
         }
         in_line_no = line_no;
@@ -106,8 +105,8 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
         rest_out   = out;
         continue;
       } else if (!rest_out.size() || memcmp(line, rest_out.begin(), read)) {
-        std::cerr << "ERROR " << fname << ":" << in_line_no << " : mismatched output, expected: '" << line
-                  << "' actual: '" << rest_out << "'\n";
+        cerr << "ERROR " << fname << ":" << in_line_no << " : mismatched output, expected: '" << line << "' actual: '"
+             << rest_out << "'\n";
         ret      = 1;
         rest_out = "";
       } else {
@@ -175,7 +174,7 @@ int main(int argc, char* argv[]) {
     else repl(&inter);
     return 0;
   } catch (std::exception& e) {
-    std::cerr << "ERROR: " << e.what() << "\n";
+    cerr << "ERROR: " << e.what() << "\n";
     return 1;
   }
 }
