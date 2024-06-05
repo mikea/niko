@@ -4,21 +4,29 @@
 #include <string.h>
 #include "common.h"
 
+struct string_t;
+struct str_t;
+
 // unowned string
-typedef struct {
+struct str_t {
   size_t      l;
   const char* p;
-} str_t;
 
-INLINE str_t       str_empty() { return (str_t){0, NULL}; }
-INLINE str_t       str_new(const char* b, const char* e) { return (str_t){e - b, b}; }
-INLINE str_t       str_new_len(const char* b, size_t l) { return (str_t){l, b}; }
-INLINE str_t       str_from_c(const char* c) { return (str_t){strlen(c), c}; }
-INLINE size_t      str_len(const str_t s) { return s.l; }
-INLINE bool        str_is_empty(const str_t s) { return !s.l; }
-INLINE bool        str_eq(const str_t s1, const str_t s2) { return s1.l == s2.l && !memcmp(s1.p, s2.p, s1.l); }
-INLINE bool        str_eqc(const str_t s, const char* c) { return str_eq(s, str_from_c(c)); }
-INLINE void        str_fprint(const str_t s, FILE* f) { DO(i, str_len(s)) putc(*(s.p + i), f); }
+  inline str_t() : l(0), p(nullptr) {}
+  inline str_t(nullptr_t) : l(0), p(nullptr) {}
+  inline str_t(const char* b, const char* e) : l(e - b), p(b) {}
+  inline str_t(const char* b, size_t l) : l(l), p(b) {}
+  inline str_t(const char* s) : l(strlen(s)), p(s) {}
+
+  inline size_t len() const { return l; }
+  inline bool   empty() const { return !l; }
+
+  inline string_t to_owned() const;
+
+  inline bool operator==(const str_t& o) const { return l == o.l && !memcmp(p, o.p, l); }
+};
+
+INLINE void        str_fprint(const str_t s, FILE* f) { DO(i, s.len()) putc(*(s.p + i), f); }
 INLINE void        str_print(const str_t s) { str_fprint(s, stdout); }
 INLINE char        str_i(const str_t s, size_t i) { return *(s.p + i); }
 INLINE const char* str_end(const str_t s) { return s.p + s.l; }
@@ -30,30 +38,67 @@ INLINE char*       str_toc(str_t s) {
 }
 INLINE str_t str_memmem(const str_t h, const str_t n) {
   void* p = memmem(h.p, h.l, n.p, n.l);
-  return p ? str_new((const char*)p, str_end(h)) : str_empty();
+  return p ? str_t((const char*)p, str_end(h)) : nullptr;
 }
 INLINE str_t str_memchr(const str_t h, char n) {
   const void* p = memchr(h.p, n, h.l);
-  return p ? str_new((const char*)p, str_end(h)) : str_empty();
+  return p ? str_t((const char*)p, str_end(h)) : nullptr;
 }
 INLINE str_t str_skip(const str_t s, size_t b) {
   assert(b <= s.l);
-  return (str_t){.l = s.l - b, .p = s.p + b};
+  return str_t(s.p + b, s.l - b);
 }
 INLINE str_t str_slice(const str_t s, size_t b, size_t e) {
   assert(b <= s.l && e <= s.l);
-  return str_new(s.p + b, s.p + e);
+  return str_t(s.p + b, s.p + e);
 }
 INLINE str_t str_first(const str_t s, size_t n) { return str_slice(s, 0, n); }
 INLINE str_t str_last(const str_t s, size_t n) { return str_slice(s, s.l - n, s.l); }
-INLINE bool  str_starts_with(const str_t s, const str_t p) { return s.l >= p.l && str_eq(str_first(s, p.l), p); }
-INLINE bool  str_ends_with(const str_t s, const str_t p) { return s.l >= p.l && str_eq(str_last(s, p.l), p); }
+INLINE bool  str_starts_with(const str_t s, const str_t p) { return s.l >= p.l && str_first(s, p.l) == p; }
+INLINE bool  str_ends_with(const str_t s, const str_t p) { return s.l >= p.l && str_last(s, p.l) == p; }
 
 // owned string
-typedef struct {
+struct string_t {
+ private:
+  friend struct str_t;
+  string_t(const string_t&) = delete;
+  inline string_t(size_t l, const char* p) : l(l), p(new char[l]) { memcpy((void*)this->p, p, l); }
+
+ public:
+  inline string_t() : l(0), p(nullptr) {}
+  inline string_t(string_t&& o) : l(o.l), p(o.p) {
+    o.l = 0;
+    o.p = nullptr;
+  }
+  explicit inline string_t(const char* s) : l(strlen(s)), p(new char[l]) { memcpy((void*)this->p, s, l); }
+  inline ~string_t() { delete[] p; }
+
+  inline string_t clone() const {
+    char* p = new char[l];
+    memcpy(p, this->p, l);
+    return string_t(l, p);
+  }
+  inline operator str_t() const { return str_t(p, l); }
+
+  inline string_t& operator=(string_t&& o) {
+    delete[] p;
+    l   = o.l;
+    p   = o.p;
+    o.l = 0;
+    o.p = nullptr;
+    return *this;
+  }
+
+  inline string_t& operator=(nullptr_t) {
+    delete[] p;
+    l = 0;
+    p = nullptr;
+    return *this;
+  }
+
   size_t      l;
   const char* p;
-} string_t;
+};
 
 static_assert(sizeof(string_t) == sizeof(str_t), "string_t & str_t binary layout should match");
 static_assert(offsetof(string_t, l) == offsetof(str_t, l), "string_t & str_t binary layout should match");
@@ -61,19 +106,4 @@ static_assert(offsetof(string_t, p) == offsetof(str_t, p), "string_t & str_t bin
 
 INLINE void string_free(string_t s) { free((char*)s.p); }
 
-INLINE string_t string_vnewf(const char* format, va_list args) {
-  char*  p;
-  size_t l = vasprintf(&p, format, args);
-  return (string_t){l, p};
-}
-INLINE PRINTF(1, 2) string_t string_newf(const char* format, ...) {
-  return VA_ARGS_FWD(format, string_vnewf(format, args));
-}
-INLINE str_t    to_str(string_t s) { return (str_t){s.l, s.p}; }
-INLINE string_t str_copy(const str_t s) {
-  char* p = (char*)malloc(s.l);
-  memcpy(p, s.p, s.l);
-  return (string_t){.l = s.l, .p = p};
-}
-INLINE string_t string_copy(const string_t s) { return str_copy(to_str(s)); }
-INLINE string_t string_from_c(const char* s) { return str_copy(str_from_c(s)); }
+inline string_t str_t::to_owned() const { return string_t(l, p); }

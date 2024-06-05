@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <format>
+#include <iostream>
 
 using std::max;
 
@@ -47,13 +48,17 @@ static_assert(sizeof(f64) == sizeof(i64));
     assert(false);           \
     abort();                 \
   } while (0)
-#define DBG(...)                                     \
-  ({                                                 \
-    do {                                             \
-      fprintf(stderr, "%s:%d ", __FILE__, __LINE__); \
-      fprintf(stderr, __VA_ARGS__);                  \
-      fprintf(stderr, "\n");                         \
-    } while (0);                                     \
+
+#define _DBG(x) std::print(std::cerr, " {} = {}", #x, (x));
+
+#define DBG(...)                                          \
+  ({                                                      \
+    do {                                                  \
+      std::print(std::cerr, "{}:{}", __FILE__, __LINE__); \
+      APPLY(_DBG, __VA_ARGS__)                            \
+      std::println(std::cerr);                            \
+      std::cerr.flush();                                  \
+    } while (0);                                          \
   })
 
 #define VA_ARGS_FWD(last, call)   \
@@ -64,34 +69,6 @@ static_assert(sizeof(f64) == sizeof(i64));
     va_end(args);                 \
     __result;                     \
   })
-
-#define GEN_VECTOR(name, t)                                             \
-  typedef struct {                                                      \
-    size_t s;                                                           \
-    size_t c;                                                           \
-    t*     d;                                                           \
-  } name##_t;                                                           \
-  INLINE void name##_reserve(name##_t* v, size_t c) {                   \
-    v->c = v->c > c ? v->c : c;                                         \
-    v->d = (t*)reallocarray(v->d, sizeof(t), v->c);                     \
-  }                                                                     \
-  INLINE void name##_grow(name##_t* v) { name##_reserve(v, v->c + 1); } \
-  INLINE void name##_shrink(name##_t* v) {                              \
-    free(v->d);                                                         \
-    v->d = NULL;                                                        \
-    v->s = v->c = 0;                                                    \
-  }                                                                     \
-  ALWAYS_INLINE void name##_grow_if_needed(name##_t* v) {               \
-    if (v->s == v->c) name##_grow(v);                                   \
-  }                                                                     \
-  ALWAYS_INLINE void name##_push(name##_t* v, t e) {                    \
-    name##_grow_if_needed(v);                                           \
-    v->d[v->s++] = e;                                                   \
-  }                                                                     \
-  ALWAYS_INLINE t name##_pop(name##_t* v) {                             \
-    assert(v->s > 0);                                                   \
-    return v->d[--v->s];                                                \
-  }
 
 // NARGS
 

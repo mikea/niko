@@ -8,10 +8,11 @@
 
 // repl
 
-INLINE void stack_print_repl(stack_t* stack) {
-  DO(i, stack->l) {
+INLINE void stack_print_repl(stack_t& stack) {
+  DO(i, stack.len()) {
     if (i > 0) printf(" ");
-    printf("%25pA", stack->data[i]);
+    // printf("%25pA", stack->data[i]);
+    NOT_IMPLEMENTED;
   }
 }
 
@@ -64,9 +65,9 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
   std::string_view rest_out;
   size_t           in_line_no = 0;
 
-  const str_t nkt_start       = str_from_c("```nkt\n");
-  const str_t nk_start        = str_from_c("```nk\n");
-  const str_t code_end        = str_from_c("```");
+  const str_t nkt_start       = "```nkt\n";
+  const str_t nk_start        = "```nk\n";
+  const str_t code_end        = "```";
 
   bool in_nk                  = false;
   bool in_nkt                 = false;
@@ -76,7 +77,7 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
     line_no++;
     if (read == 0) continue;
 
-    str_t l = str_from_c(line);
+    str_t l(line);
 
     if (in_nk) {
       if (str_starts_with(l, code_end)) {
@@ -163,16 +164,15 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  own(inter_t) inter = inter_new();
-  inter_set_current(inter);
+  inter_t inter;
+  inter_set_current(&inter);
 
-  if (!z) inter_load_prelude(inter);
+  if (!z) inter_load_prelude(&inter);
 
   try {
-    if (t) return test(inter, t, v, f);
-    else if (e) inter_line(inter, e);
-    else repl(inter);
-
+    if (t) return test(&inter, t, v, f);
+    else if (e) inter_line(&inter, e);
+    else repl(&inter);
     return 0;
   } catch (std::exception& e) {
     std::cerr << "ERROR: " << e.what() << "\n";

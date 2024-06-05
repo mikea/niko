@@ -1,6 +1,7 @@
 #pragma once
 
 #include <format>
+#include <print>
 #include <string_view>
 
 #include "array.h"
@@ -31,7 +32,7 @@ struct std::formatter<type_t> {
 };
 
 template <>
-struct std::formatter<array_t*> {
+struct std::formatter<array_p> {
   constexpr auto                parse(std::format_parse_context& ctx) { return ctx.begin(); }
-  std::format_context::iterator format(const array_t* a, std::format_context& ctx) const;
+  std::format_context::iterator format(const array_p& a, std::format_context& ctx) const;
 };

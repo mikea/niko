@@ -9,7 +9,6 @@ set (CMAKE_CXX_STANDARD 23)
 
 add_compile_options(
   -mavx2
-  -mmemset-strategy=vector_loop:-1:noalign
   # -Wall
   # -Werror=implicit-fallthrough -Werror=switch -Werror=return-type
   # todo
@@ -18,8 +17,8 @@ add_compile_options(
   # -fpermissive
   # -Wno-psabi 
   -fno-math-errno -fno-trapping-math -fno-omit-frame-pointer -fverbose-asm)
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-inline-small-functions -Og")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -g -Wno-unknown-pragmas")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-inline-small-functions -Og")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g -Wno-unknown-pragmas")
 add_link_options(-z execstack)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)

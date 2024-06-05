@@ -1,5 +1,5 @@
 {
-    "C_Cpp.default.compilerPath": "/etc/profiles/per-user/mike/bin/gcc",
+    "C_Cpp.default.compilerPath": "/nix/store/8kawj3bqk7633i1cmqs24g4k6qncvqmk-gcc-wrapper-14.1.0/bin/g++",
     "files.associations": {
         "*.h": "c",
         "typeinfo": "c",
@@ -55,10 +55,14 @@
         "sstream": "cpp",
         "stdexcept": "cpp",
         "streambuf": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "print": "cpp",
+        "text_encoding": "cpp"
     },
     "C_Cpp.default.cStandard": "gnu23",
     "cmake.configureOnOpen": true,
     "nixEnvSelector.nixFile": "${workspaceFolder}/shell.nix",
-    "C_Cpp.default.cppStandard": "c++23"
+    "C_Cpp.default.cppStandard": "c++23",
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "cmake.buildDirectory": "${workspaceFolder}/build/vscode"
 }

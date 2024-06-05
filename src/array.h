@@ -11,27 +11,24 @@ typedef enum { T_C8, T_I64, T_F64, T_ARR, T_FFI, T_DICT_ENTRY } type_t;
 #define T_MAX (T_DICT_ENTRY + 1)
 
 typedef char t_c8;
-#define t_c8_enum    T_C8
-#define t_c8_copy(x) (x)
+#define t_c8_enum T_C8
 
 typedef int64_t t_i64;
-#define t_i64_enum    T_I64
-#define t_i64_simd    vmax_i64
-#define t_i64_copy(x) (x)
+#define t_i64_enum T_I64
+#define t_i64_simd vmax_i64
 
 typedef double t_f64;
-#define t_f64_enum    T_F64
-#define t_f64_simd    vmax_f64
-#define t_f64_copy(x) (x)
+#define t_f64_enum T_F64
+#define t_f64_simd vmax_f64
 
 struct array_t;
-typedef struct array_t* t_arr;
-#define t_arr_enum    T_ARR
-#define t_arr_copy(x) (array_inc_ref(x))
+using array_p = rc<array_t>;
+using t_arr   = array_p;
+#define t_arr_enum T_ARR
 
 struct inter_t;
 struct stack_t;
-typedef void (*t_ffi)(inter_t* inter, stack_t* s);
+typedef void (*t_ffi)(inter_t* inter, stack_t& s);
 #define t_ffi_enum T_FFI
 
 typedef i64 t_dict_entry;
@@ -60,21 +57,32 @@ typedef enum flags { FLAG_ATOM = 1, FLAG_QUOTE = 2 } flags_t;
 inline flags operator|(flags a, flags b) { return static_cast<flags>(static_cast<int>(a) | static_cast<int>(b)); }
 inline flags operator&(flags a, flags b) { return static_cast<flags>(static_cast<int>(a) & static_cast<int>(b)); }
 
-// array: (header, dims, data)
 struct array_t {
-  type_t          t;
-  flags_t         f;
-  size_t          rc;  // ref count
-  size_t          n;
-  struct array_t* owner;
-  void* restrict p;
-};
-typedef struct array_t array_t;
+ private:
+  array_t(type_t t, flags_t f, size_t n, array_p owner, void* restrict p) : t(t), f(f), n(n), owner(owner), p(p) {}
 
-array_t* array_alloc(type_t t, size_t n, flags_t f);
-void     array_free(array_t* a);
-array_t* array_new(type_t t, size_t n, flags_t f, const void* x);
-array_t* array_new_slice(array_t* x, size_t n, const void* p);
+  friend class rc<array_t>;
+  inline void inc() { rc++; }
+  inline void dec() {
+    if (!--rc) this->~array_t();
+  }
+
+ public:
+  type_t  t;
+  flags_t f;
+  size_t  rc = 1;
+  size_t  n;
+  array_p owner;
+  void* restrict p;
+
+  ~array_t();
+
+  static array_p alloc(type_t t, size_t n, flags_t f);
+  static array_p create(type_t t, size_t n, flags_t f, const void* x);
+  static array_p create_slice(array_t* x, size_t n, const void* p);
+};
+
+using array_p = rc<array_t>;
 
 INLINE bool __array_data_simd_aligned(type_t t, size_t n) { return n >= 2 * SIMD_REG_WIDTH_BYTES / type_sizeof(t, 1); }
 INLINE bool array_data_simd_aligned(const array_t* a) { return __array_data_simd_aligned(a->t, a->n); }
@@ -83,9 +91,9 @@ INLINE const array_t* __array_assert_type(const array_t* a, type_t t) {
   assert(a->t == t);
   return a;
 }
-INLINE array_t* __array_assert_mut(const array_t* arr) {
-  assert(arr->rc <= 1 && !arr->owner);
-  return (array_t*)arr;
+INLINE array_t* __array_assert_mut(const array_t* a) {
+  assert(a->rc <= 1 && !a->owner);
+  return (array_t*)a;
 }
 INLINE array_t* __array_assert_simd_aligned(array_t* arr) {
   assert(array_data_simd_aligned(arr));
@@ -98,42 +106,18 @@ INLINE void*       array_mut_data(array_t* arr) { return (void*)array_data(__arr
 INLINE const void* array_data_i(const array_t* a, size_t i) { return array_data(a) + type_sizeof(a->t, i); }
 INLINE void* array_mut_data_i(const array_t* a, size_t i) { return (void*)array_data_i(__array_assert_mut(a), i); }
 
-INLINE void array_dec_ref(array_t* arr);
+INLINE array_p array_alloc_as(const array_t* a) { return array_t::alloc(a->t, a->n, a->f); }
+INLINE array_p array_new_copy(const array_t* a) { return array_t::create(a->t, a->n, a->f, array_data(a)); }
+INLINE array_p array_new_atom(type_t t, const void* x) { return array_t::create(t, 1, FLAG_ATOM, x); }
 
-INLINE array_t* array_inc_ref(array_t* arr) {
-  arr->rc++;
-  return arr;
-}
-INLINE void array_dec_ref(array_t* arr) {
-  assert(arr->rc > 0);
-  if (!--arr->rc) array_free(arr);
-}
-INLINE array_t* array_move(array_t* arr) {
-  assert(arr->rc > 0);
-  arr->rc--;
-  return arr;
-}
-DEF_CLEANUP(array_t, array_dec_ref);
-
-INLINE array_t* array_alloc_as(const array_t* a) { return array_alloc(a->t, a->n, a->f); }
-INLINE array_t* array_new_copy(const array_t* a) { return array_new(a->t, a->n, a->f, array_data(a)); }
-INLINE array_t* array_cow(array_t* a) {
-  if (a->rc == 1) return (array_t*)a;
-  array_t* y = array_new_copy(a);
-  array_dec_ref(a);
-  return y;
-}
-
-INLINE array_t* array_new_atom(type_t t, const void* x) { return array_new(t, 1, FLAG_ATOM, x); }
-
-#define __DEF_TYPE_HELPER(t)                                                                                \
-  INLINE array_t* array_new_atom_##t(t v) { return array_new_atom(TYPE_ENUM(t), &v); }                      \
-  INLINE array_t* array_new_##t(size_t n, const t* x) { return array_new(TYPE_ENUM(t), n, (flags_t)0, x); } \
-  INLINE const t* array_data_##t(const array_t* a) {                                                        \
-    return (const t*)array_data(__array_assert_type(a, TYPE_ENUM(t)));                                      \
-  }                                                                                                         \
-  INLINE t* array_mut_data_##t(array_t* a) {                                                                \
-    return (t*)array_mut_data((array_t*)__array_assert_type(a, TYPE_ENUM(t)));                              \
+#define __DEF_TYPE_HELPER(t)                                                                                      \
+  INLINE array_p  array_new_atom_##t(t v) { return array_new_atom(TYPE_ENUM(t), &v); }                            \
+  INLINE array_p  array_new_##t(size_t n, const t* x) { return array_t::create(TYPE_ENUM(t), n, (flags_t)0, x); } \
+  INLINE const t* array_data_##t(const array_t* a) {                                                              \
+    return (const t*)array_data(__array_assert_type(a, TYPE_ENUM(t)));                                            \
+  }                                                                                                               \
+  INLINE t* array_mut_data_##t(array_t* a) {                                                                      \
+    return (t*)array_mut_data((array_t*)__array_assert_type(a, TYPE_ENUM(t)));                                    \
   }
 
 TYPE_FOREACH(__DEF_TYPE_HELPER)
@@ -160,7 +144,7 @@ INLINE void array_for_each_atom(array_t* x, Fn callback) {
   const void* ptr    = array_data(x);
   if (x->t != T_ARR) {
     DO(i, x->n) {
-      own(array_t) y = array_new_atom(x->t, ptr + stride * i);
+      array_p y = array_new_atom(x->t, ptr + stride * i);
       callback(i, y);
     }
   } else {
