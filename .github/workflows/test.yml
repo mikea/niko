@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ "master" ]
 
+env:
+  CXX: g++-14
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -17,7 +20,7 @@ jobs:
       run: |
         sudo apt remove needrestart
         sudo apt update
-        sudo apt install --no-install-recommends --no-upgrade -y just re2c valgrind ninja-build libjemalloc-dev
+        sudo apt install --no-install-recommends --no-upgrade -y gcc-14 just re2c valgrind ninja-build libjemalloc-dev
 
     - name: Debug
       run: |
