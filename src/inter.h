@@ -91,7 +91,7 @@ struct dict_entry_t {
   array_p     v;
   entry_flags f;
 
-  inline dict_entry_t(str_t k, array_p v, entry_flags f = (entry_flags)0) : k(k.to_owned()), v(v), f(f) { }
+  inline dict_entry_t(str_t k, array_p v, entry_flags f = (entry_flags)0) : k(k.to_owned()), v(v), f(f) {}
   dict_entry_t(const dict_entry_t&) = delete;
   dict_entry_t(dict_entry_t&&)      = default;
 };

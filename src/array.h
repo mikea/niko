@@ -83,6 +83,8 @@ struct array_t {
   static array_p alloc(type_t t, size_t n, flags_t f);
   static array_p create(type_t t, size_t n, flags_t f, const void* x);
   static array_p create_slice(array_t* x, size_t n, const void* p);
+
+  inline const void* data() const { return p; }
 };
 
 using array_p = rc<array_t>;
@@ -104,23 +106,20 @@ INLINE array_t* __array_assert_simd_aligned(array_t* arr) {
 }
 
 INLINE size_t      array_data_sizeof(const array_t* a) { return type_sizeof(a->t, a->n); }
-INLINE const void* array_data(const array_t* arr) { return arr->p; }
-INLINE void*       array_mut_data(array_t* arr) { return (void*)array_data(__array_assert_mut(arr)); }
-INLINE const void* array_data_i(const array_t* a, size_t i) { return array_data(a) + type_sizeof(a->t, i); }
+INLINE void*       array_mut_data(array_t* arr) { return (void*)__array_assert_mut(arr)->data(); }
+INLINE const void* array_data_i(const array_t* a, size_t i) { return a->data() + type_sizeof(a->t, i); }
 INLINE void* array_mut_data_i(const array_t* a, size_t i) { return (void*)array_data_i(__array_assert_mut(a), i); }
 
 INLINE array_p array_alloc_as(const array_t* a) { return array_t::alloc(a->t, a->n, a->f); }
-INLINE array_p array_new_copy(const array_t* a) { return array_t::create(a->t, a->n, a->f, array_data(a)); }
+INLINE array_p array_new_copy(const array_t* a) { return array_t::create(a->t, a->n, a->f, a->data()); }
 INLINE array_p array_new_atom(type_t t, const void* x) { return array_t::create(t, 1, FLAG_ATOM, x); }
 
-#define __DEF_TYPE_HELPER(t)                                                                                      \
-  INLINE array_p  array_new_atom_##t(t v) { return array_new_atom(TYPE_ENUM(t), &v); }                            \
-  INLINE array_p  array_new_##t(size_t n, const t* x) { return array_t::create(TYPE_ENUM(t), n, (flags_t)0, x); } \
-  INLINE const t* array_data_##t(const array_t* a) {                                                              \
-    return (const t*)array_data(__array_assert_type(a, TYPE_ENUM(t)));                                            \
-  }                                                                                                               \
-  INLINE t* array_mut_data_##t(array_t* a) {                                                                      \
-    return (t*)array_mut_data((array_t*)__array_assert_type(a, TYPE_ENUM(t)));                                    \
+#define __DEF_TYPE_HELPER(t)                                                                                          \
+  INLINE array_p  array_new_atom_##t(t v) { return array_new_atom(TYPE_ENUM(t), &v); }                                \
+  INLINE array_p  array_new_##t(size_t n, const t* x) { return array_t::create(TYPE_ENUM(t), n, (flags_t)0, x); }     \
+  INLINE const t* array_data_##t(const array_t* a) { return (const t*)__array_assert_type(a, TYPE_ENUM(t))->data(); } \
+  INLINE t*       array_mut_data_##t(array_t* a) {                                                                    \
+    return (t*)array_mut_data((array_t*)__array_assert_type(a, TYPE_ENUM(t)));                                  \
   }
 
 TYPE_FOREACH(__DEF_TYPE_HELPER)
@@ -139,12 +138,12 @@ TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 
 #define _DO_ARRAY_IMPL(a, i, p, u, p_decl) __DO_ARRAY_IMPL(a, i, p, u, p_decl)
 #define DO_MUT_ARRAY(a, t, i, p)           _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), t* restrict p = (t*)array_mut_data(a))
-#define DO_ARRAY(a, t, i, p)               _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), const t* restrict p = (const t*)array_data(a))
+#define DO_ARRAY(a, t, i, p)               _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), const t* restrict p = (const t*)a->data())
 
 template <typename Fn>
-INLINE void array_for_each_atom(array_t* x, Fn callback) {
+INLINE void array_for_each_atom(array_p& x, Fn callback) {
   size_t      stride = type_sizeof(x->t, 1);
-  const void* ptr    = array_data(x);
+  const void* ptr    = x->data();
   if (x->t != T_ARR) {
     DO(i, x->n) {
       array_p y = array_new_atom(x->t, ptr + stride * i);

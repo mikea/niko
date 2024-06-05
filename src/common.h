@@ -57,14 +57,14 @@ static_assert(sizeof(f64) == sizeof(i64));
 
 #define _DBG(x) print(cerr, " {} = {}", #x, (x));
 
-#define DBG(...)                                          \
-  ({                                                      \
-    do {                                                  \
+#define DBG(...)                                \
+  ({                                            \
+    do {                                        \
       print(cerr, "{}:{}", __FILE__, __LINE__); \
-      APPLY(_DBG, __VA_ARGS__)                            \
+      APPLY(_DBG, __VA_ARGS__)                  \
       println(cerr);                            \
-      cerr.flush();                                  \
-    } while (0);                                          \
+      cerr.flush();                             \
+    } while (0);                                \
   })
 
 #define VA_ARGS_FWD(last, call)   \

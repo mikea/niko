@@ -117,11 +117,11 @@ t_ffi not_table[T_MAX];
 
 GEN_THREAD1(not, not_table);
 
-#define GEN_NOT(t)                                                                        \
-  DEF_WORD_HANDLER_1_1(not_##t) {                                                         \
-    array_p out = array_t::alloc(T_I64, x->n, x->f);                                      \
-    DO(i, x->n) { (array_mut_data_t_i64(out.get()))[i] = !((const t*)array_data(x))[i]; } \
-    return out;                                                                           \
+#define GEN_NOT(t)                                                                    \
+  DEF_WORD_HANDLER_1_1(not_##t) {                                                     \
+    array_p out = array_t::alloc(T_I64, x->n, x->f);                                  \
+    DO(i, x->n) { (array_mut_data_t_i64(out.get()))[i] = !((const t*)x->data())[i]; } \
+    return out;                                                                       \
   }
 
 GEN_NOT(t_i64);
@@ -141,11 +141,11 @@ CONSTRUCTOR void reg_not() {
 
 t_ffi neg_table[T_MAX];
 
-#define GEN_NEG(t)                                                                \
-  DEF_WORD_HANDLER_1_1(neg_##t) {                                                 \
-    array_p out = array_alloc_as(x);                                              \
-    DO(i, x->n) { ((t*)array_mut_data(out))[i] = -((const t*)array_data(x))[i]; } \
-    return out;                                                                   \
+#define GEN_NEG(t)                                                            \
+  DEF_WORD_HANDLER_1_1(neg_##t) {                                             \
+    array_p out = array_alloc_as(x);                                          \
+    DO(i, x->n) { ((t*)array_mut_data(out))[i] = -((const t*)x->data())[i]; } \
+    return out;                                                               \
   }
 
 GEN_NEG(t_i64);
@@ -163,11 +163,11 @@ CONSTRUCTOR void reg_neg() {
 
 t_ffi abs_table[T_MAX];
 
-#define GEN_ABS(t, op)                                                               \
-  DEF_WORD_HANDLER_1_1(abs_##t) {                                                    \
-    array_p out = array_alloc_as(x);                                                 \
-    DO(i, x->n) { ((t*)array_mut_data(out))[i] = op(((const t*)array_data(x))[i]); } \
-    return out;                                                                      \
+#define GEN_ABS(t, op)                                                           \
+  DEF_WORD_HANDLER_1_1(abs_##t) {                                                \
+    array_p out = array_alloc_as(x);                                             \
+    DO(i, x->n) { ((t*)array_mut_data(out))[i] = op(((const t*)x->data())[i]); } \
+    return out;                                                                  \
   }
 
 GEN_ABS(t_i64, labs);
@@ -269,7 +269,7 @@ void w_binop(stack_t& stack, type_t t, binop_kernel_t kernel) {
   POP(x);
 
   array_p out = array_t::alloc(t, max(xn, yn), x->f & y->f);
-  kernel(array_data(x), x->n, array_data(y), y->n, array_mut_data(out), out->n);
+  kernel(x->data(), x->n, y->data(), y->n, array_mut_data(out), out->n);
   PUSH(out);
 }
 
@@ -477,7 +477,7 @@ DEF_WORD("take", take) {
   size_t  n  = as_size_t(y);
   array_p z  = array_t::alloc(x->t, n, (flags_t)0);
   size_t  ys = type_sizeof(x->t, x->n);
-  DO(i, type_sizeof(x->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)array_data(x))[i % ys]; }
+  DO(i, type_sizeof(x->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)x->data())[i % ys]; }
   PUSH(z);
 }
 

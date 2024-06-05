@@ -42,7 +42,7 @@ array_p cat(stack_t& stack, size_t n) {
     a          = array_t::alloc(t, n, (flags_t)0);
     void*  ptr = array_mut_data(a);
     size_t s   = type_sizeof(t, 1);
-    DO(i, n) { memcpy(ptr + s * i, array_data(&stack.peek(n - i - 1)), s); }
+    DO(i, n) { memcpy(ptr + s * i, stack.peek(n - i - 1).data(), s); }
   } else {
     a = array_t::alloc(T_ARR, n, (flags_t)0);
     DO_MUT_ARRAY(a, t_arr, i, p) { *p = stack[n - i - 1]; }
@@ -102,7 +102,7 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
         case T_MAX* T_MAX: {
           auto& y = stack.peek(0);
           auto& x = stack.peek(1);
-          f       = ((t_ffi(*)[T_MAX])array_data(a))[x.t][y.t];
+          f       = ((t_ffi(*)[T_MAX])a->data())[x.t][y.t];
           CHECK(f, "{} {} are not supported", x.t, y.t);
           return f(inter, stack);
         }

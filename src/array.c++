@@ -38,6 +38,6 @@ array_p array_t::create_slice(array_t* x, size_t n, const void* p) {
 array_t::~array_t() {
   if (t == T_ARR) {
     DO_ARRAY(this, t_arr, i, p) { p->~array_p(); }
-  } 
+  }
   if (__array_data_simd_aligned(t, n)) free(p);
 }
