@@ -70,6 +70,14 @@ struct array_t {
     }
   }
 
+  inline array_t* assert_mut() {
+    assert(rc <= 1 && !owner);
+    return this;
+  }
+
+  static inline bool data_simd_aligned(type_t t, size_t n) { return n >= 2 * SIMD_REG_WIDTH_BYTES / type_sizeof(t, 1); }
+  inline bool        simd_aligned() const { return data_simd_aligned(t, n); }
+
  public:
   type_t  t;
   flags_t f;
@@ -88,46 +96,48 @@ struct array_t {
   inline array_p alloc_as() const { return array_t::alloc(t, n, f); }
   inline array_p copy() const { return array_t::create(t, n, f, data()); }
 
+  inline void* restrict mut_data() { return assert_mut()->p; }
   inline const void* data() const { return p; }
+
+  inline void*       mut_data_i(size_t i) { return mut_data() + type_sizeof(t, i); }
+  inline const void* data_i(size_t i) const { return data() + type_sizeof(t, i); }
+
+  inline array_t* assert_simd_aligned() {
+    assert(simd_aligned());
+    return this;
+  }
+
+  inline const array_t* assert_simd_aligned() const {
+    assert(simd_aligned());
+    return this;
+  }
+
+  inline array_t* assert_type(type_t t) {
+    assert(this->t == t);
+    return this;
+  }
+
+  inline const array_t* assert_type(type_t t) const {
+    assert(this->t == t);
+    return this;
+  }
+
+  template <typename Fn>
+  inline void for_each_atom(Fn callback) const;
 };
 
 using array_p = rc<array_t>;
 
-INLINE bool __array_data_simd_aligned(type_t t, size_t n) { return n >= 2 * SIMD_REG_WIDTH_BYTES / type_sizeof(t, 1); }
-INLINE bool array_data_simd_aligned(const array_t* a) { return __array_data_simd_aligned(a->t, a->n); }
-
-INLINE const array_t* __array_assert_type(const array_t* a, type_t t) {
-  assert(a->t == t);
-  return a;
-}
-INLINE array_t* __array_assert_mut(const array_t* a) {
-  assert(a->rc <= 1 && !a->owner);
-  return (array_t*)a;
-}
-INLINE array_t* __array_assert_simd_aligned(array_t* arr) {
-  assert(array_data_simd_aligned(arr));
-  return arr;
-}
-
-INLINE size_t      array_data_sizeof(const array_t* a) { return type_sizeof(a->t, a->n); }
-INLINE void*       array_mut_data(array_t* arr) { return (void*)__array_assert_mut(arr)->data(); }
-INLINE const void* array_data_i(const array_t* a, size_t i) { return a->data() + type_sizeof(a->t, i); }
-INLINE void* array_mut_data_i(const array_t* a, size_t i) { return (void*)array_data_i(__array_assert_mut(a), i); }
-
-#define __DEF_TYPE_HELPER(t)                                                                                          \
-  INLINE array_p  array_new_atom_##t(t v) { return array_t::atom(TYPE_ENUM(t), &v); }                                 \
-  INLINE array_p  array_new_##t(size_t n, const t* x) { return array_t::create(TYPE_ENUM(t), n, (flags_t)0, x); }     \
-  INLINE const t* array_data_##t(const array_t* a) { return (const t*)__array_assert_type(a, TYPE_ENUM(t))->data(); } \
-  INLINE t*       array_mut_data_##t(array_t* a) {                                                                    \
-    return (t*)array_mut_data((array_t*)__array_assert_type(a, TYPE_ENUM(t)));                                  \
-  }
+#define __DEF_TYPE_HELPER(t)                                                                                      \
+  INLINE array_p  array_new_atom_##t(t v) { return array_t::atom(TYPE_ENUM(t), &v); }                             \
+  INLINE array_p  array_new_##t(size_t n, const t* x) { return array_t::create(TYPE_ENUM(t), n, (flags_t)0, x); } \
+  INLINE const t* array_data_##t(const array_t* a) { return (const t*)a->assert_type(TYPE_ENUM(t))->data(); }     \
+  INLINE t*       array_mut_data_##t(array_t* a) { return (t*)a->assert_type(TYPE_ENUM(t))->mut_data(); }
 
 TYPE_FOREACH(__DEF_TYPE_HELPER)
 
-#define __DEF_SIMD_HELPER(t, v)                                         \
-  INLINE v* restrict array_mut_data_##v(array_t* a) {                   \
-    return (v* restrict)array_mut_data(__array_assert_simd_aligned(a)); \
-  }
+#define __DEF_SIMD_HELPER(t, v) \
+  INLINE v* restrict array_mut_data_##v(array_t* a) { return (v* restrict)a->assert_simd_aligned()->mut_data(); }
 
 TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 
@@ -137,19 +147,19 @@ TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
       for (size_t i = 0, u##n = a->n; i < u##n && u##b; i++, p++)
 
 #define _DO_ARRAY_IMPL(a, i, p, u, p_decl) __DO_ARRAY_IMPL(a, i, p, u, p_decl)
-#define DO_MUT_ARRAY(a, t, i, p)           _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), t* restrict p = (t*)array_mut_data(a))
+#define DO_MUT_ARRAY(a, t, i, p)           _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), t* restrict p = (t*)a->mut_data())
 #define DO_ARRAY(a, t, i, p)               _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), const t* restrict p = (const t*)a->data())
 
 template <typename Fn>
-INLINE void array_for_each_atom(array_p& x, Fn callback) {
-  size_t      stride = type_sizeof(x->t, 1);
-  const void* ptr    = x->data();
-  if (x->t != T_ARR) {
-    DO(i, x->n) {
-      array_p y = array_t::atom(x->t, ptr + stride * i);
+inline void array_t::for_each_atom(Fn callback) const {
+  size_t      stride = type_sizeof(t, 1);
+  const void* ptr    = data();
+  if (t != T_ARR) {
+    DO(i, n) {
+      array_p y = array_t::atom(t, ptr + stride * i);
       callback(i, y);
     }
   } else {
-    DO_ARRAY(x, t_arr, i, p) callback(i, *p);
+    DO_ARRAY(this, t_arr, i, p) callback(i, *p);
   }
 }

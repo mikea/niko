@@ -141,11 +141,11 @@ CONSTRUCTOR void reg_not() {
 
 t_ffi neg_table[T_MAX];
 
-#define GEN_NEG(t)                                                            \
-  DEF_WORD_HANDLER_1_1(neg_##t) {                                             \
-    array_p out = x->alloc_as();                                              \
-    DO(i, x->n) { ((t*)array_mut_data(out))[i] = -((const t*)x->data())[i]; } \
-    return out;                                                               \
+#define GEN_NEG(t)                                                        \
+  DEF_WORD_HANDLER_1_1(neg_##t) {                                         \
+    array_p out = x->alloc_as();                                          \
+    DO(i, x->n) { ((t*)out->mut_data())[i] = -((const t*)x->data())[i]; } \
+    return out;                                                           \
   }
 
 GEN_NEG(t_i64);
@@ -163,11 +163,11 @@ CONSTRUCTOR void reg_neg() {
 
 t_ffi abs_table[T_MAX];
 
-#define GEN_ABS(t, op)                                                           \
-  DEF_WORD_HANDLER_1_1(abs_##t) {                                                \
-    array_p out = x->alloc_as();                                                 \
-    DO(i, x->n) { ((t*)array_mut_data(out))[i] = op(((const t*)x->data())[i]); } \
-    return out;                                                                  \
+#define GEN_ABS(t, op)                                                       \
+  DEF_WORD_HANDLER_1_1(abs_##t) {                                            \
+    array_p out = x->alloc_as();                                             \
+    DO(i, x->n) { ((t*)out->mut_data())[i] = op(((const t*)x->data())[i]); } \
+    return out;                                                              \
   }
 
 GEN_ABS(t_i64, labs);
@@ -269,7 +269,7 @@ void w_binop(stack_t& stack, type_t t, binop_kernel_t kernel) {
   POP(x);
 
   array_p out = array_t::alloc(t, max(xn, yn), x->f & y->f);
-  kernel(x->data(), x->n, y->data(), y->n, array_mut_data(out), out->n);
+  kernel(x->data(), x->n, y->data(), y->n, out->mut_data(), out->n);
   PUSH(out);
 }
 
@@ -467,7 +467,7 @@ DEF_WORD_1_1("index", index) {
 DEF_WORD("reverse", reverse) {
   POP(x);
   array_p y = array_t::alloc(x->t, x->n, x->f);
-  DO(i, x->n) { memcpy(array_mut_data_i(y, i), array_data_i(x, x->n - i - 1), type_sizeof(x->t, 1)); }
+  DO(i, x->n) { memcpy(y->mut_data_i(i), x->data_i(x->n - i - 1), type_sizeof(x->t, 1)); }
   PUSH(y);
 }
 
@@ -477,7 +477,7 @@ DEF_WORD("take", take) {
   size_t  n  = as_size_t(y);
   array_p z  = array_t::alloc(x->t, n, (flags_t)0);
   size_t  ys = type_sizeof(x->t, x->n);
-  DO(i, type_sizeof(x->t, z->n)) { ((char*)array_mut_data(z))[i] = ((char*)x->data())[i % ys]; }
+  DO(i, type_sizeof(x->t, z->n)) { ((char*)z->mut_data())[i] = ((char*)x->data())[i % ys]; }
   PUSH(z);
 }
 
@@ -492,7 +492,7 @@ DEF_WORD("[]", cell) {
   size_t  i = WRAP(*array_data_t_i64(y), x->n);
   array_p z;
   if (x->t == T_ARR) z = *(array_data_t_arr(x) + i);
-  else z = array_t::atom(x->t, array_data_i(x, i));
+  else z = array_t::atom(x->t, x->data_i(i));
   PUSH(z);
 }
 
@@ -567,7 +567,7 @@ DEF_WORD(",fold", fold) {
     PUSH(slice);
     if (i > 0) inter_dict_entry(inter, e);
   };
-  array_for_each_atom(x, iter);
+  x->for_each_atom(iter);
 }
 
 DEF_WORD(",scan", scan) {
@@ -581,7 +581,7 @@ DEF_WORD(",scan", scan) {
     PUSH(slice);
     if (i > 0) inter_dict_entry(inter, e);
   };
-  array_for_each_atom(x, iter);
+  x->for_each_atom(iter);
   array_p result = cat(stack, x->n);
   PUSH(result);
 }
@@ -595,7 +595,7 @@ DEF_WORD(",apply", apply) {
     PUSH(slice);
     inter_dict_entry(inter, e);
   };
-  array_for_each_atom(x, iter);
+  x->for_each_atom(iter);
   array_p result = cat(stack, x->n);
   PUSH(result);
 }
@@ -611,7 +611,7 @@ DEF_WORD(",pairwise", pairwise) {
     if (i > 0) inter_dict_entry(inter, e);
     PUSH(slice);
   };
-  array_for_each_atom(x, iter);
+  x->for_each_atom(iter);
   DROP;
   array_p result = cat(stack, x->n);
   PUSH(result);
@@ -670,7 +670,7 @@ DEF_WORD_1_1("load_text", load_text) {
   size_t  n = ftell(file);
   array_p y = array_t::alloc(T_C8, n, (flags_t)0);
   rewind(file);
-  size_t read = fread(array_mut_data(y), 1, n, file);
+  size_t read = fread(y->mut_data(), 1, n, file);
   CHECK(n == read, "truncated read");
   return y;
 }

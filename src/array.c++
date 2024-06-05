@@ -2,7 +2,7 @@
 
 array_p array_t::alloc(type_t t, size_t n, flags_t f) {
   array_t* a;
-  if (__array_data_simd_aligned(t, n)) {
+  if (data_simd_aligned(t, n)) {
     auto buf = new std::byte[sizeof(array_t)];
     auto p   = aligned_alloc(SIMD_REG_WIDTH_BYTES, SIMD_ALIGN_BYTES(type_sizeof(t, n)));
     a        = new (buf) array_t(t, f, n, nullptr, p);
@@ -16,7 +16,7 @@ array_p array_t::alloc(type_t t, size_t n, flags_t f) {
 
 array_p array_t::create(type_t t, size_t n, flags_t f, const void* x) {
   auto a = array_t::alloc(t, n, f);
-  memcpy(array_mut_data(a), x, type_sizeof(t, n));
+  memcpy(a->p, x, type_sizeof(t, n));
   if (t == T_ARR) DO_MUT_ARRAY(a.get(), t_arr, i, p) p->get()->rc++;
   return a;
 }
@@ -39,5 +39,5 @@ array_t::~array_t() {
   if (t == T_ARR) {
     DO_ARRAY(this, t_arr, i, p) { p->~array_p(); }
   }
-  if (__array_data_simd_aligned(t, n)) free(p);
+  if (simd_aligned()) free(p);
 }

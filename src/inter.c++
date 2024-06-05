@@ -40,7 +40,7 @@ array_p cat(stack_t& stack, size_t n) {
   if (same_type && (f & FLAG_ATOM)) {
     assert(t != T_ARR);  // not implemented
     a          = array_t::alloc(t, n, (flags_t)0);
-    void*  ptr = array_mut_data(a);
+    void*  ptr = a->mut_data();
     size_t s   = type_sizeof(t, 1);
     DO(i, n) { memcpy(ptr + s * i, stack.peek(n - i - 1).data(), s); }
   } else {
