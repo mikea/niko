@@ -8,7 +8,8 @@
 // common utilities
 
 void global_dict_add_ffi1(const char* n, t_ffi ffi[T_MAX]) {
-  global_dict_add_new({string_t(n), array_t::create(T_FFI, T_MAX, (flags_t)0, ffi)});
+  auto a = array_t::create(T_FFI, T_MAX, (flags_t)0, ffi);
+  global_dict_add_new({string_t(n), a});
 }
 
 void global_dict_add_ffi2(const char* n, t_ffi ffi[T_MAX][T_MAX]) {

@@ -17,8 +17,9 @@ inter_t::inter_t() {
   }
 }
 
-void global_dict_add_new(const dict_entry_t& e) {
-  global_dict.push_back({e.k.clone(), e.v, e.f | entry_flags::ENTRY_SYS});
+void global_dict_add_new(dict_entry_t&& e) {
+  e.f = e.f | entry_flags::ENTRY_SYS;
+  global_dict.push_back(mv(e));
 }
 
 array_p cat(stack_t& stack, size_t n) {
@@ -267,7 +268,7 @@ DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
     prev->v = a;
     prev->f = (entry_flags)(prev->f & ~ENTRY_VAR);
   } else {
-    inter->dict.push_back({inter->comp.clone(), a});
+    inter->dict.push_back(dict_entry_t(inter->comp.clone(), a));
   }
 
   inter->comp_stack.clear();

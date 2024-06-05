@@ -1,6 +1,7 @@
 #pragma once
 
 #include "array.h"
+#include "print.h"
 #include "str.h"
 
 #include <iostream>
@@ -89,9 +90,13 @@ struct dict_entry_t {
   string_t    k;
   array_p     v;
   entry_flags f;
+
+  inline dict_entry_t(str_t k, array_p v, entry_flags f = (entry_flags)0) : k(k.to_owned()), v(v), f(f) { }
+  dict_entry_t(const dict_entry_t&) = delete;
+  dict_entry_t(dict_entry_t&&)      = default;
 };
 
-void global_dict_add_new(const dict_entry_t& e);
+void global_dict_add_new(dict_entry_t&& e);
 
 // interpreter
 

@@ -64,7 +64,10 @@ struct array_t {
   friend class rc<array_t>;
   inline void inc() { rc++; }
   inline void dec() {
-    if (!--rc) this->~array_t();
+    if (!--rc) {
+      this->~array_t();
+      delete[] (std::byte*)this;
+    }
   }
 
  public:

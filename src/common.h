@@ -12,6 +12,7 @@
 #include <iostream>
 
 using std::max;
+#define mv(x) std::move(x)
 
 typedef unsigned char byte;
 typedef int64_t       i64;

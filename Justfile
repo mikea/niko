@@ -30,8 +30,8 @@ coverage: clean
 valgrind-test FILE BUILD_TYPE="Debug": (build BUILD_TYPE) (_valgrind-test FILE)
 valgrind BUILD_TYPE="Debug": (build BUILD_TYPE) (_valgrind-test "tests/inter.md") (_valgrind-test "tests/words.md") (_valgrind-test "tests/prelude.md")  (_valgrind-test "docs/examples.md") 
 
-valgrind-expr EXPR="10000000 zeros": build 
-    valgrind --leak-check=full --track-origins=yes --show-reachable=yes  --suppressions=default.supp bin/niko -e "{{EXPR}}"
+valgrind-expr EXPR="1000 .": build 
+    valgrind --leak-check=full --track-origins=yes --show-reachable=yes  --suppressions=default.supp bin/niko -z -e "{{EXPR}}"
 
 callgrind EXPR="10000000 zeros": release
     rm -f callgrind.out.* cachegrind.out.*

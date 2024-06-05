@@ -73,12 +73,8 @@ struct string_t {
   explicit inline string_t(const char* s) : l(strlen(s)), p(new char[l]) { memcpy((void*)this->p, s, l); }
   inline ~string_t() { delete[] p; }
 
-  inline string_t clone() const {
-    char* p = new char[l];
-    memcpy(p, this->p, l);
-    return string_t(l, p);
-  }
-  inline operator str_t() const { return str_t(p, l); }
+  inline string_t clone() const { return string_t(l, p); }
+  inline          operator str_t() const { return str_t(p, l); }
 
   inline string_t& operator=(string_t&& o) {
     delete[] p;
