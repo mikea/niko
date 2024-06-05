@@ -648,8 +648,7 @@ DEF_WORD(",trace", trace) {
     inter_dict_entry(inter, e);
   }
 
-  array_p result = cat(stack, n);
-  PUSH(result);
+  PUSH(cat(stack, n));
 }
 
 #pragma endregion adverbs
