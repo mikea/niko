@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [ "master" ]
 
+env:
+  CMAKE_CXX_COMPILER: g++-14
 jobs:
   build:
     runs-on: ubuntu-24.04
