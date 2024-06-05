@@ -92,7 +92,7 @@ DEF_WORD("2over", _2over) {
 
 INLINE void thread1(inter_t* inter, stack_t& stack, const array_p x, t_ffi ffi_table[T_MAX]) {
   assert(x->t == T_ARR);
-  array_p        out = array_alloc_as(x.get());
+  array_p        out = x->alloc_as();
   array_p const* src = array_data_t_arr(x.get());
   array_p*       dst = array_mut_data_t_arr(out.get());
   DO(i, x->n) {
@@ -143,7 +143,7 @@ t_ffi neg_table[T_MAX];
 
 #define GEN_NEG(t)                                                            \
   DEF_WORD_HANDLER_1_1(neg_##t) {                                             \
-    array_p out = array_alloc_as(x);                                          \
+    array_p out = x->alloc_as();                                              \
     DO(i, x->n) { ((t*)array_mut_data(out))[i] = -((const t*)x->data())[i]; } \
     return out;                                                               \
   }
@@ -165,7 +165,7 @@ t_ffi abs_table[T_MAX];
 
 #define GEN_ABS(t, op)                                                           \
   DEF_WORD_HANDLER_1_1(abs_##t) {                                                \
-    array_p out = array_alloc_as(x);                                             \
+    array_p out = x->alloc_as();                                                 \
     DO(i, x->n) { ((t*)array_mut_data(out))[i] = op(((const t*)x->data())[i]); } \
     return out;                                                                  \
   }
@@ -492,7 +492,7 @@ DEF_WORD("[]", cell) {
   size_t  i = WRAP(*array_data_t_i64(y), x->n);
   array_p z;
   if (x->t == T_ARR) z = *(array_data_t_arr(x) + i);
-  else z = array_new_atom(x->t, array_data_i(x, i));
+  else z = array_t::atom(x->t, array_data_i(x, i));
   PUSH(z);
 }
 
