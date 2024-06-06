@@ -56,7 +56,7 @@ class stack_t {
     CHECK(!empty(), "stack underflow");
     data.pop_back();
   }
-  inline const array_t& peek(size_t i) {
+  inline const array& peek(size_t i) {
     CHECK(i < len(), "stack underflow");
     return *data[len() - i - 1];
   }
@@ -86,21 +86,21 @@ inline entry_flags operator&(entry_flags a, entry_flags b) {
   return static_cast<entry_flags>(static_cast<int>(a) & static_cast<int>(b));
 }
 
-struct dict_entry_t {
+struct dict_entry {
   string_t    k;
   array_p     v;
   entry_flags f;
 
-  inline dict_entry_t(str_t k, array_p v, entry_flags f = (entry_flags)0) : k(k.to_owned()), v(v), f(f) {}
-  dict_entry_t(const dict_entry_t&) = delete;
-  dict_entry_t(dict_entry_t&&)      = default;
+  inline dict_entry(str_t k, array_p v, entry_flags f = (entry_flags)0) : k(k.to_owned()), v(v), f(f) {}
+  dict_entry(const dict_entry&) = delete;
+  dict_entry(dict_entry&&)      = default;
 };
 
-void global_dict_add_new(dict_entry_t&& e);
+void global_dict_add_new(dict_entry&& e);
 
 // interpreter
 
-using dict_t = std::vector<dict_entry_t>;
+using dict_t = std::vector<dict_entry>;
 
 struct inter_t {
   enum { INTERPRET, COMPILE } mode = INTERPRET;

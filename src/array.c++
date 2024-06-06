@@ -1,29 +1,29 @@
 #include "array.h"
 
-array_p array_t::alloc(type_t t, size_t n, flags_t f) {
-  array_t* a;
+array_p array::alloc(type_t t, size_t n, flags_t f) {
+  array* a;
   if (data_simd_aligned(t, n)) {
-    auto buf = new std::byte[sizeof(array_t)];
+    auto buf = new std::byte[sizeof(array)];
     auto p   = aligned_alloc(SIMD_REG_WIDTH_BYTES, SIMD_ALIGN_BYTES(type_sizeof(t, n)));
-    a        = new (buf) array_t(t, f, n, nullptr, p);
+    a        = new (buf) array(t, f, n, nullptr, p);
   } else {
-    auto buf = new std::byte[sizeof(array_t) + type_sizeof(t, n)];
-    a        = new (buf) array_t(t, f, n, nullptr, buf + sizeof(array_t));
+    auto buf = new std::byte[sizeof(array) + type_sizeof(t, n)];
+    a        = new (buf) array(t, f, n, nullptr, buf + sizeof(array));
   }
   if (t == T_ARR) memset(a->p, 0, type_sizeof(t, n));
   return array_p::from_raw(a);
 }
 
-array_p array_t::create(type_t t, size_t n, flags_t f, const void* x) {
-  auto a = array_t::alloc(t, n, f);
+array_p array::create(type_t t, size_t n, flags_t f, const void* x) {
+  auto a = array::alloc(t, n, f);
   memcpy(a->p, x, type_sizeof(t, n));
   if (t == T_ARR) DO_MUT_ARRAY(a.get(), t_arr, i, p) p->get()->rc++;
   return a;
 }
 
-array_p array_t::create_slice(array_t* x, size_t n, const void* p) {
+array_p array::create_slice(array* x, size_t n, const void* p) {
   //   array_inc_ref(x);
-  //   array_t* y = (array_t*)malloc(sizeof(array_t));
+  //   array* y = (array*)malloc(sizeof(array));
 
   //   y->t       = x->t;
   //   y->f       = (flags_t)0;
@@ -35,7 +35,7 @@ array_p array_t::create_slice(array_t* x, size_t n, const void* p) {
   NOT_IMPLEMENTED;
 }
 
-array_t::~array_t() {
+array::~array() {
   if (t == T_ARR) {
     DO_ARRAY(this, t_arr, i, p) { p->~array_p(); }
   }

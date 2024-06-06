@@ -12,18 +12,18 @@ dict_t global_dict;
 inter_t::inter_t() {
   dict.reserve(global_dict.size());
   DO(i, global_dict.size()) {
-    dict_entry_t& e = global_dict[i];
+    dict_entry& e = global_dict[i];
     dict.push_back({e.k.clone(), e.v, e.f});
   }
 }
 
-void global_dict_add_new(dict_entry_t&& e) {
+void global_dict_add_new(dict_entry&& e) {
   e.f = e.f | entry_flags::ENTRY_SYS;
   global_dict.push_back(mv(e));
 }
 
 array_p cat(stack_t& stack, size_t n) {
-  if (!n) return array_t::alloc(T_I64, 0, (flags_t)0);
+  if (!n) return array::alloc(T_I64, 0, (flags_t)0);
   CHECK(n <= stack.len(), "stack underflow");
 
   bool         same_type = true;
@@ -39,12 +39,12 @@ array_p cat(stack_t& stack, size_t n) {
   array_p a;
   if (same_type && (f & FLAG_ATOM)) {
     assert(t != T_ARR);  // not implemented
-    a          = array_t::alloc(t, n, (flags_t)0);
+    a          = array::alloc(t, n, (flags_t)0);
     void*  ptr = a->mut_data();
     size_t s   = type_sizeof(t, 1);
     DO(i, n) { memcpy(ptr + s * i, stack.peek(n - i - 1).data(), s); }
   } else {
-    a = array_t::alloc(T_ARR, n, (flags_t)0);
+    a = array::alloc(T_ARR, n, (flags_t)0);
     DO_MUT_ARRAY(a, t_arr, i, p) { *p = stack[n - i - 1]; }
   }
   DO(i, n) stack.drop();
@@ -64,25 +64,25 @@ t_dict_entry inter_find_entry_idx(inter_t* inter, const str_t n) {
   return dict.size();
 }
 
-ALWAYS_INLINE dict_entry_t* inter_lookup_entry(inter_t* inter, t_dict_entry e) {
+ALWAYS_INLINE dict_entry* inter_lookup_entry(inter_t* inter, t_dict_entry e) {
   CHECK(e < inter->dict.size(), "bad dict entry");
   return &inter->dict[e];
 }
 
-dict_entry_t* inter_find_entry(inter_t* inter, str_t n) {
+dict_entry* inter_find_entry(inter_t* inter, str_t n) {
   size_t e = inter_find_entry_idx(inter, n);
   if (e == inter->dict.size()) return NULL;
   return &inter->dict[e];
 }
 
 void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
-  stack_t&      stack = inter->stack;
-  dict_entry_t* e     = inter_lookup_entry(inter, e_idx);
+  stack_t&    stack = inter->stack;
+  dict_entry* e     = inter_lookup_entry(inter, e_idx);
   if (e->f & ENTRY_CONST || e->f & ENTRY_VAR) {
     PUSH(e->v);
     return;
   }
-  array_t* a = e->v;
+  array* a = e->v;
   switch (a->t) {
     case T_FFI: {
       t_ffi f;
@@ -161,24 +161,18 @@ void inter_token(inter_t* inter, token_t t) {
     case TOK_WORD: {
       size_t e = inter_find_entry_idx(inter, t.text);
       CHECK(e < inter->dict.size(), "unknown word '{}'", t.text);
-      dict_entry_t* entry = inter_lookup_entry(inter, e);
-      if (inter->mode == inter_t::INTERPRET || (entry->f & ENTRY_IMM)) {
-        inter_dict_entry(inter, e);
-      } else {
-        array_p a = array_new_atom_t_dict_entry(e);
-        PUSH(a);
-      }
+      dict_entry* entry = inter_lookup_entry(inter, e);
+      if (inter->mode == inter_t::INTERPRET || (entry->f & ENTRY_IMM)) inter_dict_entry(inter, e);
+      else PUSH(array::atom<dict_entry_t>(e));
 
       return;
     }
     case TOK_I64: {
-      array_p a = array_new_atom_t_i64(t.val.i);
-      PUSH(a);
+      PUSH(array::atom<i64_t>(t.val.i));
       return;
     }
     case TOK_F64: {
-      array_p a = array_new_atom_t_f64(t.val.d);
-      PUSH(a);
+      PUSH(array::atom<f64_t>(t.val.d));
       return;
     }
     case TOK_STR: {
@@ -190,7 +184,7 @@ void inter_token(inter_t* inter, token_t t) {
     case TOK_QUOTE: {
       size_t e = inter_find_entry_idx(inter, t.val.s);
       CHECK(e < inter->dict.size(), "unknown word '{}'", t.text);
-      array_p a = array_new_atom_t_dict_entry(e);
+      array_p a = array::atom<dict_entry_t>(e);
       a->f      = a->f | FLAG_QUOTE;
       PUSH(a);
       return;
@@ -252,7 +246,7 @@ DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
   str_t        next = inter_next_word(inter);
   t_dict_entry prev = inter_find_entry_idx(inter, next);
   if (prev < inter->dict.size()) {
-    dict_entry_t* e = &inter->dict[prev];
+    dict_entry* e = &inter->dict[prev];
     if (e->f & (ENTRY_CONST | ENTRY_SYS)) panicf("`{}` can't be redefined", next);
   }
   inter->mode = inter_t::COMPILE;
@@ -262,13 +256,13 @@ DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
 
 DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
   CHECK(inter->mode == inter_t::COMPILE, ": can be used only in compile mode");
-  array_p       a    = array_t::create(T_ARR, inter->comp_stack.len(), (flags_t)0, inter->comp_stack.begin());
-  dict_entry_t* prev = inter_find_entry(inter, inter->comp);
+  array_p     a    = array::create(T_ARR, inter->comp_stack.len(), (flags_t)0, inter->comp_stack.begin());
+  dict_entry* prev = inter_find_entry(inter, inter->comp);
   if (prev) {
     prev->v = a;
     prev->f = (entry_flags)(prev->f & ~ENTRY_VAR);
   } else {
-    inter->dict.push_back(dict_entry_t(inter->comp.clone(), a));
+    inter->dict.push_back(dict_entry(inter->comp.clone(), a));
   }
 
   inter->comp_stack.clear();
@@ -303,7 +297,7 @@ DEF_WORD_FLAGS("literal", literal, ENTRY_IMM) {
 DEF_WORD("!", store) {
   POP(v);
   POP(x);
-  dict_entry_t* e = inter_lookup_entry(inter, as_dict_entry(v));
+  dict_entry* e = inter_lookup_entry(inter, as_dict_entry(v));
   CHECK(e->f & ENTRY_VAR || !e->f, "{} is not a valid store target", e->v);
   e->v = x;
   e->f = e->f | ENTRY_VAR;
@@ -311,7 +305,7 @@ DEF_WORD("!", store) {
 
 DEF_WORD("@", load) {
   POP(v);
-  dict_entry_t* e = inter_lookup_entry(inter, as_dict_entry(v));
+  dict_entry* e = inter_lookup_entry(inter, as_dict_entry(v));
   PUSH(e->v);
 }
 

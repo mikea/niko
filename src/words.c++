@@ -8,12 +8,12 @@
 // common utilities
 
 void global_dict_add_ffi1(const char* n, t_ffi ffi[T_MAX]) {
-  auto a = array_t::create(T_FFI, T_MAX, (flags_t)0, ffi);
+  auto a = array::create(T_FFI, T_MAX, (flags_t)0, ffi);
   global_dict_add_new({string_t(n), a});
 }
 
 void global_dict_add_ffi2(const char* n, t_ffi ffi[T_MAX][T_MAX]) {
-  global_dict_add_new({string_t(n), array_t::create(T_FFI, T_MAX * T_MAX, (flags_t)0, ffi)});
+  global_dict_add_new({string_t(n), array::create(T_FFI, T_MAX * T_MAX, (flags_t)0, ffi)});
 }
 
 #pragma region stack
@@ -119,7 +119,7 @@ GEN_THREAD1(not, not_table);
 
 #define GEN_NOT(t)                                                                    \
   DEF_WORD_HANDLER_1_1(not_##t) {                                                     \
-    array_p out = array_t::alloc(T_I64, x->n, x->f);                                  \
+    array_p out = array::alloc(T_I64, x->n, x->f);                                    \
     DO(i, x->n) { (array_mut_data_t_i64(out.get()))[i] = !((const t*)x->data())[i]; } \
     return out;                                                                       \
   }
@@ -186,7 +186,7 @@ CONSTRUCTOR void reg_abs() {
 #define GEN_SPEC1(name, xt, yt, op)                                        \
   DEF_WORD_HANDLER(name##_##xt) {                                          \
     POP(x);                                                                \
-    array_p y = array_t::alloc(TYPE_ENUM(yt), x->n, x->f);                 \
+    array_p y = array::alloc(TYPE_ENUM(yt), x->n, x->f);                   \
     DO(i, x->n) { array_mut_data_##yt(y)[i] = op(array_data_##xt(x)[i]); } \
     PUSH(y);                                                               \
     return;                                                                \
@@ -268,7 +268,7 @@ void w_binop(stack_t& stack, type_t t, binop_kernel_t kernel) {
   POP(y);
   POP(x);
 
-  array_p out = array_t::alloc(t, max(xn, yn), x->f & y->f);
+  array_p out = array::alloc(t, max(xn, yn), x->f & y->f);
   kernel(x->data(), x->n, y->data(), y->n, out->mut_data(), out->n);
   PUSH(out);
 }
@@ -455,7 +455,7 @@ CONSTRUCTOR void register_less() {
 
 DEF_WORD_1_1("index", index) {
   size_t  n = as_size_t(x);
-  array_p y = array_t::alloc(T_I64, n, (flags_t)0);
+  array_p y = array::alloc(T_I64, n, (flags_t)0);
   DO_MUT_ARRAY(y, t_i64, i, ptr) { (*ptr) = i; }
   return y;
 }
@@ -466,7 +466,7 @@ DEF_WORD_1_1("index", index) {
 
 DEF_WORD("reverse", reverse) {
   POP(x);
-  array_p y = array_t::alloc(x->t, x->n, x->f);
+  array_p y = array::alloc(x->t, x->n, x->f);
   DO(i, x->n) { memcpy(y->mut_data_i(i), x->data_i(x->n - i - 1), type_sizeof(x->t, 1)); }
   PUSH(y);
 }
@@ -475,13 +475,13 @@ DEF_WORD("take", take) {
   POP(y);
   POP(x);
   size_t  n  = as_size_t(y);
-  array_p z  = array_t::alloc(x->t, n, (flags_t)0);
+  array_p z  = array::alloc(x->t, n, (flags_t)0);
   size_t  ys = type_sizeof(x->t, x->n);
   DO(i, type_sizeof(x->t, z->n)) { ((char*)z->mut_data())[i] = ((char*)x->data())[i % ys]; }
   PUSH(z);
 }
 
-DEF_WORD_1_1("len", len) { return array_new_atom_t_i64(x->n); }
+DEF_WORD_1_1("len", len) { return array::atom<i64_t>(x->n); }
 
 DEF_WORD("[]", cell) {
   POP(y);
@@ -492,7 +492,7 @@ DEF_WORD("[]", cell) {
   size_t  i = WRAP(*array_data_t_i64(y), x->n);
   array_p z;
   if (x->t == T_ARR) z = *(array_data_t_arr(x) + i);
-  else z = array_t::atom(x->t, x->data_i(i));
+  else z = array::atom(x->t, x->data_i(i));
   PUSH(z);
 }
 
@@ -509,7 +509,7 @@ DEF_WORD("cat", cat) {
     size_t n = 0;                                                                \
     DO_ARRAY(y, t_i64, i, p) { n += *p; }                                        \
     POP(x);                                                                      \
-    array_p   z   = array_t::alloc(x->t, n, (flags_t)0);                         \
+    array_p   z   = array::alloc(x->t, n, (flags_t)0);                           \
     xt*       dst = array_mut_data_##xt(z);                                      \
     const xt* src = array_data_##xt(x);                                          \
     DO_ARRAY(y, t_i64, i, p) {                                                   \
@@ -668,7 +668,7 @@ DEF_WORD_1_1("load_text", load_text) {
   CHECK(file, "failed to open file %s", c_name);
   CHECK(!fseek(file, 0, SEEK_END), "failed to seek file");
   size_t  n = ftell(file);
-  array_p y = array_t::alloc(T_C8, n, (flags_t)0);
+  array_p y = array::alloc(T_C8, n, (flags_t)0);
   rewind(file);
   size_t read = fread(y->mut_data(), 1, n, file);
   CHECK(n == read, "truncated read");
