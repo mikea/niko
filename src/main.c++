@@ -17,7 +17,7 @@ INLINE void stack_print_repl(stack& stack) {
 
 void v() {}
 
-void repl(inter_t* inter) {
+void repl(inter_t& inter) {
   size_t input_size = 0;
   own(char) input   = NULL;
   bool prompt       = isatty(STDIN_FILENO);
@@ -27,10 +27,10 @@ void repl(inter_t* inter) {
 next:
   while (true) {
     if (prompt) {
-      if (inter->arr_level) {
-        printf("%ld> ", inter->arr_level);
+      if (inter.arr_level) {
+        printf("%ld> ", inter.arr_level);
       } else {
-        stack_print_repl(inter->stack);
+        stack_print_repl(inter.stack);
         printf(" > ");
       }
     }
@@ -38,7 +38,7 @@ next:
     if (getline(&input, &input_size, stdin) <= 0) return;
 
     try {
-      inter->line(input);
+      inter.line(input);
     } catch (std::exception& e) {
       cerr << "ERROR: " << e.what() << "\n";
       goto next;
@@ -48,7 +48,7 @@ next:
 
 // test runner
 
-int test(inter_t* inter, const char* fname, bool v, bool f) {
+int test(inter_t& inter, const char* fname, bool v, bool f) {
   int ret        = 0;
   own(FILE) file = fopen(fname, "r");
   CHECK(file, "test: can't open file: %s", fname);
@@ -80,14 +80,14 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
 
     if (in_nk) {
       if (str_starts_with(l, code_end)) {
-        inter->reset();
+        inter.reset();
         in_nk = false;
       } else {
-        inter->line(line);
+        inter.line(line);
       }
     } else if (in_nkt) {
       if (str_starts_with(l, code_end)) {
-        inter->reset();
+        inter.reset();
         if (rest_out.size()) {
           cerr << "ERROR " << fname << ":" << in_line_no << " : unmatched output: '" << rest_out << "'\n";
           ret = 1;
@@ -101,7 +101,7 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
           ret = 1;
         }
         in_line_no = line_no;
-        out        = inter->line_capture_out(line + 1);
+        out        = inter.line_capture_out(line + 1);
         rest_out   = out;
         continue;
       } else if (!rest_out.size() || memcmp(line, rest_out.begin(), read)) {
@@ -163,14 +163,12 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  inter_t inter;
-
-  if (!z) inter.load_prelude();
+  inter_t inter(!z);
 
   try {
-    if (t) return test(&inter, t, v, f);
+    if (t) return test(inter, t, v, f);
     else if (e) inter.line(e);
-    else repl(&inter);
+    else repl(inter);
     return 0;
   } catch (std::exception& e) {
     cerr << "ERROR: " << e.what() << "\n";

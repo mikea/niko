@@ -3,19 +3,19 @@
 #include "inter.h"
 #include "print.h"
 
-#define DEF_WORD_HANDLER(name) void name(inter_t* inter, stack& stack)
+#define DEF_WORD_HANDLER(name) void name(inter_t& inter, stack& stack)
 
 #define DEF_WORD_HANDLER_1_1(n)                       \
-  INLINE array_p n##_impl(inter_t* inter, array_p x); \
+  INLINE array_p n##_impl(inter_t& inter, array_p x); \
   DEF_WORD_HANDLER(n) {                               \
     POP(x);                                           \
     array_p y = n##_impl(inter, x);                   \
     PUSH(y);                                          \
   }                                                   \
-  INLINE array_p n##_impl(inter_t* inter, array_p x)
+  INLINE array_p n##_impl(inter_t& inter, array_p x)
 
 #define REGISTER_WORD_FLAGS(w, n, f)                    \
-  void             w_##n(inter_t* inter, stack& stack); \
+  void             w_##n(inter_t& inter, stack& stack); \
   CONSTRUCTOR void __register_w_##n() { global_dict_add_new({string_t(w), array::atom<ffi_t>(w_##n), f}); }
 
 #define REGISTER_WORD(w, n) REGISTER_WORD_FLAGS(w, n, (entry_flags)0)

@@ -11,13 +11,14 @@ dict_t global_dict;
 
 inter_t* global_inter;
 
-inter_t::inter_t() {
+inter_t::inter_t(bool prelude) {
   assert(!global_inter);
   dict.reserve(global_dict.size());
   DO(i, global_dict.size()) {
     dict_entry& e = global_dict[i];
     dict.push_back({e.k.clone(), e.v, e.f});
   }
+  if (prelude) load_prelude();
   global_inter = this;
 }
 
@@ -97,20 +98,20 @@ void inter_t::entry(t_dict_entry e_idx) {
         case 1: {
           f = *d;
           CHECK(f, "not implemented");
-          return f(this, stack);
+          return f(*this, stack);
         }
         case T_MAX: {
           auto& x = stack.peek(0);
           f       = d[x.t];
           CHECK(f, "{} is not supported", x.t);
-          return f(this, stack);
+          return f(*this, stack);
         }
         case T_MAX* T_MAX: {
           auto& y = stack.peek(0);
           auto& x = stack.peek(1);
           f       = ((ffi(*)[T_MAX])d)[x.t][y.t];
           CHECK(f, "{} {} are not supported", x.t, y.t);
-          return f(this, stack);
+          return f(*this, stack);
         }
         default: panicf("unexpected ffi length: {}", a->n);
       }
@@ -242,54 +243,54 @@ void inter_t::reset() {
 #pragma region immediate
 
 DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
-  CHECK(inter->mode == inter_t::INTERPRET, ": can be used only in interpret mode");
-  str_t        next = inter->next_word();
-  t_dict_entry prev = inter->find_entry_idx(next);
-  if (prev < inter->dict.size()) {
-    dict_entry* e = &inter->dict[prev];
+  CHECK(inter.mode == inter_t::INTERPRET, ": can be used only in interpret mode");
+  str_t        next = inter.next_word();
+  t_dict_entry prev = inter.find_entry_idx(next);
+  if (prev < inter.dict.size()) {
+    dict_entry* e = &inter.dict[prev];
     if (e->f & (ENTRY_CONST | ENTRY_SYS)) panicf("`{}` can't be redefined", next);
   }
-  inter->mode = inter_t::COMPILE;
-  assert(inter->comp_stack.empty());
-  inter->comp = next.to_owned();
+  inter.mode = inter_t::COMPILE;
+  assert(inter.comp_stack.empty());
+  inter.comp = next.to_owned();
 }
 
 DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
-  CHECK(inter->mode == inter_t::COMPILE, ": can be used only in compile mode");
-  array_p     a    = array::create(T_ARR, inter->comp_stack.len(), (flags_t)0, inter->comp_stack.begin());
-  dict_entry* prev = inter->find_entry(inter->comp);
+  CHECK(inter.mode == inter_t::COMPILE, ": can be used only in compile mode");
+  array_p     a    = array::create(T_ARR, inter.comp_stack.len(), (flags_t)0, inter.comp_stack.begin());
+  dict_entry* prev = inter.find_entry(inter.comp);
   if (prev) {
     prev->v = a;
     prev->f = (entry_flags)(prev->f & ~ENTRY_VAR);
   } else {
-    inter->dict.push_back(dict_entry(inter->comp.clone(), a));
+    inter.dict.push_back(dict_entry(inter.comp.clone(), a));
   }
 
-  inter->comp_stack.clear();
-  inter->mode = inter_t::INTERPRET;
-  inter->comp = nullptr;
+  inter.comp_stack.clear();
+  inter.mode = inter_t::INTERPRET;
+  inter.comp = nullptr;
 }
 
 DEF_WORD_FLAGS("const", _const, ENTRY_IMM) {
-  CHECK(inter->mode == inter_t::INTERPRET, "const can be used only in interpret mode");
-  str_t next = inter->next_word();
-  if (inter->find_entry_idx(next) < inter->dict.size()) panicf("`{}` can't be redefined", next);
+  CHECK(inter.mode == inter_t::INTERPRET, "const can be used only in interpret mode");
+  str_t next = inter.next_word();
+  if (inter.find_entry_idx(next) < inter.dict.size()) panicf("`{}` can't be redefined", next);
   POP(x);
-  inter->dict.push_back({next.to_owned(), x, ENTRY_CONST});
+  inter.dict.push_back({next.to_owned(), x, ENTRY_CONST});
 }
 
 DEF_WORD_FLAGS("var", _var, ENTRY_IMM) {
-  CHECK(inter->mode == inter_t::INTERPRET, "var can be used only in interpret mode");
-  str_t next = inter->next_word();
-  if (inter->find_entry_idx(next) < inter->dict.size()) panicf("`{}` can't be redefined", next);
+  CHECK(inter.mode == inter_t::INTERPRET, "var can be used only in interpret mode");
+  str_t next = inter.next_word();
+  if (inter.find_entry_idx(next) < inter.dict.size()) panicf("`{}` can't be redefined", next);
   POP(x);
-  inter->dict.push_back({next.to_owned(), x, ENTRY_VAR});
+  inter.dict.push_back({next.to_owned(), x, ENTRY_VAR});
 }
 
 DEF_WORD_FLAGS("literal", literal, ENTRY_IMM) {
-  CHECK(inter->mode == inter_t::COMPILE, "literal can be used only in compilation mode");
+  CHECK(inter.mode == inter_t::COMPILE, "literal can be used only in compilation mode");
   POP(x);
-  inter->comp_stack.push(x);
+  inter.comp_stack.push(x);
 }
 
 #pragma endregion immediate
@@ -297,7 +298,7 @@ DEF_WORD_FLAGS("literal", literal, ENTRY_IMM) {
 DEF_WORD("!", store) {
   POP(v);
   POP(x);
-  dict_entry* e = inter->lookup_entry(as_dict_entry(v));
+  dict_entry* e = inter.lookup_entry(as_dict_entry(v));
   CHECK(e->f & ENTRY_VAR || !e->f, "{} is not a valid store target", e->v);
   e->v = x;
   e->f = e->f | ENTRY_VAR;
@@ -305,12 +306,12 @@ DEF_WORD("!", store) {
 
 DEF_WORD("@", load) {
   POP(v);
-  dict_entry* e = inter->lookup_entry(as_dict_entry(v));
+  dict_entry* e = inter.lookup_entry(as_dict_entry(v));
   PUSH(e->v);
 }
 
 DEF_WORD("exit", exit) {
-  (*inter->out) << "bye\n";
+  (*inter.out) << "bye\n";
   exit(0);
 }
 

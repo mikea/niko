@@ -106,6 +106,7 @@ struct inter_t {
  private:
   token_t next_token() { return ::next_token(&in); }
   void    token(token_t t);
+  void    load_prelude();
 
  public:
   enum { INTERPRET, COMPILE } mode = INTERPRET;
@@ -118,10 +119,9 @@ struct inter_t {
   std::ostream* out = &cout;
   const char*   in  = nullptr;
 
-  inter_t();
+  inter_t(bool prelude = true);
   ~inter_t();
   void reset();
-  void load_prelude();
 
   void        entry(t_dict_entry e_idx);
   void        line(const char* s);

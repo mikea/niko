@@ -90,7 +90,7 @@ DEF_WORD("2over", _2over) {
 
 #pragma endregion stack
 
-INLINE void thread1(inter_t* inter, stack& stack, const array_p x, ffi ffi_table[T_MAX]) {
+INLINE void thread1(inter_t& inter, stack& stack, const array_p x, ffi ffi_table[T_MAX]) {
   assert(x->t == T_ARR);
   array_p        out = x->alloc_as();
   array_p const* src = x->data<arr_t>();
@@ -548,10 +548,10 @@ DEF_WORD("\\i", slash_info) {
   }
 }
 
-DEF_WORD("\\c", slash_clear) { inter->reset(); }
+DEF_WORD("\\c", slash_clear) { inter.reset(); }
 DEF_WORD("\\mem", slash_mem) { malloc_stats_print(NULL, NULL, NULL); }
 DEF_WORD("\\s", slash_stack) {
-  DO(i, stack.len()) { (*inter->out) << std::format("{}: {}\n", i, stack[i]); }
+  DO(i, stack.len()) { (*inter.out) << std::format("{}: {}\n", i, stack[i]); }
 }
 
 #pragma endregion slash_words
@@ -565,7 +565,7 @@ DEF_WORD(",fold", fold) {
   t_dict_entry e    = as_dict_entry(op);
   auto         iter = [&](size_t i, array_p slice) mutable {
     PUSH(slice);
-    if (i > 0) inter->entry(e);
+    if (i > 0) inter.entry(e);
   };
   x->for_each_atom(iter);
 }
@@ -579,7 +579,7 @@ DEF_WORD(",scan", scan) {
   auto iter      = [&](size_t i, array_p slice) mutable {
     if (i > 0) DUP;
     PUSH(slice);
-    if (i > 0) inter->entry(e);
+    if (i > 0) inter.entry(e);
   };
   x->for_each_atom(iter);
   array_p result = cat(stack, x->n);
@@ -593,7 +593,7 @@ DEF_WORD(",apply", apply) {
   t_dict_entry e    = as_dict_entry(op);
   auto         iter = [&](size_t i, array_p slice) mutable {
     PUSH(slice);
-    inter->entry(e);
+    inter.entry(e);
   };
   x->for_each_atom(iter);
   array_p result = cat(stack, x->n);
@@ -608,7 +608,7 @@ DEF_WORD(",pairwise", pairwise) {
 
   auto iter      = [&](size_t i, array_p slice) mutable {
     PUSH(slice);
-    if (i > 0) inter->entry(e);
+    if (i > 0) inter.entry(e);
     PUSH(slice);
   };
   x->for_each_atom(iter);
@@ -622,7 +622,7 @@ DEF_WORD(",power", power) {
   POP(n);
 
   t_dict_entry e = as_dict_entry(op);
-  DO(i, as_size_t(n)) { inter->entry(e); }
+  DO(i, as_size_t(n)) { inter.entry(e); }
 }
 
 DEF_WORD(",collect", collect) {
@@ -630,7 +630,7 @@ DEF_WORD(",collect", collect) {
   POP(x);
   t_dict_entry e = as_dict_entry(op);
   size_t       n = as_size_t(x);
-  DO(i, n) { inter->entry(e); }
+  DO(i, n) { inter.entry(e); }
   DROP;
   array_p result = cat(stack, n);
   PUSH(result);
@@ -645,7 +645,7 @@ DEF_WORD(",trace", trace) {
 
   DO(i, n) {
     if (i > 0) DUP;
-    inter->entry(e);
+    inter.entry(e);
   }
 
   PUSH(cat(stack, n));
@@ -657,7 +657,7 @@ DEF_WORD(",trace", trace) {
 
 DEF_WORD(".", dot) {
   POP(x);
-  std::println(*inter->out, "{}", x);
+  std::println(*inter.out, "{}", x);
 }
 
 DEF_WORD_1_1("load_text", load_text) {
