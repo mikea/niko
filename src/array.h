@@ -12,6 +12,10 @@ typedef enum { T_C8, T_I64, T_F64, T_ARR, T_FFI, T_DICT_ENTRY } type_t;
 
 typedef char t_c8;
 #define t_c8_enum T_C8
+struct c8_t {
+  using t                   = char;
+  static constexpr type_t e = type_t::T_C8;
+};
 
 typedef int64_t t_i64;
 #define t_i64_enum T_I64
@@ -114,6 +118,8 @@ struct array {
   static array_p     create(type_t t, size_t n, flags_t f, const void* x);
   static array_p     create_slice(array* x, size_t n, const void* p);
   static array_p     atom(type_t t, const void* x) { return create(t, 1, FLAG_ATOM, x); }
+
+  ttT static array_p create(size_t n, const T::t* x) { return create(T::e, n, (flags_t)0, x); }
   ttT static array_p atom(const T::t& x) { return create(T::e, 1, FLAG_ATOM, &x); }
 
   inline array_p alloc_as() const { return array::alloc(t, n, f); }
@@ -151,9 +157,8 @@ struct array {
 
 using array_p = rc<array>;
 
-#define __DEF_TYPE_HELPER(t)                                                                                    \
-  INLINE array_p  array_new_##t(size_t n, const t* x) { return array::create(TYPE_ENUM(t), n, (flags_t)0, x); } \
-  INLINE const t* array_data_##t(const array* a) { return (const t*)a->assert_type(TYPE_ENUM(t))->data(); }     \
+#define __DEF_TYPE_HELPER(t)                                                                                \
+  INLINE const t* array_data_##t(const array* a) { return (const t*)a->assert_type(TYPE_ENUM(t))->data(); } \
   INLINE t*       array_mut_data_##t(array* a) { return (t*)a->assert_type(TYPE_ENUM(t))->mut_data(); }
 
 TYPE_FOREACH(__DEF_TYPE_HELPER)

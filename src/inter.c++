@@ -177,7 +177,7 @@ void inter_token(inter_t* inter, token_t t) {
     }
     case TOK_STR: {
       size_t  l = t.val.s.l;
-      array_p a = array_new_t_c8(l, t.val.s.p);
+      array_p a = array::create<c8_t>(l, t.val.s.p);
       PUSH(a);
       return;
     }
