@@ -456,7 +456,7 @@ CONSTRUCTOR void register_less() {
 DEF_WORD_1_1("index", index) {
   size_t  n = as_size_t(x);
   array_p y = array::alloc(T_I64, n, (flags_t)0);
-  DO_MUT_ARRAY(y, t_i64, i, ptr) { (*ptr) = i; }
+  DO_MUT_ARRAY(y, i64_t, i, ptr) { (*ptr) = i; }
   return y;
 }
 
@@ -505,14 +505,14 @@ DEF_WORD("cat", cat) {
 #define GEN_REPEAT_SPECIALIZATION(xt)                                            \
   DEF_WORD_HANDLER(repeat_##xt) {                                                \
     POP(y);                                                                      \
-    DO_ARRAY(y, t_i64, i, p) { CHECK(*p >= 0, "non-negative values expected"); } \
+    DO_ARRAY(y, i64_t, i, p) { CHECK(*p >= 0, "non-negative values expected"); } \
     size_t n = 0;                                                                \
-    DO_ARRAY(y, t_i64, i, p) { n += *p; }                                        \
+    DO_ARRAY(y, i64_t, i, p) { n += *p; }                                        \
     POP(x);                                                                      \
     array_p z   = array::alloc(x->t, n, (flags_t)0);                             \
     auto    dst = z->mut_data<xt>();                                             \
     auto    src = x->data<xt>();                                                 \
-    DO_ARRAY(y, t_i64, i, p) {                                                   \
+    DO_ARRAY(y, i64_t, i, p) {                                                   \
       DO(j, *p) { *dst++ = *(src + i); }                                         \
     }                                                                            \
     PUSH(z);                                                                     \

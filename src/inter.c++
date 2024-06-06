@@ -45,7 +45,7 @@ array_p cat(stack_t& stack, size_t n) {
     DO(i, n) { memcpy(ptr + s * i, stack.peek(n - i - 1).data(), s); }
   } else {
     a = array::alloc(T_ARR, n, (flags_t)0);
-    DO_MUT_ARRAY(a, t_arr, i, p) { *p = stack[n - i - 1]; }
+    DO_MUT_ARRAY(a, arr_t, i, p) { *p = stack[n - i - 1]; }
   }
   DO(i, n) stack.drop();
   return a;
@@ -111,7 +111,7 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
       }
     }
     case T_ARR: {
-      DO_ARRAY(a, t_arr, i, p) {
+      DO_ARRAY(a, arr_t, i, p) {
         switch ((*p)->t) {
           case T_C8:
           case T_I64:

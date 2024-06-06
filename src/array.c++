@@ -17,7 +17,7 @@ array_p array::alloc(type_t t, size_t n, flags_t f) {
 array_p array::create(type_t t, size_t n, flags_t f, const void* x) {
   auto a = array::alloc(t, n, f);
   memcpy(a->p, x, type_sizeof(t, n));
-  if (t == T_ARR) DO_MUT_ARRAY(a.get(), t_arr, i, p) p->get()->rc++;
+  if (t == T_ARR) DO_MUT_ARRAY(a.get(), arr_t, i, p) p->get()->rc++;
   return a;
 }
 
@@ -37,7 +37,7 @@ array_p array::create_slice(array* x, size_t n, const void* p) {
 
 array::~array() {
   if (t == T_ARR) {
-    DO_ARRAY(this, t_arr, i, p) { p->~array_p(); }
+    DO_ARRAY(this, arr_t, i, p) { p->~array_p(); }
   }
   if (simd_aligned()) free(p);
 }

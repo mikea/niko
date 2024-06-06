@@ -147,8 +147,8 @@ TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
       for (size_t i = 0, u##n = a->n; i < u##n && u##b; i++, p++)
 
 #define _DO_ARRAY_IMPL(a, i, p, u, p_decl) __DO_ARRAY_IMPL(a, i, p, u, p_decl)
-#define DO_MUT_ARRAY(a, t, i, p)           _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), t* restrict p = (t*)a->mut_data())
-#define DO_ARRAY(a, t, i, p)               _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), const t* restrict p = (const t*)a->data())
+#define DO_MUT_ARRAY(a, t, i, p)           _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), auto p = a->mut_data<t>())
+#define DO_ARRAY(a, t, i, p)               _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), auto p = a->data<t>())
 
 template <typename Fn>
 inline void array::for_each_atom(Fn callback) const {
@@ -160,6 +160,6 @@ inline void array::for_each_atom(Fn callback) const {
       callback(i, y);
     }
   } else {
-    DO_ARRAY(this, t_arr, i, p) callback(i, *p);
+    DO_ARRAY(this, arr_t, i, p) callback(i, *p);
   }
 }
