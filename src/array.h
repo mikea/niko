@@ -41,9 +41,9 @@ struct ffi_t {
   static constexpr type_t e = type_t::T_FFI;
 };
 
-typedef i64 t_dict_entry;
+typedef u64 t_dict_entry;
 struct dict_entry_t {
-  using t                   = i64;
+  using t                   = u64;
   static constexpr type_t e = type_t::T_DICT_ENTRY;
 };
 

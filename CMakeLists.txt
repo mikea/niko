@@ -9,8 +9,8 @@ set (CMAKE_CXX_STANDARD 23)
 
 add_compile_options(
   -mavx2
-  # -Wall
-  # -Werror=implicit-fallthrough -Werror=switch -Werror=return-type
+  -Wall
+  -Werror=implicit-fallthrough -Werror=switch -Werror=return-type
   # todo
   -Wno-narrowing 
   -Wno-pointer-arith
