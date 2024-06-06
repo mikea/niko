@@ -16,7 +16,7 @@ inter_t::inter_t(bool prelude) {
   dict.reserve(global_dict.size());
   DO(i, global_dict.size()) {
     dict_entry& e = global_dict[i];
-    dict.push_back({e.k.clone(), e.v, e.f});
+    dict.push_back({e.k, e.v, e.f});
   }
   if (prelude) load_prelude();
   global_inter = this;
@@ -63,7 +63,7 @@ array_p cat(stack& stack, size_t n) {
 
 // interpreter
 
-t_dict_entry inter_t::find_entry_idx(const str_t n) {
+t_dict_entry inter_t::find_entry_idx(const str n) {
   DO(i, dict.size()) {
     size_t j = dict.size() - i - 1;
     if (n == dict[j].k) return j;
@@ -76,7 +76,7 @@ dict_entry* inter_t::lookup_entry(t_dict_entry e) {
   return &dict[e];
 }
 
-dict_entry* inter_t::find_entry(str_t n) {
+dict_entry* inter_t::find_entry(str n) {
   size_t e = find_entry_idx(n);
   if (e == dict.size()) return NULL;
   return &dict[e];
@@ -146,7 +146,7 @@ void inter_t::entry(dict_entry* e) {
   }
 }
 
-str_t inter_t::next_word() {
+str inter_t::next_word() {
   token_t next = next_token();
   CHECK(next.tok == TOK_WORD, "word expected");
   return next.text;
@@ -188,9 +188,7 @@ void inter_t::token(token_t t) {
       return;
     }
     case TOK_STR: {
-      size_t  l = t.val.s.l;
-      array_p a = array::create<c8_t>(l, t.val.s.p);
-      PUSH(a);
+      PUSH(array::create<c8_t>(t.val.s.size(), t.val.s.begin()));
       return;
     }
     case TOK_QUOTE: {
@@ -220,7 +218,7 @@ void inter_t::line(const char* s) {
   }
 }
 
-std::string inter_t::line_capture_out(const char* l) {
+string inter_t::line_capture_out(const char* l) {
   std::ostringstream buf;
   out = &buf;
   defer { out = &cout; };
@@ -231,7 +229,7 @@ std::string inter_t::line_capture_out(const char* l) {
 }
 
 void inter_t::load_prelude() {
-  std::string prelude((char*)__prelude_nk, __prelude_nk_len);
+  string prelude((char*)__prelude_nk, __prelude_nk_len);
   line(prelude.c_str());
 }
 
@@ -248,7 +246,7 @@ void inter_t::reset() {
 
 DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
   CHECK(inter.mode == inter_t::INTERPRET, ": can be used only in interpret mode");
-  str_t        next = inter.next_word();
+  str          next = inter.next_word();
   t_dict_entry prev = inter.find_entry_idx(next);
   if (prev < inter.dict.size()) {
     dict_entry* e = &inter.dict[prev];
@@ -256,7 +254,7 @@ DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
   }
   inter.mode = inter_t::COMPILE;
   assert(inter.comp_stack.empty());
-  inter.comp = next.to_owned();
+  inter.comp = next;
 }
 
 DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
@@ -267,28 +265,28 @@ DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
     prev->v = a;
     prev->f = (entry_flags)(prev->f & ~ENTRY_VAR);
   } else {
-    inter.dict.push_back(dict_entry(inter.comp.clone(), a));
+    inter.dict.push_back(dict_entry(inter.comp, a));
   }
 
   inter.comp_stack.clear();
   inter.mode = inter_t::INTERPRET;
-  inter.comp = nullptr;
+  inter.comp.clear();
 }
 
 DEF_WORD_FLAGS("const", _const, ENTRY_IMM) {
   CHECK(inter.mode == inter_t::INTERPRET, "const can be used only in interpret mode");
-  str_t next = inter.next_word();
+  str next = inter.next_word();
   if (inter.find_entry_idx(next) < inter.dict.size()) panicf("`{}` can't be redefined", next);
   POP(x);
-  inter.dict.push_back({next.to_owned(), x, ENTRY_CONST});
+  inter.dict.push_back({next, x, ENTRY_CONST});
 }
 
 DEF_WORD_FLAGS("var", _var, ENTRY_IMM) {
   CHECK(inter.mode == inter_t::INTERPRET, "var can be used only in interpret mode");
-  str_t next = inter.next_word();
+  str next = inter.next_word();
   if (inter.find_entry_idx(next) < inter.dict.size()) panicf("`{}` can't be redefined", next);
   POP(x);
-  inter.dict.push_back({next.to_owned(), x, ENTRY_VAR});
+  inter.dict.push_back({next, x, ENTRY_VAR});
 }
 
 DEF_WORD_FLAGS("literal", literal, ENTRY_IMM) {

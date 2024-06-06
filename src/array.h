@@ -58,8 +58,8 @@ struct dict_entry_t {
 static size_t type_sizeof_table[T_MAX] = TYPE_ROW_FOREACH(__TYPE_SIZEOF);
 INLINE size_t type_sizeof(type_t t, size_t n) { return n * type_sizeof_table[t]; }
 
-static const std::string_view type_name_table[T_MAX] = TYPE_ROW("c8", "i64", "f64", "arr", "ffi", "dict");
-INLINE const std::string_view type_name(type_t t) { return type_name_table[t]; }
+static const str type_name_table[T_MAX] = TYPE_ROW("c8", "i64", "f64", "arr", "ffi", "dict");
+INLINE const str type_name(type_t t) { return type_name_table[t]; }
 
 typedef enum flags { FLAG_ATOM = 1, FLAG_QUOTE = 2 } flags_t;
 inline flags operator|(flags a, flags b) { return static_cast<flags>(static_cast<int>(a) | static_cast<int>(b)); }

@@ -18,7 +18,7 @@ INLINE void stack_print_repl(stack& stack) {
 void v() {}
 
 void repl(inter_t& inter) {
-  std::string input;
+  string input;
   bool        prompt = isatty(STDIN_FILENO);
 
   if (prompt) printf(VERSION_STRING "\n");
@@ -51,11 +51,11 @@ int test(inter_t& inter, const char* fname, bool v, bool f) {
   int           ret = 0;
   std::ifstream file(fname);
 
-  std::string line;
+  string line;
   size_t      line_no = 0;
 
-  std::string      out;
-  std::string_view rest_out;
+  string      out;
+  str rest_out;
   size_t           in_line_no = 0;
 
   bool in_nk                  = false;

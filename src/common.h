@@ -17,6 +17,9 @@ using std::cout;
 using std::max;
 using std::print;
 using std::println;
+using std::string;
+using str = std::string_view;
+
 #define mv(x) std::move(x)
 #define rcast reinterpret_cast
 

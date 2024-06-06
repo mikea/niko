@@ -2,7 +2,6 @@
 
 #include "array.h"
 #include "print.h"
-#include "str.h"
 
 #include <iostream>
 
@@ -21,11 +20,11 @@ enum token_type {
 
 struct token_t {
   token_type tok;
-  str_t      text;
+  str      text;
   union {
     int64_t i;
     double  d;
-    str_t   s;
+    str   s;
   } val;
 };
 
@@ -87,11 +86,11 @@ inline entry_flags operator&(entry_flags a, entry_flags b) {
 }
 
 struct dict_entry {
-  string_t    k;
+  string    k;
   array_p     v;
   entry_flags f;
 
-  inline dict_entry(str_t k, array_p v, entry_flags f = (entry_flags)0) : k(k.to_owned()), v(v), f(f) {}
+  inline dict_entry(str k, array_p v, entry_flags f = (entry_flags)0) : k(k), v(v), f(f) {}
   dict_entry(const dict_entry&) = delete;
   dict_entry(dict_entry&&)      = default;
 };
@@ -113,7 +112,7 @@ struct inter_t {
   dict_t        dict;
   class stack   stack;
   class stack   comp_stack;
-  string_t      comp;
+  string      comp;
   size_t        arr_level = 0;
   size_t        arr_marks[256]{};
   std::ostream* out = &cout;
@@ -127,11 +126,11 @@ struct inter_t {
   void        entry(dict_entry* e);
   void        entry(array_p w);
   void        line(const char* s);
-  std::string line_capture_out(const char* line);
+  string line_capture_out(const char* line);
 
-  str_t        next_word();
-  dict_entry*  find_entry(str_t n);
-  t_dict_entry find_entry_idx(const str_t n);
+  str        next_word();
+  dict_entry*  find_entry(str n);
+  t_dict_entry find_entry_idx(const str n);
   dict_entry*  lookup_entry(t_dict_entry e);
 
   static inter_t& current();

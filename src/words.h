@@ -16,7 +16,7 @@
 
 #define REGISTER_WORD_FLAGS(w, n, f)                    \
   void             w_##n(inter_t& inter, stack& stack); \
-  CONSTRUCTOR void __register_w_##n() { global_dict_add_new({string_t(w), array::atom<ffi_t>(w_##n), f}); }
+  CONSTRUCTOR void __register_w_##n() { global_dict_add_new({string(w), array::atom<ffi_t>(w_##n), f}); }
 
 #define REGISTER_WORD(w, n) REGISTER_WORD_FLAGS(w, n, (entry_flags)0)
 

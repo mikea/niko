@@ -30,8 +30,8 @@ ttT T format_atom(type_t t, flags_t f, const void* ptr, T out) {
 
 std::format_context::iterator std::formatter<array_p>::format(const array_p& a, std::format_context& ctx) const {
   if (a->f & flags_t::FLAG_ATOM) return format_atom(a->t, a->f, a->data(), ctx.out());
-  if (a->t == type_t::T_C8) return format_to(ctx.out(), "\"{}\"", std::string_view(a->data<c8_t>(), a->n));
-  std::string out    = "[ ";
+  if (a->t == type_t::T_C8) return format_to(ctx.out(), "\"{}\"", str(a->data<c8_t>(), a->n));
+  string out    = "[ ";
   size_t      stride = type_sizeof(a->t, 1);
   const void* ptr    = a->data();
   DO(i, a->n) {

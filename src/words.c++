@@ -11,11 +11,11 @@
 
 void global_dict_add_ffi1(const char* n, ffi ffi[T_MAX]) {
   auto a = array::create(T_FFI, T_MAX, (flags_t)0, ffi);
-  global_dict_add_new({string_t(n), a});
+  global_dict_add_new({string(n), a});
 }
 
 void global_dict_add_ffi2(const char* n, ffi ffi[T_MAX][T_MAX]) {
-  global_dict_add_new({string_t(n), array::create(T_FFI, T_MAX * T_MAX, (flags_t)0, ffi)});
+  global_dict_add_new({string(n), array::create(T_FFI, T_MAX * T_MAX, (flags_t)0, ffi)});
 }
 
 #pragma region stack
@@ -663,7 +663,7 @@ DEF_WORD(".", dot) {
 
 DEF_WORD_1_1("load_text", load_text) {
   CHECK(x->t == T_C8, "c8 array expected");
-  auto               name = std::string(x->data<c8_t>(), x->n);
+  auto               name = string(x->data<c8_t>(), x->n);
   std::ifstream      file(name);
   std::ostringstream buf;
   buf << file.rdbuf();
