@@ -35,12 +35,12 @@
 INLINE size_t as_size_t(const array* a) {
   CHECK(a->n == 1, "expected single value");
   CHECK(a->t == T_I64, "expected int, got {} instead", a->t);
-  i64 i = *array_data_t_i64(a);
+  i64 i = *a->data<i64_t>();
   CHECK(i >= 0, "expected non-negative value");
   return i;
 }
 
 INLINE t_dict_entry as_dict_entry(const array* x) {
   CHECK(x->t == T_DICT_ENTRY, "dict entry expected");
-  return *array_data_t_dict_entry(x);
+  return *x->data<dict_entry_t>();
 }

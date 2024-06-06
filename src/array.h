@@ -39,7 +39,7 @@ struct array;
 using array_p = rc<array>;
 using t_arr   = array_p;
 #define t_arr_enum T_ARR
-struct array_t {
+struct arr_t {
   using t                   = array_p;
   static constexpr type_t e = type_t::T_ARR;
 };
@@ -114,22 +114,25 @@ struct array {
 
   ~array();
 
-  static array_p     alloc(type_t t, size_t n, flags_t f);
-  static array_p     create(type_t t, size_t n, flags_t f, const void* x);
-  static array_p     create_slice(array* x, size_t n, const void* p);
-  static array_p     atom(type_t t, const void* x) { return create(t, 1, FLAG_ATOM, x); }
+  static array_p alloc(type_t t, size_t n, flags_t f);
+  static array_p create(type_t t, size_t n, flags_t f, const void* x);
+  static array_p create_slice(array* x, size_t n, const void* p);
+  static array_p atom(type_t t, const void* x) { return create(t, 1, FLAG_ATOM, x); }
 
-  ttT static array_p create(size_t n, const T::t* x) { return create(T::e, n, (flags_t)0, x); }
-  ttT static array_p atom(const T::t& x) { return create(T::e, 1, FLAG_ATOM, &x); }
+  ttT static inline array_p alloc(size_t n, flags_t f) { return alloc(T::e, n, f); }
+  ttT static inline array_p create(size_t n, const T::t* x) { return create(T::e, n, (flags_t)0, x); }
+  ttT static inline array_p atom(const T::t& x) { return create(T::e, 1, FLAG_ATOM, &x); }
 
   inline array_p alloc_as() const { return array::alloc(t, n, f); }
   inline array_p copy() const { return array::create(t, n, f, data()); }
 
-  inline void* restrict mut_data() { return assert_mut()->p; }
   inline const void* data() const { return p; }
-
-  inline void*       mut_data_i(size_t i) { return mut_data() + type_sizeof(t, i); }
+  inline void* restrict mut_data() { return assert_mut()->p; }
   inline const void* data_i(size_t i) const { return data() + type_sizeof(t, i); }
+  inline void*       mut_data_i(size_t i) { return mut_data() + type_sizeof(t, i); }
+
+  ttT inline const T::t* data() const { return rcast<const T::t*>(assert_type(T::e)->data()); }
+  ttT inline T::t* restrict mut_data() { return rcast<T::t* restrict>(assert_type(T::e)->mut_data()); }
 
   inline array* assert_simd_aligned() {
     assert(simd_aligned());
@@ -156,12 +159,6 @@ struct array {
 };
 
 using array_p = rc<array>;
-
-#define __DEF_TYPE_HELPER(t)                                                                                \
-  INLINE const t* array_data_##t(const array* a) { return (const t*)a->assert_type(TYPE_ENUM(t))->data(); } \
-  INLINE t*       array_mut_data_##t(array* a) { return (t*)a->assert_type(TYPE_ENUM(t))->mut_data(); }
-
-TYPE_FOREACH(__DEF_TYPE_HELPER)
 
 #define __DEF_SIMD_HELPER(t, v) \
   INLINE v* restrict array_mut_data_##v(array* a) { return (v* restrict)a->assert_simd_aligned()->mut_data(); }

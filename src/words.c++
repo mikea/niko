@@ -93,8 +93,8 @@ DEF_WORD("2over", _2over) {
 INLINE void thread1(inter_t* inter, stack_t& stack, const array_p x, t_ffi ffi_table[T_MAX]) {
   assert(x->t == T_ARR);
   array_p        out = x->alloc_as();
-  array_p const* src = array_data_t_arr(x.get());
-  array_p*       dst = array_mut_data_t_arr(out.get());
+  array_p const* src = x->data<arr_t>();
+  array_p*       dst = out->mut_data<arr_t>();
   DO(i, x->n) {
     PUSH(src[i]);
     t_ffi ffi = ffi_table[src[i]->t];
@@ -106,7 +106,7 @@ INLINE void thread1(inter_t* inter, stack_t& stack, const array_p x, t_ffi ffi_t
 }
 
 #define GEN_THREAD1(name, ffi)            \
-  DEF_WORD_HANDLER(name##_t_arr) {        \
+  DEF_WORD_HANDLER(name##_arr_t) {        \
     POP(x);                               \
     return thread1(inter, stack, x, ffi); \
   }
@@ -117,20 +117,20 @@ t_ffi not_table[T_MAX];
 
 GEN_THREAD1(not, not_table);
 
-#define GEN_NOT(t)                                                                    \
-  DEF_WORD_HANDLER_1_1(not_##t) {                                                     \
-    array_p out = array::alloc(T_I64, x->n, x->f);                                    \
-    DO(i, x->n) { (array_mut_data_t_i64(out.get()))[i] = !((const t*)x->data())[i]; } \
-    return out;                                                                       \
+#define GEN_NOT(t)                                                  \
+  DEF_WORD_HANDLER_1_1(not_##t) {                                   \
+    array_p out = array::alloc(T_I64, x->n, x->f);                  \
+    DO(i, x->n) { out->mut_data<i64_t>()[i] = !(x->data<t>()[i]); } \
+    return out;                                                     \
   }
 
-GEN_NOT(t_i64);
-GEN_NOT(t_f64);
+GEN_NOT(i64_t);
+GEN_NOT(f64_t);
 
 CONSTRUCTOR void reg_not() {
-  not_table[T_I64] = not_t_i64;
-  not_table[T_F64] = not_t_f64;
-  not_table[T_ARR] = not_t_arr;
+  not_table[T_I64] = not_i64_t;
+  not_table[T_F64] = not_f64_t;
+  not_table[T_ARR] = not_arr_t;
   global_dict_add_ffi1("not", not_table);
 }
 #pragma endregion bool
@@ -141,21 +141,21 @@ CONSTRUCTOR void reg_not() {
 
 t_ffi neg_table[T_MAX];
 
-#define GEN_NEG(t)                                                        \
-  DEF_WORD_HANDLER_1_1(neg_##t) {                                         \
-    array_p out = x->alloc_as();                                          \
-    DO(i, x->n) { ((t*)out->mut_data())[i] = -((const t*)x->data())[i]; } \
-    return out;                                                           \
+#define GEN_NEG(t)                                            \
+  DEF_WORD_HANDLER_1_1(neg_##t) {                             \
+    array_p out = x->alloc_as();                              \
+    DO(i, x->n) { out->mut_data<t>()[i] = -x->data<t>()[i]; } \
+    return out;                                               \
   }
 
-GEN_NEG(t_i64);
-GEN_NEG(t_f64);
+GEN_NEG(i64_t);
+GEN_NEG(f64_t);
 GEN_THREAD1(neg, neg_table)
 
 CONSTRUCTOR void reg_neg() {
-  neg_table[T_I64] = neg_t_i64;
-  neg_table[T_F64] = neg_t_f64;
-  neg_table[T_ARR] = neg_t_arr;
+  neg_table[T_I64] = neg_i64_t;
+  neg_table[T_F64] = neg_f64_t;
+  neg_table[T_ARR] = neg_arr_t;
   global_dict_add_ffi1("neg", neg_table);
 }
 
@@ -163,46 +163,46 @@ CONSTRUCTOR void reg_neg() {
 
 t_ffi abs_table[T_MAX];
 
-#define GEN_ABS(t, op)                                                       \
-  DEF_WORD_HANDLER_1_1(abs_##t) {                                            \
-    array_p out = x->alloc_as();                                             \
-    DO(i, x->n) { ((t*)out->mut_data())[i] = op(((const t*)x->data())[i]); } \
-    return out;                                                              \
+#define GEN_ABS(t, op)                                           \
+  DEF_WORD_HANDLER_1_1(abs_##t) {                                \
+    array_p out = x->alloc_as();                                 \
+    DO(i, x->n) { out->mut_data<t>()[i] = op(x->data<t>()[i]); } \
+    return out;                                                  \
   }
 
-GEN_ABS(t_i64, labs);
-GEN_ABS(t_f64, fabs);
+GEN_ABS(i64_t, labs);
+GEN_ABS(f64_t, fabs);
 GEN_THREAD1(abs, abs_table)
 
 CONSTRUCTOR void reg_abs() {
-  abs_table[T_I64] = abs_t_i64;
-  abs_table[T_F64] = abs_t_f64;
-  abs_table[T_ARR] = abs_t_arr;
+  abs_table[T_I64] = abs_i64_t;
+  abs_table[T_F64] = abs_f64_t;
+  abs_table[T_ARR] = abs_arr_t;
   global_dict_add_ffi1("abs", abs_table);
 }
 
 // sqrt, sin, et. al.
 
-#define GEN_SPEC1(name, xt, yt, op)                                        \
-  DEF_WORD_HANDLER(name##_##xt) {                                          \
-    POP(x);                                                                \
-    array_p y = array::alloc(TYPE_ENUM(yt), x->n, x->f);                   \
-    DO(i, x->n) { array_mut_data_##yt(y)[i] = op(array_data_##xt(x)[i]); } \
-    PUSH(y);                                                               \
-    return;                                                                \
+#define GEN_SPEC1(name, xt, yt, op)                              \
+  DEF_WORD_HANDLER(name##_##xt) {                                \
+    POP(x);                                                      \
+    array_p y = array::alloc<yt>(x->n, x->f);                    \
+    DO(i, x->n) { y->mut_data<yt>()[i] = op(x->data<xt>()[i]); } \
+    PUSH(y);                                                     \
+    return;                                                      \
   }
 
-#define GEN_FLOAT1_SPEC(name, t, op) GEN_SPEC1(name, t, t_f64, op)
+#define GEN_FLOAT1_SPEC(name, t, op) GEN_SPEC1(name, t, f64_t, op)
 
 #define GEN_FLOAT(name, op)                    \
   t_ffi name##_table[T_MAX];                   \
-  GEN_FLOAT1_SPEC(name, t_f64, op)             \
-  GEN_FLOAT1_SPEC(name, t_i64, op)             \
+  GEN_FLOAT1_SPEC(name, f64_t, op)             \
+  GEN_FLOAT1_SPEC(name, i64_t, op)             \
   GEN_THREAD1(name, name##_table)              \
   CONSTRUCTOR void reg_##name() {              \
-    name##_table[T_I64] = name##_t_i64;        \
-    name##_table[T_F64] = name##_t_f64;        \
-    name##_table[T_ARR] = name##_t_arr;        \
+    name##_table[T_I64] = name##_i64_t;        \
+    name##_table[T_F64] = name##_f64_t;        \
+    name##_table[T_ARR] = name##_arr_t;        \
     global_dict_add_ffi1(#name, name##_table); \
   }
 
@@ -234,13 +234,13 @@ GEN_FLOAT(tanh, tanh)
 
 #define GEN_ROUND(name, op)                    \
   t_ffi name##_table[T_MAX];                   \
-  GEN_SPEC1(name, t_f64, t_i64, op)            \
-  GEN_SPEC1(name, t_i64, t_i64, op)            \
+  GEN_SPEC1(name, f64_t, i64_t, op)            \
+  GEN_SPEC1(name, i64_t, i64_t, op)            \
   GEN_THREAD1(name, name##_table)              \
   CONSTRUCTOR void reg_##name() {              \
-    name##_table[T_I64] = name##_t_i64;        \
-    name##_table[T_F64] = name##_t_f64;        \
-    name##_table[T_ARR] = name##_t_arr;        \
+    name##_table[T_I64] = name##_i64_t;        \
+    name##_table[T_F64] = name##_f64_t;        \
+    name##_table[T_ARR] = name##_arr_t;        \
     global_dict_add_ffi1(#name, name##_table); \
   }
 
@@ -489,9 +489,9 @@ DEF_WORD("[]", cell) {
   CHECK(y->t == T_I64, "i64 array expected");
   POP(x);
 
-  size_t  i = WRAP(*array_data_t_i64(y), x->n);
+  size_t  i = WRAP(*y->data<i64_t>(), x->n);
   array_p z;
-  if (x->t == T_ARR) z = *(array_data_t_arr(x) + i);
+  if (x->t == T_ARR) z = *(x->data<arr_t>() + i);
   else z = array::atom(x->t, x->data_i(i));
   PUSH(z);
 }
@@ -509,27 +509,27 @@ DEF_WORD("cat", cat) {
     size_t n = 0;                                                                \
     DO_ARRAY(y, t_i64, i, p) { n += *p; }                                        \
     POP(x);                                                                      \
-    array_p   z   = array::alloc(x->t, n, (flags_t)0);                           \
-    xt*       dst = array_mut_data_##xt(z);                                      \
-    const xt* src = array_data_##xt(x);                                          \
+    array_p z   = array::alloc(x->t, n, (flags_t)0);                             \
+    auto    dst = z->mut_data<xt>();                                             \
+    auto    src = x->data<xt>();                                                 \
     DO_ARRAY(y, t_i64, i, p) {                                                   \
       DO(j, *p) { *dst++ = *(src + i); }                                         \
     }                                                                            \
     PUSH(z);                                                                     \
   }
 
-GEN_REPEAT_SPECIALIZATION(t_c8);
-GEN_REPEAT_SPECIALIZATION(t_i64);
-GEN_REPEAT_SPECIALIZATION(t_f64);
-GEN_REPEAT_SPECIALIZATION(t_arr);
+GEN_REPEAT_SPECIALIZATION(c8_t);
+GEN_REPEAT_SPECIALIZATION(i64_t);
+GEN_REPEAT_SPECIALIZATION(f64_t);
+GEN_REPEAT_SPECIALIZATION(arr_t);
 
 t_ffi repeat_table[T_MAX][T_MAX] = {};
 
 CONSTRUCTOR void register_repeat() {
-  repeat_table[T_C8][T_I64]  = repeat_t_c8;
-  repeat_table[T_I64][T_I64] = repeat_t_i64;
-  repeat_table[T_F64][T_I64] = repeat_t_f64;
-  repeat_table[T_ARR][T_I64] = repeat_t_arr;
+  repeat_table[T_C8][T_I64]  = repeat_c8_t;
+  repeat_table[T_I64][T_I64] = repeat_i64_t;
+  repeat_table[T_F64][T_I64] = repeat_f64_t;
+  repeat_table[T_ARR][T_I64] = repeat_arr_t;
   global_dict_add_ffi2("repeat", repeat_table);
 }
 
@@ -662,7 +662,7 @@ DEF_WORD(".", dot) {
 
 DEF_WORD_1_1("load_text", load_text) {
   CHECK(x->t == T_C8, "c8 array expected");
-  str_t name       = str_t(array_data_t_c8(x), x->n);
+  str_t name       = str_t(x->data<c8_t>(), x->n);
   own(char) c_name = str_toc(name);
   own(FILE) file   = fopen(c_name, "r");
   CHECK(file, "failed to open file %s", c_name);

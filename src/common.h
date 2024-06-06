@@ -18,6 +18,7 @@ using std::max;
 using std::print;
 using std::println;
 #define mv(x) std::move(x)
+#define rcast reinterpret_cast
 
 typedef unsigned char byte;
 typedef int64_t       i64;

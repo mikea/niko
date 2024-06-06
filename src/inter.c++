@@ -86,23 +86,24 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
   switch (a->t) {
     case T_FFI: {
       t_ffi f;
+      auto  d = a->data<ffi_t>();
 
       switch (a->n) {
         case 1: {
-          f = *array_data_t_ffi(a);
+          f = *d;
           CHECK(f, "not implemented");
           return f(inter, stack);
         }
         case T_MAX: {
           auto& x = stack.peek(0);
-          f       = (array_data_t_ffi(a))[x.t];
+          f       = d[x.t];
           CHECK(f, "{} is not supported", x.t);
           return f(inter, stack);
         }
         case T_MAX* T_MAX: {
           auto& y = stack.peek(0);
           auto& x = stack.peek(1);
-          f       = ((t_ffi(*)[T_MAX])a->data())[x.t][y.t];
+          f       = ((t_ffi(*)[T_MAX])d)[x.t][y.t];
           CHECK(f, "{} {} are not supported", x.t, y.t);
           return f(inter, stack);
         }
@@ -122,7 +123,7 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
           case T_FFI:        NOT_IMPLEMENTED;
           case T_DICT_ENTRY: {
             if ((*p)->f & FLAG_QUOTE) PUSH(*p);
-            else inter_dict_entry(inter, *array_data_t_dict_entry(p->get()));
+            else inter_dict_entry(inter, *(*p)->data<dict_entry_t>());
             break;
           };
         }
