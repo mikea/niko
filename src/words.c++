@@ -285,7 +285,7 @@ ttT void w_binop(stack_t& stack, binop_kernel_t kernel) {
     else DO(i, y_n) y[i] = op(a[i % a_n], b[i % b_n]);                                                            \
   }
 
-#define GEN_BINOP_SPECIALIZATION(name, a_t, b_t, y_t, op)          \
+#define GEN_BINOP_SPECIALIZATION(name, a_t, b_t, y_t, op)                   \
   GEN_BINOP_KERNEL(name##_kernel_##a_t##_##b_t, a_t::t, b_t::t, y_t::t, op) \
   DEF_WORD_HANDLER(name##_##a_t##_##b_t) { return w_binop<y_t>(stack, name##_kernel_##a_t##_##b_t); }
 

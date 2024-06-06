@@ -56,6 +56,12 @@ static_assert(sizeof(f64) == sizeof(i64));
     abort();                 \
   } while (0)
 
+#define assert_this(x) \
+  ({                   \
+    assert(x);         \
+    this;              \
+  })
+
 #define _DBG(x) print(cerr, " {} = {}", #x, (x));
 
 #define DBG(...)                                \

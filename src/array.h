@@ -89,10 +89,7 @@ struct array {
     }
   }
 
-  inline array* assert_mut() {
-    assert(rc <= 1 && !owner);
-    return this;
-  }
+  inline array* assert_mut() { return assert_this(rc <= 1 && !owner); }
 
   static inline bool data_simd_aligned(type_t t, size_t n) { return n >= 2 * SIMD_REG_WIDTH_BYTES / type_sizeof(t, 1); }
   inline bool        simd_aligned() const { return data_simd_aligned(t, n); }
@@ -127,25 +124,11 @@ struct array {
   ttT inline const T::t* data() const { return rcast<const T::t*>(assert_type(T::e)->data()); }
   ttT inline T::t* restrict mut_data() { return rcast<T::t* restrict>(assert_type(T::e)->mut_data()); }
 
-  inline array* assert_simd_aligned() {
-    assert(simd_aligned());
-    return this;
-  }
+  inline array*       assert_simd_aligned() { return assert_this(simd_aligned()); }
+  inline const array* assert_simd_aligned() const { return assert_this(simd_aligned()); }
 
-  inline const array* assert_simd_aligned() const {
-    assert(simd_aligned());
-    return this;
-  }
-
-  inline array* assert_type(type_t t) {
-    assert(this->t == t);
-    return this;
-  }
-
-  inline const array* assert_type(type_t t) const {
-    assert(this->t == t);
-    return this;
-  }
+  inline array*       assert_type(type_t t) { return assert_this(this->t == t); }
+  inline const array* assert_type(type_t t) const { return assert_this(this->t == t); }
 
   template <typename Fn>
   inline void for_each_atom(Fn callback) const;
