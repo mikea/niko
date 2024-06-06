@@ -260,7 +260,7 @@ typedef void (*binop_kernel_t)(const void* restrict x,
                                void* restrict out,
                                size_t out_n);
 
-void w_binop(stack_t& stack, type_t t, binop_kernel_t kernel) {
+ttT void w_binop(stack_t& stack, binop_kernel_t kernel) {
   size_t yn = stack.peek(0).n;
   size_t xn = stack.peek(1).n;
   CHECK(yn == xn || yn == 1 || xn == 1, "array lengths are incompatible: {} vs {}", xn, yn);
@@ -268,7 +268,7 @@ void w_binop(stack_t& stack, type_t t, binop_kernel_t kernel) {
   POP(y);
   POP(x);
 
-  array_p out = array::alloc(t, max(xn, yn), x->f & y->f);
+  array_p out = array::alloc<T>(max(xn, yn), x->f & y->f);
   kernel(x->data(), x->n, y->data(), y->n, out->mut_data(), out->n);
   PUSH(out);
 }
@@ -286,20 +286,20 @@ void w_binop(stack_t& stack, type_t t, binop_kernel_t kernel) {
   }
 
 #define GEN_BINOP_SPECIALIZATION(name, a_t, b_t, y_t, op)          \
-  GEN_BINOP_KERNEL(name##_kernel_##a_t##_##b_t, a_t, b_t, y_t, op) \
-  DEF_WORD_HANDLER(name##_##a_t##_##b_t) { return w_binop(stack, TYPE_ENUM(y_t), name##_kernel_##a_t##_##b_t); }
+  GEN_BINOP_KERNEL(name##_kernel_##a_t##_##b_t, a_t::t, b_t::t, y_t::t, op) \
+  DEF_WORD_HANDLER(name##_##a_t##_##b_t) { return w_binop<y_t>(stack, name##_kernel_##a_t##_##b_t); }
 
 #define GEN_BINOP(word, name, op)                         \
-  GEN_BINOP_SPECIALIZATION(name, t_i64, t_i64, t_i64, op) \
-  GEN_BINOP_SPECIALIZATION(name, t_i64, t_f64, t_f64, op) \
-  GEN_BINOP_SPECIALIZATION(name, t_f64, t_i64, t_f64, op) \
-  GEN_BINOP_SPECIALIZATION(name, t_f64, t_f64, t_f64, op) \
+  GEN_BINOP_SPECIALIZATION(name, i64_t, i64_t, i64_t, op) \
+  GEN_BINOP_SPECIALIZATION(name, i64_t, f64_t, f64_t, op) \
+  GEN_BINOP_SPECIALIZATION(name, f64_t, i64_t, f64_t, op) \
+  GEN_BINOP_SPECIALIZATION(name, f64_t, f64_t, f64_t, op) \
   t_ffi            name##_table[T_MAX][T_MAX] = {};       \
   CONSTRUCTOR void __register_w_##name() {                \
-    name##_table[T_I64][T_I64] = name##_t_i64_t_i64;      \
-    name##_table[T_F64][T_I64] = name##_t_f64_t_i64;      \
-    name##_table[T_I64][T_F64] = name##_t_i64_t_f64;      \
-    name##_table[T_F64][T_F64] = name##_t_f64_t_f64;      \
+    name##_table[T_I64][T_I64] = name##_i64_t_i64_t;      \
+    name##_table[T_F64][T_I64] = name##_f64_t_i64_t;      \
+    name##_table[T_I64][T_F64] = name##_i64_t_f64_t;      \
+    name##_table[T_F64][T_F64] = name##_f64_t_f64_t;      \
     global_dict_add_ffi2(word, name##_table);             \
   }
 
@@ -324,16 +324,16 @@ t_ffi divide_table[T_MAX][T_MAX] = {};
 
 #define DIVIDE(x, y) ((f64)(x)) / ((f64)(y))
 
-GEN_BINOP_SPECIALIZATION(divide, t_i64, t_i64, t_f64, DIVIDE)
-GEN_BINOP_SPECIALIZATION(divide, t_i64, t_f64, t_f64, DIVIDE)
-GEN_BINOP_SPECIALIZATION(divide, t_f64, t_i64, t_f64, DIVIDE)
-GEN_BINOP_SPECIALIZATION(divide, t_f64, t_f64, t_f64, DIVIDE)
+GEN_BINOP_SPECIALIZATION(divide, i64_t, i64_t, f64_t, DIVIDE)
+GEN_BINOP_SPECIALIZATION(divide, i64_t, f64_t, f64_t, DIVIDE)
+GEN_BINOP_SPECIALIZATION(divide, f64_t, i64_t, f64_t, DIVIDE)
+GEN_BINOP_SPECIALIZATION(divide, f64_t, f64_t, f64_t, DIVIDE)
 
 CONSTRUCTOR void register_divide() {
-  divide_table[T_I64][T_I64] = divide_t_i64_t_i64;
-  divide_table[T_I64][T_F64] = divide_t_i64_t_f64;
-  divide_table[T_F64][T_I64] = divide_t_f64_t_i64;
-  divide_table[T_F64][T_F64] = divide_t_f64_t_f64;
+  divide_table[T_I64][T_I64] = divide_i64_t_i64_t;
+  divide_table[T_I64][T_F64] = divide_i64_t_f64_t;
+  divide_table[T_F64][T_I64] = divide_f64_t_i64_t;
+  divide_table[T_F64][T_F64] = divide_f64_t_f64_t;
   global_dict_add_ffi2("/", divide_table);
 }
 
@@ -346,16 +346,16 @@ t_ffi div_table[T_MAX][T_MAX] = {};
 #define DIV_INT(x, y)   (x) / (y)
 #define DIV_FLOAT(x, y) trunc((x) / (y))
 
-GEN_BINOP_SPECIALIZATION(div, t_i64, t_i64, t_i64, DIV_INT)
-GEN_BINOP_SPECIALIZATION(div, t_i64, t_f64, t_f64, DIV_FLOAT)
-GEN_BINOP_SPECIALIZATION(div, t_f64, t_i64, t_f64, DIV_FLOAT)
-GEN_BINOP_SPECIALIZATION(div, t_f64, t_f64, t_f64, DIV_FLOAT)
+GEN_BINOP_SPECIALIZATION(div, i64_t, i64_t, i64_t, DIV_INT)
+GEN_BINOP_SPECIALIZATION(div, i64_t, f64_t, f64_t, DIV_FLOAT)
+GEN_BINOP_SPECIALIZATION(div, f64_t, i64_t, f64_t, DIV_FLOAT)
+GEN_BINOP_SPECIALIZATION(div, f64_t, f64_t, f64_t, DIV_FLOAT)
 
 CONSTRUCTOR void register_div() {
-  div_table[T_I64][T_I64] = div_t_i64_t_i64;
-  div_table[T_I64][T_F64] = div_t_i64_t_f64;
-  div_table[T_F64][T_I64] = div_t_f64_t_i64;
-  div_table[T_F64][T_F64] = div_t_f64_t_f64;
+  div_table[T_I64][T_I64] = div_i64_t_i64_t;
+  div_table[T_I64][T_F64] = div_i64_t_f64_t;
+  div_table[T_F64][T_I64] = div_f64_t_i64_t;
+  div_table[T_F64][T_F64] = div_f64_t_f64_t;
   global_dict_add_ffi2("div", div_table);
 }
 
@@ -368,16 +368,16 @@ t_ffi mod_table[T_MAX][T_MAX] = {};
 #define MOD_PERCENT(x, y) ((x) % (y))
 #define MOD_FMOD(x, y)    fmod((x), (y))
 
-GEN_BINOP_SPECIALIZATION(mod, t_i64, t_i64, t_i64, MOD_PERCENT)
-GEN_BINOP_SPECIALIZATION(mod, t_i64, t_f64, t_f64, MOD_FMOD)
-GEN_BINOP_SPECIALIZATION(mod, t_f64, t_i64, t_f64, MOD_FMOD)
-GEN_BINOP_SPECIALIZATION(mod, t_f64, t_f64, t_f64, MOD_FMOD)
+GEN_BINOP_SPECIALIZATION(mod, i64_t, i64_t, i64_t, MOD_PERCENT)
+GEN_BINOP_SPECIALIZATION(mod, i64_t, f64_t, f64_t, MOD_FMOD)
+GEN_BINOP_SPECIALIZATION(mod, f64_t, i64_t, f64_t, MOD_FMOD)
+GEN_BINOP_SPECIALIZATION(mod, f64_t, f64_t, f64_t, MOD_FMOD)
 
 CONSTRUCTOR void register_mod() {
-  mod_table[T_I64][T_I64] = mod_t_i64_t_i64;
-  mod_table[T_I64][T_F64] = mod_t_i64_t_f64;
-  mod_table[T_F64][T_I64] = mod_t_f64_t_i64;
-  mod_table[T_F64][T_F64] = mod_t_f64_t_f64;
+  mod_table[T_I64][T_I64] = mod_i64_t_i64_t;
+  mod_table[T_I64][T_F64] = mod_i64_t_f64_t;
+  mod_table[T_F64][T_I64] = mod_f64_t_i64_t;
+  mod_table[T_F64][T_F64] = mod_f64_t_f64_t;
   global_dict_add_ffi2("mod", mod_table);
 }
 
@@ -389,28 +389,28 @@ t_ffi equal_table[T_MAX][T_MAX] = {};
 
 #define EQUAL_OP(a, b) (a) == (b)
 
-GEN_BINOP_SPECIALIZATION(equal, t_c8, t_c8, t_i64, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, t_c8, t_i64, t_i64, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, t_c8, t_f64, t_i64, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, t_i64, t_c8, t_i64, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, t_i64, t_i64, t_i64, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, t_i64, t_f64, t_i64, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, t_f64, t_c8, t_i64, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, t_f64, t_i64, t_i64, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, t_f64, t_f64, t_i64, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, c8_t, c8_t, i64_t, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, c8_t, i64_t, i64_t, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, c8_t, f64_t, i64_t, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, i64_t, c8_t, i64_t, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, i64_t, i64_t, i64_t, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, i64_t, f64_t, i64_t, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, f64_t, c8_t, i64_t, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, f64_t, i64_t, i64_t, EQUAL_OP);
+GEN_BINOP_SPECIALIZATION(equal, f64_t, f64_t, i64_t, EQUAL_OP);
 
-#define REGISTER_EQUAL(t1, t2) equal_table[TYPE_ENUM(t1)][TYPE_ENUM(t2)] = equal_##t1##_##t2;
+#define REGISTER_EQUAL(t1, t2) equal_table[t1::e][t2::e] = equal_##t1##_##t2;
 
 CONSTRUCTOR void register_equal() {
-  REGISTER_EQUAL(t_c8, t_c8);
-  REGISTER_EQUAL(t_c8, t_i64);
-  REGISTER_EQUAL(t_c8, t_f64);
-  REGISTER_EQUAL(t_i64, t_c8);
-  REGISTER_EQUAL(t_i64, t_i64);
-  REGISTER_EQUAL(t_i64, t_f64);
-  REGISTER_EQUAL(t_f64, t_c8);
-  REGISTER_EQUAL(t_f64, t_i64);
-  REGISTER_EQUAL(t_f64, t_f64);
+  REGISTER_EQUAL(c8_t, c8_t);
+  REGISTER_EQUAL(c8_t, i64_t);
+  REGISTER_EQUAL(c8_t, f64_t);
+  REGISTER_EQUAL(i64_t, c8_t);
+  REGISTER_EQUAL(i64_t, i64_t);
+  REGISTER_EQUAL(i64_t, f64_t);
+  REGISTER_EQUAL(f64_t, c8_t);
+  REGISTER_EQUAL(f64_t, i64_t);
+  REGISTER_EQUAL(f64_t, f64_t);
   global_dict_add_ffi2("=", equal_table);
 }
 
@@ -422,28 +422,28 @@ t_ffi less_table[T_MAX][T_MAX] = {};
 
 #define LESS_OP(a, b) (a) < (b)
 
-GEN_BINOP_SPECIALIZATION(less, t_c8, t_c8, t_i64, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, t_c8, t_i64, t_i64, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, t_c8, t_f64, t_i64, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, t_i64, t_c8, t_i64, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, t_i64, t_i64, t_i64, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, t_i64, t_f64, t_i64, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, t_f64, t_c8, t_i64, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, t_f64, t_i64, t_i64, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, t_f64, t_f64, t_i64, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, c8_t, c8_t, i64_t, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, c8_t, i64_t, i64_t, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, c8_t, f64_t, i64_t, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, i64_t, c8_t, i64_t, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, i64_t, i64_t, i64_t, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, i64_t, f64_t, i64_t, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, f64_t, c8_t, i64_t, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, f64_t, i64_t, i64_t, LESS_OP);
+GEN_BINOP_SPECIALIZATION(less, f64_t, f64_t, i64_t, LESS_OP);
 
-#define REGISTER_less(t1, t2) less_table[TYPE_ENUM(t1)][TYPE_ENUM(t2)] = less_##t1##_##t2;
+#define REGISTER_less(t1, t2) less_table[t1::e][t2::e] = less_##t1##_##t2;
 
 CONSTRUCTOR void register_less() {
-  REGISTER_less(t_c8, t_c8);
-  REGISTER_less(t_c8, t_i64);
-  REGISTER_less(t_c8, t_f64);
-  REGISTER_less(t_i64, t_c8);
-  REGISTER_less(t_i64, t_i64);
-  REGISTER_less(t_i64, t_f64);
-  REGISTER_less(t_f64, t_c8);
-  REGISTER_less(t_f64, t_i64);
-  REGISTER_less(t_f64, t_f64);
+  REGISTER_less(c8_t, c8_t);
+  REGISTER_less(c8_t, i64_t);
+  REGISTER_less(c8_t, f64_t);
+  REGISTER_less(i64_t, c8_t);
+  REGISTER_less(i64_t, i64_t);
+  REGISTER_less(i64_t, f64_t);
+  REGISTER_less(f64_t, c8_t);
+  REGISTER_less(f64_t, i64_t);
+  REGISTER_less(f64_t, f64_t);
   global_dict_add_ffi2("<", less_table);
 }
 

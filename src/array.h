@@ -11,14 +11,12 @@ typedef enum { T_C8, T_I64, T_F64, T_ARR, T_FFI, T_DICT_ENTRY } type_t;
 #define T_MAX (T_DICT_ENTRY + 1)
 
 typedef char t_c8;
-#define t_c8_enum T_C8
 struct c8_t {
   using t                   = char;
   static constexpr type_t e = type_t::T_C8;
 };
 
 typedef int64_t t_i64;
-#define t_i64_enum T_I64
 #define t_i64_simd vmax_i64
 
 struct i64_t {
@@ -27,7 +25,6 @@ struct i64_t {
 };
 
 typedef double t_f64;
-#define t_f64_enum T_F64
 #define t_f64_simd vmax_f64
 
 struct f64_t {
@@ -38,7 +35,6 @@ struct f64_t {
 struct array;
 using array_p = rc<array>;
 using t_arr   = array_p;
-#define t_arr_enum T_ARR
 struct arr_t {
   using t                   = array_p;
   static constexpr type_t e = type_t::T_ARR;
@@ -47,20 +43,17 @@ struct arr_t {
 struct inter_t;
 struct stack_t;
 typedef void (*t_ffi)(inter_t* inter, stack_t& s);
-#define t_ffi_enum T_FFI
 struct ffi_t {
   using t                   = t_ffi;
   static constexpr type_t e = type_t::T_FFI;
 };
 
 typedef i64 t_dict_entry;
-#define t_dict_entry_enum T_DICT_ENTRY
 struct dict_entry_t {
   using t                   = i64;
   static constexpr type_t e = type_t::T_DICT_ENTRY;
 };
 
-#define TYPE_ENUM(t) t##_enum
 #define TYPE_SIMD(t) t##_simd
 
 #define TYPE_FOREACH(f)      f(t_c8) f(t_i64) f(t_f64) f(t_arr) f(t_ffi) f(t_dict_entry)
