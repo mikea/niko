@@ -67,7 +67,7 @@ class stack {
   inline array_p* begin() { return &data[0]; }
 };
 
-array_p cat(stack& stack, size_t n);
+array_p cat(stack& s, size_t n);
 
 #define POP(x)             \
   array_p x = stack.pop(); \
@@ -124,6 +124,8 @@ struct inter_t {
   void reset();
 
   void        entry(t_dict_entry e_idx);
+  void        entry(dict_entry* e);
+  void        entry(array_p w);
   void        line(const char* s);
   std::string line_capture_out(const char* line);
 

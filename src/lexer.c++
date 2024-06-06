@@ -1,13 +1,7 @@
 #include "inter.h"
 
-int64_t str_parse_i64(const str_t s) {
-  own(char) c = str_toc(s);
-  return strtol(c, NULL, 10);
-}
-double str_parse_f64(const str_t s) {
-  own(char) c = str_toc(s);
-  return strtod(c, NULL);
-}
+int64_t str_parse_i64(const str_t s) { return std::stol(std::string(s)); }
+double  str_parse_f64(const str_t s) { return std::stod(std::string(s)); }
 
 token_t next_token(const char** s) {
   const char* YYCURSOR = *s;

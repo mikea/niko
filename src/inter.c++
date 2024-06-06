@@ -82,8 +82,14 @@ dict_entry* inter_t::find_entry(str_t n) {
   return &dict[e];
 }
 
-void inter_t::entry(t_dict_entry e_idx) {
-  dict_entry* e = lookup_entry(e_idx);
+void inter_t::entry(array_p w) {
+  CHECK(w->t == T_DICT_ENTRY, "dict entry expected");
+  entry(*w->data<dict_entry_t>());
+}
+
+void inter_t::entry(t_dict_entry e_idx) { entry(lookup_entry(e_idx)); }
+
+void inter_t::entry(dict_entry* e) {
   if (e->f & ENTRY_CONST || e->f & ENTRY_VAR) {
     PUSH(e->v);
     return;
@@ -129,7 +135,7 @@ void inter_t::entry(t_dict_entry e_idx) {
           case T_FFI:        NOT_IMPLEMENTED;
           case T_DICT_ENTRY: {
             if ((*p)->f & FLAG_QUOTE) PUSH(*p);
-            else entry(*(*p)->data<dict_entry_t>());
+            else entry(*p);
             break;
           };
         }
@@ -169,9 +175,8 @@ void inter_t::token(token_t t) {
       size_t e = find_entry_idx(t.text);
       CHECK(e < dict.size(), "unknown word '{}'", t.text);
       dict_entry* en = lookup_entry(e);
-      if (mode == inter_t::INTERPRET || (en->f & ENTRY_IMM)) entry(e);
+      if (mode == inter_t::INTERPRET || (en->f & ENTRY_IMM)) entry(en);
       else PUSH(array::atom<dict_entry_t>(e));
-
       return;
     }
     case TOK_I64: {
@@ -226,9 +231,8 @@ std::string inter_t::line_capture_out(const char* l) {
 }
 
 void inter_t::load_prelude() {
-  str_t prelude((char*)__prelude_nk, __prelude_nk_len);
-  own(char) c_prelude = str_toc(prelude);
-  line(c_prelude);
+  std::string prelude((char*)__prelude_nk, __prelude_nk_len);
+  line(prelude.c_str());
 }
 
 void inter_t::reset() {

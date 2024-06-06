@@ -1,5 +1,7 @@
 #include <jemalloc/jemalloc.h>
 #include <math.h>
+#include <fstream>
+#include <sstream>
 
 #include "niko.h"
 #include "print.h"
@@ -574,9 +576,8 @@ DEF_WORD(",scan", scan) {
   POP(op);
   POP(x);
 
-  t_dict_entry e = as_dict_entry(op);
-
-  auto iter      = [&](size_t i, array_p slice) mutable {
+  t_dict_entry e    = as_dict_entry(op);
+  auto         iter = [&](size_t i, array_p slice) mutable {
     if (i > 0) DUP;
     PUSH(slice);
     if (i > 0) inter.entry(e);
@@ -662,17 +663,12 @@ DEF_WORD(".", dot) {
 
 DEF_WORD_1_1("load_text", load_text) {
   CHECK(x->t == T_C8, "c8 array expected");
-  str_t name       = str_t(x->data<c8_t>(), x->n);
-  own(char) c_name = str_toc(name);
-  own(FILE) file   = fopen(c_name, "r");
-  CHECK(file, "failed to open file %s", c_name);
-  CHECK(!fseek(file, 0, SEEK_END), "failed to seek file");
-  size_t  n = ftell(file);
-  array_p y = array::alloc(T_C8, n, (flags_t)0);
-  rewind(file);
-  size_t read = fread(y->mut_data(), 1, n, file);
-  CHECK(n == read, "truncated read");
-  return y;
+  auto               name = std::string(x->data<c8_t>(), x->n);
+  std::ifstream      file(name);
+  std::ostringstream buf;
+  buf << file.rdbuf();
+  auto content = buf.str();
+  return array::create<c8_t>(content.size(), content.c_str());
 }
 
 #pragma endregion io

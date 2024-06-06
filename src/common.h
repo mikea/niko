@@ -74,6 +74,8 @@ static_assert(sizeof(f64) == sizeof(i64));
     } while (0);                                \
   })
 
+#define ERROR(...) println(cerr, __VA_ARGS__)
+
 #define VA_ARGS_FWD(last, call)   \
   ({                              \
     va_list args;                 \

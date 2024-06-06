@@ -1,7 +1,7 @@
-#include <iostream>
-
 #include <getopt.h>
 #include <unistd.h>
+#include <fstream>
+#include <iostream>
 
 #include "inter.h"
 #include "niko.h"
@@ -18,9 +18,8 @@ INLINE void stack_print_repl(stack& stack) {
 void v() {}
 
 void repl(inter_t& inter) {
-  size_t input_size = 0;
-  own(char) input   = NULL;
-  bool prompt       = isatty(STDIN_FILENO);
+  std::string input;
+  bool        prompt = isatty(STDIN_FILENO);
 
   if (prompt) printf(VERSION_STRING "\n");
 
@@ -35,10 +34,10 @@ next:
       }
     }
 
-    if (getline(&input, &input_size, stdin) <= 0) return;
+    if (!std::getline(std::cin, input)) return;
 
     try {
-      inter.line(input);
+      inter.line(input.c_str());
     } catch (std::exception& e) {
       cerr << "ERROR: " << e.what() << "\n";
       goto next;
@@ -49,72 +48,60 @@ next:
 // test runner
 
 int test(inter_t& inter, const char* fname, bool v, bool f) {
-  int ret        = 0;
-  own(FILE) file = fopen(fname, "r");
-  CHECK(file, "test: can't open file: %s", fname);
+  int           ret = 0;
+  std::ifstream file(fname);
 
-  size_t len     = 0;
-  own(char) line = NULL;
-
-  size_t read;
-  size_t line_no = 0;
+  std::string line;
+  size_t      line_no = 0;
 
   std::string      out;
-  size_t           out_size;
   std::string_view rest_out;
   size_t           in_line_no = 0;
-
-  const str_t nkt_start       = "```nkt\n";
-  const str_t nk_start        = "```nk\n";
-  const str_t code_end        = "```";
 
   bool in_nk                  = false;
   bool in_nkt                 = false;
 
-  while ((read = getline(&line, &len, file)) != -1) {
+  while (std::getline(file, line)) {
     if (f && ret) return ret;
     line_no++;
-    if (read == 0) continue;
-
-    str_t l(line);
 
     if (in_nk) {
-      if (str_starts_with(l, code_end)) {
+      if (line.starts_with("```")) {
         inter.reset();
         in_nk = false;
       } else {
-        inter.line(line);
+        inter.line(line.c_str());
       }
     } else if (in_nkt) {
-      if (str_starts_with(l, code_end)) {
+      if (line.starts_with("```")) {
         inter.reset();
         if (rest_out.size()) {
-          cerr << "ERROR " << fname << ":" << in_line_no << " : unmatched output: '" << rest_out << "'\n";
+          ERROR("ERROR {}:{} : unmatched output: '{}'", fname, in_line_no, rest_out);
           ret = 1;
         }
         rest_out = "";
         in_nkt   = false;
-      } else if (*line == '>') {
-        if (v) fprintf(stderr, "%s", line);
+      } else if (line[0] == '>') {
+        if (v) ERROR("{}", line);
         if (rest_out.size()) {
-          cerr << "ERROR " << fname << ":" << in_line_no << " : unmatched output: '" << rest_out << "'\n";
+          ERROR("ERROR {}:{} : unmatched output: '{}'", fname, in_line_no, rest_out);
           ret = 1;
         }
         in_line_no = line_no;
-        out        = inter.line_capture_out(line + 1);
+        out        = inter.line_capture_out(line.c_str() + 1);
         rest_out   = out;
         continue;
-      } else if (!rest_out.size() || memcmp(line, rest_out.begin(), read)) {
+      } else if (!rest_out.starts_with(line + "\n")) {
         cerr << "ERROR " << fname << ":" << in_line_no << " : mismatched output, expected: '" << line << "' actual: '"
              << rest_out << "'\n";
         ret      = 1;
         rest_out = "";
       } else {
-        rest_out = rest_out.substr(read);
+        rest_out = rest_out.substr(line.size() + 1);
       }
     }
-    if (str_ends_with(l, nkt_start)) in_nkt = true;
-    else if (str_ends_with(l, nk_start)) in_nk = true;
+    if (line.ends_with("```nkt")) in_nkt = true;
+    else if (line.ends_with("```nk")) in_nk = true;
   }
 
   return ret;

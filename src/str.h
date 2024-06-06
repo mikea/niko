@@ -24,6 +24,8 @@ struct str_t {
   inline string_t to_owned() const;
 
   inline bool operator==(const str_t& o) const { return l == o.l && !memcmp(p, o.p, l); }
+
+  inline operator std::string_view() const { return std::string_view(p, l); }
 };
 
 INLINE void        str_fprint(const str_t s, FILE* f) { DO(i, s.len()) putc(*(s.p + i), f); }
@@ -75,6 +77,7 @@ struct string_t {
 
   inline string_t clone() const { return string_t(l, p); }
   inline          operator str_t() const { return str_t(p, l); }
+  inline          operator std::string_view() const { return std::string_view(p, l); }
 
   inline string_t& operator=(string_t&& o) {
     delete[] p;
