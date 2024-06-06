@@ -6,35 +6,28 @@
 #include "memory.h"
 #include "simd.h"
 
+struct array;
+using array_p = rc<array>;
+
 // type
 typedef enum { T_C8, T_I64, T_F64, T_ARR, T_FFI, T_DICT_ENTRY } type_t;
 #define T_MAX (T_DICT_ENTRY + 1)
 
-typedef char t_c8;
 struct c8_t {
   using t                   = char;
   static constexpr type_t e = type_t::T_C8;
 };
-
-typedef int64_t t_i64;
-#define t_i64_simd vmax_i64
 
 struct i64_t {
   using t                   = i64;
   static constexpr type_t e = type_t::T_I64;
 };
 
-typedef double t_f64;
-#define t_f64_simd vmax_f64
-
 struct f64_t {
   using t                   = f64;
   static constexpr type_t e = type_t::T_F64;
 };
 
-struct array;
-using array_p = rc<array>;
-using t_arr   = array_p;
 struct arr_t {
   using t                   = array_p;
   static constexpr type_t e = type_t::T_ARR;
@@ -54,19 +47,15 @@ struct dict_entry_t {
   static constexpr type_t e = type_t::T_DICT_ENTRY;
 };
 
-#define TYPE_SIMD(t) t##_simd
-
-#define TYPE_FOREACH(f)      f(t_c8) f(t_i64) f(t_f64) f(t_arr) f(t_ffi) f(t_dict_entry)
-#define TYPE_FOREACH_SIMD(f) f(t_i64, vmax_i64) f(t_f64, vmax_f64)
-
 #define TYPE_ROW(v_c8, v_i64, v_f64, v_arr, v_ffi, v_dict_entry) \
   { v_c8, v_i64, v_f64, v_arr, v_ffi, v_dict_entry }
 
-#define TYPE_ROW_FOREACH(f) TYPE_ROW(f(t_c8), f(t_i64), f(t_f64), f(t_arr), f(t_ffi), f(t_dict_entry))
+#define TYPE_ROW_FOREACH(f) TYPE_ROW(f(c8_t), f(i64_t), f(f64_t), f(arr_t), f(ffi_t), f(dict_entry_t))
 
 #define TYPE_ROW_ID TYPE_ROW(T_C8, T_I64, T_F64, T_ARR, T_FFI)
 
-static size_t type_sizeof_table[T_MAX] = TYPE_ROW_FOREACH(sizeof);
+#define __TYPE_SIZEOF(x) sizeof(x::t)
+static size_t type_sizeof_table[T_MAX] = TYPE_ROW_FOREACH(__TYPE_SIZEOF);
 INLINE size_t type_sizeof(type_t t, size_t n) { return n * type_sizeof_table[t]; }
 
 static const std::string_view type_name_table[T_MAX] = TYPE_ROW("c8", "i64", "f64", "arr", "ffi", "dict");
@@ -75,6 +64,7 @@ INLINE const std::string_view type_name(type_t t) { return type_name_table[t]; }
 typedef enum flags { FLAG_ATOM = 1, FLAG_QUOTE = 2 } flags_t;
 inline flags operator|(flags a, flags b) { return static_cast<flags>(static_cast<int>(a) | static_cast<int>(b)); }
 inline flags operator&(flags a, flags b) { return static_cast<flags>(static_cast<int>(a) & static_cast<int>(b)); }
+
 
 struct array {
  private:
@@ -135,11 +125,6 @@ struct array {
 };
 
 using array_p = rc<array>;
-
-#define __DEF_SIMD_HELPER(t, v) \
-  INLINE v* restrict array_mut_data_##v(array* a) { return (v* restrict)a->assert_simd_aligned()->mut_data(); }
-
-TYPE_FOREACH_SIMD(__DEF_SIMD_HELPER)
 
 #define __DO_ARRAY_IMPL(a, i, p, u, p_decl) \
   for (bool u##b = 1; u##b; u##b = 0)       \
