@@ -19,7 +19,7 @@ void v() {}
 
 void repl(inter_t& inter) {
   string input;
-  bool        prompt = isatty(STDIN_FILENO);
+  bool   prompt = isatty(STDIN_FILENO);
 
   if (prompt) printf(VERSION_STRING "\n");
 
@@ -52,14 +52,14 @@ int test(inter_t& inter, const char* fname, bool v, bool f) {
   std::ifstream file(fname);
 
   string line;
-  size_t      line_no = 0;
+  size_t line_no = 0;
 
-  string      out;
-  str rest_out;
-  size_t           in_line_no = 0;
+  string out;
+  str    rest_out;
+  size_t in_line_no = 0;
 
-  bool in_nk                  = false;
-  bool in_nkt                 = false;
+  bool in_nk        = false;
+  bool in_nkt       = false;
 
   while (std::getline(file, line)) {
     if (f && ret) return ret;

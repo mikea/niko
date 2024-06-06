@@ -14,10 +14,7 @@ inter_t* global_inter;
 inter_t::inter_t(bool prelude) {
   assert(!global_inter);
   dict.reserve(global_dict.size());
-  DO(i, global_dict.size()) {
-    dict_entry& e = global_dict[i];
-    dict.push_back({e.k, e.v, e.f});
-  }
+  for (auto e : global_dict) dict.push_back(e);
   if (prelude) load_prelude();
   global_inter = this;
 }
@@ -28,7 +25,7 @@ inter_t::~inter_t() {
 }
 
 void global_dict_add_new(dict_entry&& e) {
-  e.f = e.f | entry_flags::ENTRY_SYS;
+  e.sys = true;
   global_dict.push_back(mv(e));
 }
 
@@ -90,7 +87,7 @@ void inter_t::entry(array_p w) {
 void inter_t::entry(t_dict_entry e_idx) { entry(lookup_entry(e_idx)); }
 
 void inter_t::entry(dict_entry* e) {
-  if (e->f & ENTRY_CONST || e->f & ENTRY_VAR) {
+  if (e->cons || e->var) {
     PUSH(e->v);
     return;
   }
@@ -175,7 +172,7 @@ void inter_t::token(token_t t) {
       size_t e = find_entry_idx(t.text);
       CHECK(e < dict.size(), "unknown word '{}'", t.text);
       dict_entry* en = lookup_entry(e);
-      if (mode == inter_t::INTERPRET || (en->f & ENTRY_IMM)) entry(en);
+      if (mode == INTERPRET || en->imm) entry(en);
       else PUSH(array::atom<dict_entry_t>(e));
       return;
     }
@@ -244,26 +241,26 @@ void inter_t::reset() {
 
 #pragma region immediate
 
-DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
+DEF_IWORD(":", def) {
   CHECK(inter.mode == inter_t::INTERPRET, ": can be used only in interpret mode");
   str          next = inter.next_word();
   t_dict_entry prev = inter.find_entry_idx(next);
   if (prev < inter.dict.size()) {
     dict_entry* e = &inter.dict[prev];
-    if (e->f & (ENTRY_CONST | ENTRY_SYS)) panicf("`{}` can't be redefined", next);
+    if (e->cons || e->sys) panicf("`{}` can't be redefined", next);
   }
   inter.mode = inter_t::COMPILE;
   assert(inter.comp_stack.empty());
   inter.comp = next;
 }
 
-DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
+DEF_IWORD(";", enddef) {
   CHECK(inter.mode == inter_t::COMPILE, ": can be used only in compile mode");
   array_p     a    = array::create(T_ARR, inter.comp_stack.len(), (flags_t)0, inter.comp_stack.begin());
   dict_entry* prev = inter.find_entry(inter.comp);
   if (prev) {
-    prev->v = a;
-    prev->f = (entry_flags)(prev->f & ~ENTRY_VAR);
+    prev->v    = a;
+    prev->cons = prev->var = false;
   } else {
     inter.dict.push_back(dict_entry(inter.comp, a));
   }
@@ -273,23 +270,23 @@ DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
   inter.comp.clear();
 }
 
-DEF_WORD_FLAGS("const", _const, ENTRY_IMM) {
+DEF_IWORD("const", _const) {
   CHECK(inter.mode == inter_t::INTERPRET, "const can be used only in interpret mode");
   str next = inter.next_word();
   if (inter.find_entry_idx(next) < inter.dict.size()) panicf("`{}` can't be redefined", next);
   POP(x);
-  inter.dict.push_back({next, x, ENTRY_CONST});
+  inter.dict.push_back({.k = string(next), .v = x, .cons = true});
 }
 
-DEF_WORD_FLAGS("var", _var, ENTRY_IMM) {
+DEF_IWORD("var", _var) {
   CHECK(inter.mode == inter_t::INTERPRET, "var can be used only in interpret mode");
   str next = inter.next_word();
   if (inter.find_entry_idx(next) < inter.dict.size()) panicf("`{}` can't be redefined", next);
   POP(x);
-  inter.dict.push_back({next, x, ENTRY_VAR});
+  inter.dict.push_back({.k = string(next), .v = x, .var = true});
 }
 
-DEF_WORD_FLAGS("literal", literal, ENTRY_IMM) {
+DEF_IWORD("literal", literal) {
   CHECK(inter.mode == inter_t::COMPILE, "literal can be used only in compilation mode");
   POP(x);
   inter.comp_stack.push(x);
@@ -301,9 +298,9 @@ DEF_WORD("!", store) {
   POP(v);
   POP(x);
   dict_entry* e = inter.lookup_entry(as_dict_entry(v));
-  CHECK(e->f & ENTRY_VAR || !e->f, "{} is not a valid store target", e->v);
-  e->v = x;
-  e->f = e->f | ENTRY_VAR;
+  CHECK(e->var || (!e->sys && !e->cons), "{} is not a valid store target", e->v);
+  e->v   = x;
+  e->var = true;
 }
 
 DEF_WORD("@", load) {

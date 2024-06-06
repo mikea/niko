@@ -14,18 +14,22 @@
   }                                                   \
   INLINE array_p n##_impl(inter_t& inter, array_p x)
 
-#define REGISTER_WORD_FLAGS(w, n, f)                    \
+#define REGISTER_WORD(w, n)                             \
   void             w_##n(inter_t& inter, stack& stack); \
-  CONSTRUCTOR void __register_w_##n() { global_dict_add_new({string(w), array::atom<ffi_t>(w_##n), f}); }
+  CONSTRUCTOR void __register_w_##n() { global_dict_add_new({.k = string(w), .v = array::atom<ffi_t>(w_##n)}); }
 
-#define REGISTER_WORD(w, n) REGISTER_WORD_FLAGS(w, n, (entry_flags)0)
+#define REGISTER_IWORD(w, n)                                                            \
+  void             w_##n(inter_t& inter, stack& stack);                                 \
+  CONSTRUCTOR void __register_w_##n() {                                                 \
+    global_dict_add_new({.k = string(w), .v = array::atom<ffi_t>(w_##n), .imm = true}); \
+  }
 
 #define DEF_WORD(w, n) \
   REGISTER_WORD(w, n)  \
   DEF_WORD_HANDLER(w_##n)
 
-#define DEF_WORD_FLAGS(w, n, f) \
-  REGISTER_WORD_FLAGS(w, n, f)  \
+#define DEF_IWORD(w, n) \
+  REGISTER_IWORD(w, n)  \
   DEF_WORD_HANDLER(w_##n)
 
 #define DEF_WORD_1_1(w, n) \

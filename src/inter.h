@@ -20,11 +20,11 @@ enum token_type {
 
 struct token_t {
   token_type tok;
-  str      text;
+  str        text;
   union {
     int64_t i;
     double  d;
-    str   s;
+    str     s;
   } val;
 };
 
@@ -77,22 +77,13 @@ array_p cat(stack& s, size_t n);
 
 // dictionary
 
-enum entry_flags { ENTRY_SYS = 1, ENTRY_CONST = 2, ENTRY_VAR = 4, ENTRY_IMM = 8 };
-inline entry_flags operator|(entry_flags a, entry_flags b) {
-  return static_cast<entry_flags>(static_cast<int>(a) | static_cast<int>(b));
-}
-inline entry_flags operator&(entry_flags a, entry_flags b) {
-  return static_cast<entry_flags>(static_cast<int>(a) & static_cast<int>(b));
-}
-
 struct dict_entry {
-  string    k;
-  array_p     v;
-  entry_flags f;
-
-  inline dict_entry(str k, array_p v, entry_flags f = (entry_flags)0) : k(k), v(v), f(f) {}
-  dict_entry(const dict_entry&) = delete;
-  dict_entry(dict_entry&&)      = default;
+  string  k;
+  array_p v;
+  bool    sys : 1  = false;
+  bool    cons : 1 = false;
+  bool    var : 1  = false;
+  bool    imm : 1  = false;
 };
 
 void global_dict_add_new(dict_entry&& e);
@@ -112,7 +103,7 @@ struct inter_t {
   dict_t        dict;
   class stack   stack;
   class stack   comp_stack;
-  string      comp;
+  string        comp;
   size_t        arr_level = 0;
   size_t        arr_marks[256]{};
   std::ostream* out = &cout;
@@ -122,13 +113,13 @@ struct inter_t {
   ~inter_t();
   void reset();
 
-  void        entry(t_dict_entry e_idx);
-  void        entry(dict_entry* e);
-  void        entry(array_p w);
-  void        line(const char* s);
+  void   entry(t_dict_entry e_idx);
+  void   entry(dict_entry* e);
+  void   entry(array_p w);
+  void   line(const char* s);
   string line_capture_out(const char* line);
 
-  str        next_word();
+  str          next_word();
   dict_entry*  find_entry(str n);
   t_dict_entry find_entry_idx(const str n);
   dict_entry*  lookup_entry(t_dict_entry e);
