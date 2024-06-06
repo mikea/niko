@@ -5,7 +5,7 @@
 
 using std::format_to;
 
-ttT T format_atom(type_t t, flags_t f, const void* ptr, T out) {
+ttT T format_atom(type_t t, bool quote, const void* ptr, T out) {
   switch (t) {
     case T_I64: return format_to(out, "{}", *(i64*)ptr);
     case T_F64: {
@@ -21,7 +21,7 @@ ttT T format_atom(type_t t, flags_t f, const void* ptr, T out) {
     case T_DICT_ENTRY: {
       size_t      idx = *(t_dict_entry*)ptr;
       dict_entry& e   = inter_t::current().dict[idx];
-      if (f & FLAG_QUOTE) return format_to(out, "{}'", e.k);
+      if (quote) return format_to(out, "{}'", e.k);
       else return format_to(out, "{}", e.k);
     }
   }
@@ -29,7 +29,7 @@ ttT T format_atom(type_t t, flags_t f, const void* ptr, T out) {
 }
 
 std::format_context::iterator std::formatter<array_p>::format(const array_p& a, std::format_context& ctx) const {
-  if (a->f & flags_t::FLAG_ATOM) return format_atom(a->t, a->f, a->data(), ctx.out());
+  if (a->a) return format_atom(a->t, a->q, a->data(), ctx.out());
   if (a->t == type_t::T_C8) return format_to(ctx.out(), "\"{}\"", str(a->data<c8_t>(), a->n));
   string      out    = "[ ";
   size_t      stride = type_sizeof(a->t, 1);
@@ -39,7 +39,7 @@ std::format_context::iterator std::formatter<array_p>::format(const array_p& a, 
       out += "... ";
       break;
     }
-    format_atom(a->t, a->f, ptr + stride * i, std::back_inserter(out));
+    format_atom(a->t, a->q, ptr + stride * i, std::back_inserter(out));
     out += " ";
   }
   out += "]";

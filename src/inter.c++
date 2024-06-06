@@ -30,28 +30,28 @@ void global_dict_add_new(dict_entry&& e) {
 }
 
 array_p cat(stack& stack, size_t n) {
-  if (!n) return array::alloc(T_I64, 0, (flags_t)0);
+  if (!n) return array::alloc<i64_t>(0);
   CHECK(n <= stack.len(), "stack underflow");
 
   bool         same_type = true;
   auto&        top       = stack.peek(0);
   const type_t t         = top.t;
-  flags_t      f         = top.f;
+  bool         atom      = top.a;
   DO(i, n) {
     auto e     = stack[i];
     same_type &= e->t == t;
-    f          = f & e->f;
+    atom      &= e->a;
   }
 
   array_p a;
-  if (same_type && (f & FLAG_ATOM)) {
+  if (same_type && atom) {
     assert(t != T_ARR);  // not implemented
-    a          = array::alloc(t, n, (flags_t)0);
+    a          = array::alloc(t, n);
     void*  ptr = a->mut_data();
     size_t s   = type_sizeof(t, 1);
     DO(i, n) { memcpy(ptr + s * i, stack.peek(n - i - 1).data(), s); }
   } else {
-    a = array::alloc(T_ARR, n, (flags_t)0);
+    a = array::alloc(T_ARR, n);
     DO_MUT_ARRAY(a, arr_t, i, p) { *p = stack[n - i - 1]; }
   }
   DO(i, n) stack.drop();
@@ -131,7 +131,7 @@ void inter_t::entry(dict_entry* e) {
           case T_ARR:        NOT_IMPLEMENTED;
           case T_FFI:        NOT_IMPLEMENTED;
           case T_DICT_ENTRY: {
-            if ((*p)->f & FLAG_QUOTE) PUSH(*p);
+            if ((*p)->q) PUSH(*p);
             else entry(*p);
             break;
           };
@@ -192,7 +192,7 @@ void inter_t::token(token_t t) {
       size_t e = find_entry_idx(t.val.s);
       CHECK(e < dict.size(), "unknown word '{}'", t.text);
       array_p a = array::atom<dict_entry_t>(e);
-      a->f      = a->f | FLAG_QUOTE;
+      a->q      = true;
       PUSH(a);
       return;
     }
@@ -256,7 +256,7 @@ DEF_IWORD(":", def) {
 
 DEF_IWORD(";", enddef) {
   CHECK(inter.mode == inter_t::COMPILE, ": can be used only in compile mode");
-  array_p     a    = array::create(T_ARR, inter.comp_stack.len(), (flags_t)0, inter.comp_stack.begin());
+  array_p     a    = array::create(T_ARR, inter.comp_stack.len(), inter.comp_stack.begin());
   dict_entry* prev = inter.find_entry(inter.comp);
   if (prev) {
     prev->v    = a;

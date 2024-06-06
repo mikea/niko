@@ -10,12 +10,12 @@
 // common utilities
 
 void global_dict_add_ffi1(const char* n, ffi ffi[T_MAX]) {
-  auto a = array::create(T_FFI, T_MAX, (flags_t)0, ffi);
+  auto a = array::create(T_FFI, T_MAX, ffi);
   global_dict_add_new({string(n), a});
 }
 
 void global_dict_add_ffi2(const char* n, ffi ffi[T_MAX][T_MAX]) {
-  global_dict_add_new({string(n), array::create(T_FFI, T_MAX * T_MAX, (flags_t)0, ffi)});
+  global_dict_add_new({string(n), array::create(T_FFI, T_MAX * T_MAX, ffi)});
 }
 
 #pragma region stack
@@ -121,7 +121,7 @@ GEN_THREAD1(not, not_table);
 
 #define GEN_NOT(t)                                                  \
   DEF_WORD_HANDLER_1_1(not_##t) {                                   \
-    array_p out = array::alloc(T_I64, x->n, x->f);                  \
+    array_p out = x->alloc_as<i64_t>();                  \
     DO(i, x->n) { out->mut_data<i64_t>()[i] = !(x->data<t>()[i]); } \
     return out;                                                     \
   }
@@ -188,7 +188,7 @@ CONSTRUCTOR void reg_abs() {
 #define GEN_SPEC1(name, xt, yt, op)                              \
   DEF_WORD_HANDLER(name##_##xt) {                                \
     POP(x);                                                      \
-    array_p y = array::alloc<yt>(x->n, x->f);                    \
+    array_p y = x->alloc_as<yt>();                    \
     DO(i, x->n) { y->mut_data<yt>()[i] = op(x->data<xt>()[i]); } \
     PUSH(y);                                                     \
     return;                                                      \
@@ -270,7 +270,8 @@ ttT void w_binop(stack& stack, binop_kernel_t kernel) {
   POP(y);
   POP(x);
 
-  array_p out = array::alloc<T>(max(xn, yn), x->f & y->f);
+  array_p out = array::alloc<T>(max(xn, yn));
+  out->a = x->a & y->a;
   kernel(x->data(), x->n, y->data(), y->n, out->mut_data(), out->n);
   PUSH(out);
 }
@@ -457,7 +458,7 @@ CONSTRUCTOR void register_less() {
 
 DEF_WORD_1_1("index", index) {
   size_t  n = as_size_t(x);
-  array_p y = array::alloc(T_I64, n, (flags_t)0);
+  array_p y = array::alloc(T_I64, n);
   DO_MUT_ARRAY(y, i64_t, i, ptr) { (*ptr) = i; }
   return y;
 }
@@ -468,7 +469,7 @@ DEF_WORD_1_1("index", index) {
 
 DEF_WORD("reverse", reverse) {
   POP(x);
-  array_p y = array::alloc(x->t, x->n, x->f);
+  array_p y = x->alloc_as();
   DO(i, x->n) { memcpy(y->mut_data_i(i), x->data_i(x->n - i - 1), type_sizeof(x->t, 1)); }
   PUSH(y);
 }
@@ -477,7 +478,7 @@ DEF_WORD("take", take) {
   POP(y);
   POP(x);
   size_t  n  = as_size_t(y);
-  array_p z  = array::alloc(x->t, n, (flags_t)0);
+  array_p z  = array::alloc(x->t, n);
   size_t  ys = type_sizeof(x->t, x->n);
   DO(i, type_sizeof(x->t, z->n)) { ((char*)z->mut_data())[i] = ((char*)x->data())[i % ys]; }
   PUSH(z);
@@ -511,7 +512,7 @@ DEF_WORD("cat", cat) {
     size_t n = 0;                                                                \
     DO_ARRAY(y, i64_t, i, p) { n += *p; }                                        \
     POP(x);                                                                      \
-    array_p z   = array::alloc(x->t, n, (flags_t)0);                             \
+    array_p z   = array::alloc(x->t, n);                                         \
     auto    dst = z->mut_data<xt>();                                             \
     auto    src = x->data<xt>();                                                 \
     DO_ARRAY(y, i64_t, i, p) {                                                   \

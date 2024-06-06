@@ -61,13 +61,9 @@ INLINE size_t type_sizeof(type_t t, size_t n) { return n * type_sizeof_table[t];
 static const str type_name_table[T_MAX] = TYPE_ROW("c8", "i64", "f64", "arr", "ffi", "dict");
 INLINE const str type_name(type_t t) { return type_name_table[t]; }
 
-typedef enum flags { FLAG_ATOM = 1, FLAG_QUOTE = 2 } flags_t;
-inline flags operator|(flags a, flags b) { return static_cast<flags>(static_cast<int>(a) | static_cast<int>(b)); }
-inline flags operator&(flags a, flags b) { return static_cast<flags>(static_cast<int>(a) & static_cast<int>(b)); }
-
 struct array {
  private:
-  array(type_t t, flags_t f, size_t n, array_p owner, void* restrict p) : t(t), f(f), n(n), owner(owner), p(p) {}
+  array(type_t t, size_t n, array_p owner, void* restrict p) : t(t), n(n), owner(owner), p(p) {}
 
   friend class rc<array>;
   inline void inc() { rc++; }
@@ -83,27 +79,50 @@ struct array {
   static inline bool data_simd_aligned(type_t t, size_t n) { return n >= 2 * SIMD_REG_WIDTH_BYTES / type_sizeof(t, 1); }
   inline bool        simd_aligned() const { return data_simd_aligned(t, n); }
 
+  void copy_flags(const array* o) {
+    a = o->a;
+    q = o->q;
+  }
+
  public:
   type_t  t;
-  flags_t f;
   size_t  rc = 1;
   size_t  n;
   array_p owner;
   void* restrict p;
+  bool a : 1 = false;
+  bool q : 1 = false;
 
   ~array();
 
-  static array_p alloc(type_t t, size_t n, flags_t f);
-  static array_p create(type_t t, size_t n, flags_t f, const void* x);
+  static array_p alloc(type_t t, size_t n);
+  static array_p create(type_t t, size_t n, const void* x);
   static array_p create_slice(array* x, size_t n, const void* p);
-  static array_p atom(type_t t, const void* x) { return create(t, 1, FLAG_ATOM, x); }
+  static array_p atom(type_t t, const void* x) {
+    auto a = create(t, 1, x);
+    a->a   = true;
+    return a;
+  }
 
-  ttT static inline array_p alloc(size_t n, flags_t f) { return alloc(T::e, n, f); }
-  ttT static inline array_p create(size_t n, const T::t* x) { return create(T::e, n, (flags_t)0, x); }
-  ttT static inline array_p atom(const T::t& x) { return create(T::e, 1, FLAG_ATOM, &x); }
+  ttT static inline array_p alloc(size_t n) { return alloc(T::e, n); }
+  ttT static inline array_p create(size_t n, const T::t* x) { return create(T::e, n, x); }
+  ttT static inline array_p atom(const T::t& x) { return atom(T::e, &x); }
 
-  inline array_p alloc_as() const { return array::alloc(t, n, f); }
-  inline array_p copy() const { return array::create(t, n, f, data()); }
+  inline array_p alloc_as() const {
+    auto a = array::alloc(t, n);
+    a->copy_flags(this);
+    return a;
+  }
+  ttT inline array_p alloc_as() const {
+    auto a = array::alloc<T>(n);
+    a->copy_flags(this);
+    return a;
+  }
+  inline array_p copy() const {
+    auto a = array::create(t, n, data());
+    a->copy_flags(this);
+    return a;
+  }
 
   inline const void* data() const { return p; }
   inline void* restrict mut_data() { return assert_mut()->p; }
