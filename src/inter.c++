@@ -22,7 +22,7 @@ void global_dict_add_new(dict_entry&& e) {
   global_dict.push_back(mv(e));
 }
 
-array_p cat(stack_t& stack, size_t n) {
+array_p cat(stack& stack, size_t n) {
   if (!n) return array::alloc(T_I64, 0, (flags_t)0);
   CHECK(n <= stack.len(), "stack underflow");
 
@@ -76,7 +76,7 @@ dict_entry* inter_find_entry(inter_t* inter, str_t n) {
 }
 
 void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
-  stack_t&    stack = inter->stack;
+  stack&      stack = inter->stack;
   dict_entry* e     = inter_lookup_entry(inter, e_idx);
   if (e->f & ENTRY_CONST || e->f & ENTRY_VAR) {
     PUSH(e->v);
@@ -141,7 +141,7 @@ str_t inter_next_word(inter_t* inter) {
 }
 
 void inter_token(inter_t* inter, token_t t) {
-  stack_t& stack = inter->mode == inter_t::COMPILE ? inter->comp_stack : inter->stack;
+  stack& stack = inter->mode == inter_t::COMPILE ? inter->comp_stack : inter->stack;
 
   switch (t.tok) {
     case TOK_EOF:      return;

@@ -34,8 +34,8 @@ struct arr_t {
 };
 
 struct inter_t;
-struct stack_t;
-typedef void (*t_ffi)(inter_t* inter, stack_t& s);
+struct stack;
+typedef void (*t_ffi)(inter_t* inter, stack& s);
 struct ffi_t {
   using t                   = t_ffi;
   static constexpr type_t e = type_t::T_FFI;
@@ -64,7 +64,6 @@ INLINE const std::string_view type_name(type_t t) { return type_name_table[t]; }
 typedef enum flags { FLAG_ATOM = 1, FLAG_QUOTE = 2 } flags_t;
 inline flags operator|(flags a, flags b) { return static_cast<flags>(static_cast<int>(a) | static_cast<int>(b)); }
 inline flags operator&(flags a, flags b) { return static_cast<flags>(static_cast<int>(a) & static_cast<int>(b)); }
-
 
 struct array {
  private:

@@ -8,7 +8,7 @@
 
 // repl
 
-INLINE void stack_print_repl(stack_t& stack) {
+INLINE void stack_print_repl(stack& stack) {
   DO(i, stack.len()) {
     if (i > 0) print(cout, " ");
     print(cout, "{:25}", stack[i]);

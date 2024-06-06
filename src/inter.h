@@ -34,13 +34,13 @@ token_t next_token(const char** s);
 // stack
 #include <vector>
 
-class stack_t {
+class stack {
   std::vector<array_p> data;
-  stack_t(const stack_t&) = delete;
-  stack_t(stack_t&&)      = delete;
+  stack(const stack&) = delete;
+  stack(stack&&)      = delete;
 
  public:
-  stack_t() {}
+  stack() {}
   inline size_t  len() const { return data.size(); }
   inline size_t  size() const { return data.size(); }
   inline bool    empty() const { return !len(); }
@@ -67,7 +67,7 @@ class stack_t {
   inline array_p* begin() { return &data[0]; }
 };
 
-array_p cat(stack_t& stack, size_t n);
+array_p cat(stack& stack, size_t n);
 
 #define POP(x)             \
   array_p x = stack.pop(); \
@@ -105,8 +105,8 @@ using dict_t = std::vector<dict_entry>;
 struct inter_t {
   enum { INTERPRET, COMPILE } mode = INTERPRET;
   dict_t        dict;
-  stack_t       stack;
-  stack_t       comp_stack;
+  class stack   stack;
+  class stack   comp_stack;
   string_t      comp;
   size_t        arr_level = 0;
   size_t        arr_marks[256]{};

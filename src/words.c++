@@ -90,7 +90,7 @@ DEF_WORD("2over", _2over) {
 
 #pragma endregion stack
 
-INLINE void thread1(inter_t* inter, stack_t& stack, const array_p x, t_ffi ffi_table[T_MAX]) {
+INLINE void thread1(inter_t* inter, stack& stack, const array_p x, t_ffi ffi_table[T_MAX]) {
   assert(x->t == T_ARR);
   array_p        out = x->alloc_as();
   array_p const* src = x->data<arr_t>();
@@ -260,7 +260,7 @@ typedef void (*binop_kernel_t)(const void* restrict x,
                                void* restrict out,
                                size_t out_n);
 
-ttT void w_binop(stack_t& stack, binop_kernel_t kernel) {
+ttT void w_binop(stack& stack, binop_kernel_t kernel) {
   size_t yn = stack.peek(0).n;
   size_t xn = stack.peek(1).n;
   CHECK(yn == xn || yn == 1 || xn == 1, "array lengths are incompatible: {} vs {}", xn, yn);
