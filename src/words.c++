@@ -92,7 +92,8 @@ DEF_WORD("2over", _2over) {
 
 #pragma endregion stack
 
-INLINE void thread1(inter_t& inter, stack& stack, const array_p x, ffi ffi_table[T_MAX]) {
+void thread1(inter_t& inter, stack& stack, ffi ffi_table[T_MAX]) {
+  POP(x);
   assert(x->t == T_ARR);
   array_p        out = x->alloc_as();
   array_p const* src = x->data<arr_t>();
@@ -107,11 +108,8 @@ INLINE void thread1(inter_t& inter, stack& stack, const array_p x, ffi ffi_table
   PUSH(out);
 }
 
-#define GEN_THREAD1(name, ffi)            \
-  DEF_WORD_HANDLER(name##_arr_t) {        \
-    POP(x);                               \
-    return thread1(inter, stack, x, ffi); \
-  }
+#define GEN_THREAD1(name, ffi_table) \
+  DEF_WORD_HANDLER(name##_arr_t) { thread1(inter, stack, ffi_table); }
 
 #pragma region bool
 
@@ -119,19 +117,16 @@ ffi not_table[T_MAX];
 
 GEN_THREAD1(not, not_table);
 
-#define GEN_NOT(t)                                                  \
-  DEF_WORD_HANDLER_1_1(not_##t) {                                   \
-    array_p out = x->alloc_as<i64_t>();                  \
-    DO(i, x->n) { out->mut_data<i64_t>()[i] = !(x->data<t>()[i]); } \
-    return out;                                                     \
-  }
-
-GEN_NOT(i64_t);
-GEN_NOT(f64_t);
+ttT void w_not(inter_t& inter, stack& stack) {
+  POP(x);
+  array_p y = x->alloc_as<i64_t>();
+  DO(i, x->n) { y->mut_data<i64_t>()[i] = !(x->data<T>()[i]); }
+  PUSH(y);
+}
 
 CONSTRUCTOR void reg_not() {
-  not_table[T_I64] = not_i64_t;
-  not_table[T_F64] = not_f64_t;
+  not_table[T_I64] = w_not<i64_t>;
+  not_table[T_F64] = w_not<f64_t>;
   not_table[T_ARR] = not_arr_t;
   global_dict_add_ffi1("not", not_table);
 }
@@ -143,20 +138,17 @@ CONSTRUCTOR void reg_not() {
 
 ffi neg_table[T_MAX];
 
-#define GEN_NEG(t)                                            \
-  DEF_WORD_HANDLER_1_1(neg_##t) {                             \
-    array_p out = x->alloc_as();                              \
-    DO(i, x->n) { out->mut_data<t>()[i] = -x->data<t>()[i]; } \
-    return out;                                               \
-  }
-
-GEN_NEG(i64_t);
-GEN_NEG(f64_t);
+ttT void w_neg(inter_t& inter, stack& stack) {
+  POP(x);
+  array_p y = x->alloc_as();
+  DO(i, x->n) { y->mut_data<T>()[i] = -x->data<T>()[i]; }
+  PUSH(y);
+}
 GEN_THREAD1(neg, neg_table)
 
 CONSTRUCTOR void reg_neg() {
-  neg_table[T_I64] = neg_i64_t;
-  neg_table[T_F64] = neg_f64_t;
+  neg_table[T_I64] = w_neg<i64_t>;
+  neg_table[T_F64] = w_neg<f64_t>;
   neg_table[T_ARR] = neg_arr_t;
   global_dict_add_ffi1("neg", neg_table);
 }
@@ -184,28 +176,25 @@ CONSTRUCTOR void reg_abs() {
 }
 
 // sqrt, sin, et. al.
+template <typename X, typename Y, typename Op>
+void w_math(struct inter_t& inter, class stack& stack) {
+  POP(x);
+  array_p y = x->alloc_as<Y>();
+  DO(i, x->n) { y->mut_data<Y>()[i] = Op::apply(x->data<X>()[i]); }
+  PUSH(y);
+}
 
-#define GEN_SPEC1(name, xt, yt, op)                              \
-  DEF_WORD_HANDLER(name##_##xt) {                                \
-    POP(x);                                                      \
-    array_p y = x->alloc_as<yt>();                    \
-    DO(i, x->n) { y->mut_data<yt>()[i] = op(x->data<xt>()[i]); } \
-    PUSH(y);                                                     \
-    return;                                                      \
-  }
-
-#define GEN_FLOAT1_SPEC(name, t, op) GEN_SPEC1(name, t, f64_t, op)
-
-#define GEN_FLOAT(name, op)                    \
-  ffi name##_table[T_MAX];                     \
-  GEN_FLOAT1_SPEC(name, f64_t, op)             \
-  GEN_FLOAT1_SPEC(name, i64_t, op)             \
-  GEN_THREAD1(name, name##_table)              \
-  CONSTRUCTOR void reg_##name() {              \
-    name##_table[T_I64] = name##_i64_t;        \
-    name##_table[T_F64] = name##_f64_t;        \
-    name##_table[T_ARR] = name##_arr_t;        \
-    global_dict_add_ffi1(#name, name##_table); \
+#define GEN_FLOAT(name, fn)                         \
+  ffi name##_table[T_MAX];                          \
+  GEN_THREAD1(name, name##_table)                   \
+  CONSTRUCTOR void reg_##name() {                   \
+    struct op {                                     \
+      static f64 apply(f64 x) { return fn(x); }     \
+    };                                              \
+    name##_table[T_I64] = w_math<i64_t, f64_t, op>; \
+    name##_table[T_F64] = w_math<f64_t, f64_t, op>; \
+    name##_table[T_ARR] = name##_arr_t;             \
+    global_dict_add_ffi1(#name, name##_table);      \
   }
 
 GEN_FLOAT(acos, acos)
@@ -234,16 +223,17 @@ GEN_FLOAT(sqrt, sqrt)
 GEN_FLOAT(tan, tan)
 GEN_FLOAT(tanh, tanh)
 
-#define GEN_ROUND(name, op)                    \
-  ffi name##_table[T_MAX];                     \
-  GEN_SPEC1(name, f64_t, i64_t, op)            \
-  GEN_SPEC1(name, i64_t, i64_t, op)            \
-  GEN_THREAD1(name, name##_table)              \
-  CONSTRUCTOR void reg_##name() {              \
-    name##_table[T_I64] = name##_i64_t;        \
-    name##_table[T_F64] = name##_f64_t;        \
-    name##_table[T_ARR] = name##_arr_t;        \
-    global_dict_add_ffi1(#name, name##_table); \
+#define GEN_ROUND(name, fn)                         \
+  ffi name##_table[T_MAX];                          \
+  GEN_THREAD1(name, name##_table)                   \
+  CONSTRUCTOR void reg_##name() {                   \
+    struct op {                                     \
+      static i64 apply(f64 x) { return fn(x); }     \
+    };                                              \
+    name##_table[T_I64] = w_math<i64_t, i64_t, op>; \
+    name##_table[T_F64] = w_math<f64_t, i64_t, op>; \
+    name##_table[T_ARR] = name##_arr_t;             \
+    global_dict_add_ffi1(#name, name##_table);      \
   }
 
 GEN_ROUND(ceil, ceil)
@@ -271,7 +261,7 @@ ttT void w_binop(stack& stack, binop_kernel_t kernel) {
   POP(x);
 
   array_p out = array::alloc<T>(max(xn, yn));
-  out->a = x->a & y->a;
+  out->a      = x->a & y->a;
   kernel(x->data(), x->n, y->data(), y->n, out->mut_data(), out->n);
   PUSH(out);
 }

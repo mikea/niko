@@ -34,8 +34,8 @@ struct arr_t {
 };
 
 struct inter_t;
-struct stack;
-typedef void (*ffi)(inter_t& inter, stack& s);
+class stack;
+using ffi = void (*)(inter_t& inter, stack& s);
 struct ffi_t {
   using t                   = ffi;
   static constexpr type_t e = type_t::T_FFI;
