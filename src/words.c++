@@ -7,12 +7,12 @@
 
 // common utilities
 
-void global_dict_add_ffi1(const char* n, t_ffi ffi[T_MAX]) {
+void global_dict_add_ffi1(const char* n, ffi ffi[T_MAX]) {
   auto a = array::create(T_FFI, T_MAX, (flags_t)0, ffi);
   global_dict_add_new({string_t(n), a});
 }
 
-void global_dict_add_ffi2(const char* n, t_ffi ffi[T_MAX][T_MAX]) {
+void global_dict_add_ffi2(const char* n, ffi ffi[T_MAX][T_MAX]) {
   global_dict_add_new({string_t(n), array::create(T_FFI, T_MAX * T_MAX, (flags_t)0, ffi)});
 }
 
@@ -90,16 +90,16 @@ DEF_WORD("2over", _2over) {
 
 #pragma endregion stack
 
-INLINE void thread1(inter_t* inter, stack& stack, const array_p x, t_ffi ffi_table[T_MAX]) {
+INLINE void thread1(inter_t* inter, stack& stack, const array_p x, ffi ffi_table[T_MAX]) {
   assert(x->t == T_ARR);
   array_p        out = x->alloc_as();
   array_p const* src = x->data<arr_t>();
   array_p*       dst = out->mut_data<arr_t>();
   DO(i, x->n) {
     PUSH(src[i]);
-    t_ffi ffi = ffi_table[src[i]->t];
-    assert(ffi);
-    ffi(inter, stack);
+    ffi f = ffi_table[src[i]->t];
+    assert(f);
+    f(inter, stack);
     dst[i] = stack.pop();
   }
   PUSH(out);
@@ -113,7 +113,7 @@ INLINE void thread1(inter_t* inter, stack& stack, const array_p x, t_ffi ffi_tab
 
 #pragma region bool
 
-t_ffi not_table[T_MAX];
+ffi not_table[T_MAX];
 
 GEN_THREAD1(not, not_table);
 
@@ -139,7 +139,7 @@ CONSTRUCTOR void reg_not() {
 
 // neg
 
-t_ffi neg_table[T_MAX];
+ffi neg_table[T_MAX];
 
 #define GEN_NEG(t)                                            \
   DEF_WORD_HANDLER_1_1(neg_##t) {                             \
@@ -161,7 +161,7 @@ CONSTRUCTOR void reg_neg() {
 
 // abs
 
-t_ffi abs_table[T_MAX];
+ffi abs_table[T_MAX];
 
 #define GEN_ABS(t, op)                                           \
   DEF_WORD_HANDLER_1_1(abs_##t) {                                \
@@ -195,7 +195,7 @@ CONSTRUCTOR void reg_abs() {
 #define GEN_FLOAT1_SPEC(name, t, op) GEN_SPEC1(name, t, f64_t, op)
 
 #define GEN_FLOAT(name, op)                    \
-  t_ffi name##_table[T_MAX];                   \
+  ffi name##_table[T_MAX];                     \
   GEN_FLOAT1_SPEC(name, f64_t, op)             \
   GEN_FLOAT1_SPEC(name, i64_t, op)             \
   GEN_THREAD1(name, name##_table)              \
@@ -233,7 +233,7 @@ GEN_FLOAT(tan, tan)
 GEN_FLOAT(tanh, tanh)
 
 #define GEN_ROUND(name, op)                    \
-  t_ffi name##_table[T_MAX];                   \
+  ffi name##_table[T_MAX];                     \
   GEN_SPEC1(name, f64_t, i64_t, op)            \
   GEN_SPEC1(name, i64_t, i64_t, op)            \
   GEN_THREAD1(name, name##_table)              \
@@ -294,7 +294,7 @@ ttT void w_binop(stack& stack, binop_kernel_t kernel) {
   GEN_BINOP_SPECIALIZATION(name, i64_t, f64_t, f64_t, op) \
   GEN_BINOP_SPECIALIZATION(name, f64_t, i64_t, f64_t, op) \
   GEN_BINOP_SPECIALIZATION(name, f64_t, f64_t, f64_t, op) \
-  t_ffi            name##_table[T_MAX][T_MAX] = {};       \
+  ffi              name##_table[T_MAX][T_MAX] = {};       \
   CONSTRUCTOR void __register_w_##name() {                \
     name##_table[T_I64][T_I64] = name##_i64_t_i64_t;      \
     name##_table[T_F64][T_I64] = name##_f64_t_i64_t;      \
@@ -320,7 +320,7 @@ GEN_BINOP("&", min, MIN_OP)
 
 #pragma region divide
 
-t_ffi divide_table[T_MAX][T_MAX] = {};
+ffi divide_table[T_MAX][T_MAX] = {};
 
 #define DIVIDE(x, y) ((f64)(x)) / ((f64)(y))
 
@@ -341,7 +341,7 @@ CONSTRUCTOR void register_divide() {
 
 #pragma region div
 
-t_ffi div_table[T_MAX][T_MAX] = {};
+ffi div_table[T_MAX][T_MAX] = {};
 
 #define DIV_INT(x, y)   (x) / (y)
 #define DIV_FLOAT(x, y) trunc((x) / (y))
@@ -363,7 +363,7 @@ CONSTRUCTOR void register_div() {
 
 #pragma region mod
 
-t_ffi mod_table[T_MAX][T_MAX] = {};
+ffi mod_table[T_MAX][T_MAX] = {};
 
 #define MOD_PERCENT(x, y) ((x) % (y))
 #define MOD_FMOD(x, y)    fmod((x), (y))
@@ -385,7 +385,7 @@ CONSTRUCTOR void register_mod() {
 
 #pragma region equal
 
-t_ffi equal_table[T_MAX][T_MAX] = {};
+ffi equal_table[T_MAX][T_MAX] = {};
 
 #define EQUAL_OP(a, b) (a) == (b)
 
@@ -418,7 +418,7 @@ CONSTRUCTOR void register_equal() {
 
 #pragma region less
 
-t_ffi less_table[T_MAX][T_MAX] = {};
+ffi less_table[T_MAX][T_MAX] = {};
 
 #define LESS_OP(a, b) (a) < (b)
 
@@ -523,7 +523,7 @@ GEN_REPEAT_SPECIALIZATION(i64_t);
 GEN_REPEAT_SPECIALIZATION(f64_t);
 GEN_REPEAT_SPECIALIZATION(arr_t);
 
-t_ffi repeat_table[T_MAX][T_MAX] = {};
+ffi repeat_table[T_MAX][T_MAX] = {};
 
 CONSTRUCTOR void register_repeat() {
   repeat_table[T_C8][T_I64]  = repeat_c8_t;
@@ -548,7 +548,7 @@ DEF_WORD("\\i", slash_info) {
   }
 }
 
-DEF_WORD("\\c", slash_clear) { inter_reset(inter); }
+DEF_WORD("\\c", slash_clear) { inter->reset(); }
 DEF_WORD("\\mem", slash_mem) { malloc_stats_print(NULL, NULL, NULL); }
 DEF_WORD("\\s", slash_stack) {
   DO(i, stack.len()) { (*inter->out) << std::format("{}: {}\n", i, stack[i]); }
@@ -565,7 +565,7 @@ DEF_WORD(",fold", fold) {
   t_dict_entry e    = as_dict_entry(op);
   auto         iter = [&](size_t i, array_p slice) mutable {
     PUSH(slice);
-    if (i > 0) inter_dict_entry(inter, e);
+    if (i > 0) inter->entry(e);
   };
   x->for_each_atom(iter);
 }
@@ -579,7 +579,7 @@ DEF_WORD(",scan", scan) {
   auto iter      = [&](size_t i, array_p slice) mutable {
     if (i > 0) DUP;
     PUSH(slice);
-    if (i > 0) inter_dict_entry(inter, e);
+    if (i > 0) inter->entry(e);
   };
   x->for_each_atom(iter);
   array_p result = cat(stack, x->n);
@@ -593,7 +593,7 @@ DEF_WORD(",apply", apply) {
   t_dict_entry e    = as_dict_entry(op);
   auto         iter = [&](size_t i, array_p slice) mutable {
     PUSH(slice);
-    inter_dict_entry(inter, e);
+    inter->entry(e);
   };
   x->for_each_atom(iter);
   array_p result = cat(stack, x->n);
@@ -608,7 +608,7 @@ DEF_WORD(",pairwise", pairwise) {
 
   auto iter      = [&](size_t i, array_p slice) mutable {
     PUSH(slice);
-    if (i > 0) inter_dict_entry(inter, e);
+    if (i > 0) inter->entry(e);
     PUSH(slice);
   };
   x->for_each_atom(iter);
@@ -622,7 +622,7 @@ DEF_WORD(",power", power) {
   POP(n);
 
   t_dict_entry e = as_dict_entry(op);
-  DO(i, as_size_t(n)) { inter_dict_entry(inter, e); }
+  DO(i, as_size_t(n)) { inter->entry(e); }
 }
 
 DEF_WORD(",collect", collect) {
@@ -630,7 +630,7 @@ DEF_WORD(",collect", collect) {
   POP(x);
   t_dict_entry e = as_dict_entry(op);
   size_t       n = as_size_t(x);
-  DO(i, n) { inter_dict_entry(inter, e); }
+  DO(i, n) { inter->entry(e); }
   DROP;
   array_p result = cat(stack, n);
   PUSH(result);
@@ -645,7 +645,7 @@ DEF_WORD(",trace", trace) {
 
   DO(i, n) {
     if (i > 0) DUP;
-    inter_dict_entry(inter, e);
+    inter->entry(e);
   }
 
   PUSH(cat(stack, n));

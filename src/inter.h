@@ -103,6 +103,11 @@ void global_dict_add_new(dict_entry&& e);
 using dict_t = std::vector<dict_entry>;
 
 struct inter_t {
+ private:
+  token_t next_token() { return ::next_token(&in); }
+  void    token(token_t t);
+
+ public:
   enum { INTERPRET, COMPILE } mode = INTERPRET;
   dict_t        dict;
   class stack   stack;
@@ -110,19 +115,22 @@ struct inter_t {
   string_t      comp;
   size_t        arr_level = 0;
   size_t        arr_marks[256]{};
-  std::ostream* out  = &cout;
-  const char*   line = nullptr;
+  std::ostream* out = &cout;
+  const char*   in  = nullptr;
 
   inter_t();
+  ~inter_t();
+  void reset();
+  void load_prelude();
+
+  void        entry(t_dict_entry e_idx);
+  void        line(const char* s);
+  std::string line_capture_out(const char* line);
+
+  str_t        next_word();
+  dict_entry*  find_entry(str_t n);
+  t_dict_entry find_entry_idx(const str_t n);
+  dict_entry*  lookup_entry(t_dict_entry e);
+
+  static inter_t& current();
 };
-
-inter_t* inter_current();
-void     inter_set_current(inter_t* inter);
-
-void inter_load_prelude(inter_t* inter);
-
-void inter_reset(inter_t* inter);
-void inter_dict_entry(inter_t* inter, t_dict_entry e);
-
-void        inter_line(inter_t* inter, const char* s);
-std::string inter_line_capture_out(inter_t* inter, const char* line);

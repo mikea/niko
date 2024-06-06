@@ -38,7 +38,7 @@ next:
     if (getline(&input, &input_size, stdin) <= 0) return;
 
     try {
-      inter_line(inter, input);
+      inter->line(input);
     } catch (std::exception& e) {
       cerr << "ERROR: " << e.what() << "\n";
       goto next;
@@ -80,14 +80,14 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
 
     if (in_nk) {
       if (str_starts_with(l, code_end)) {
-        inter_reset(inter);
+        inter->reset();
         in_nk = false;
       } else {
-        inter_line(inter, line);
+        inter->line(line);
       }
     } else if (in_nkt) {
       if (str_starts_with(l, code_end)) {
-        inter_reset(inter);
+        inter->reset();
         if (rest_out.size()) {
           cerr << "ERROR " << fname << ":" << in_line_no << " : unmatched output: '" << rest_out << "'\n";
           ret = 1;
@@ -101,7 +101,7 @@ int test(inter_t* inter, const char* fname, bool v, bool f) {
           ret = 1;
         }
         in_line_no = line_no;
-        out        = inter_line_capture_out(inter, line + 1);
+        out        = inter->line_capture_out(line + 1);
         rest_out   = out;
         continue;
       } else if (!rest_out.size() || memcmp(line, rest_out.begin(), read)) {
@@ -164,13 +164,12 @@ int main(int argc, char* argv[]) {
   }
 
   inter_t inter;
-  inter_set_current(&inter);
 
-  if (!z) inter_load_prelude(&inter);
+  if (!z) inter.load_prelude();
 
   try {
     if (t) return test(&inter, t, v, f);
-    else if (e) inter_line(&inter, e);
+    else if (e) inter.line(e);
     else repl(&inter);
     return 0;
   } catch (std::exception& e) {

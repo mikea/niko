@@ -9,12 +9,21 @@
 
 dict_t global_dict;
 
+inter_t* global_inter;
+
 inter_t::inter_t() {
+  assert(!global_inter);
   dict.reserve(global_dict.size());
   DO(i, global_dict.size()) {
     dict_entry& e = global_dict[i];
     dict.push_back({e.k.clone(), e.v, e.f});
   }
+  global_inter = this;
+}
+
+inter_t::~inter_t() {
+  assert(global_inter == this);
+  global_inter = nullptr;
 }
 
 void global_dict_add_new(dict_entry&& e) {
@@ -53,10 +62,7 @@ array_p cat(stack& stack, size_t n) {
 
 // interpreter
 
-token_t _inter_next_token(inter_t* inter) { return next_token(&inter->line); }
-
-t_dict_entry inter_find_entry_idx(inter_t* inter, const str_t n) {
-  dict_t& dict = inter->dict;
+t_dict_entry inter_t::find_entry_idx(const str_t n) {
   DO(i, dict.size()) {
     size_t j = dict.size() - i - 1;
     if (n == dict[j].k) return j;
@@ -64,20 +70,19 @@ t_dict_entry inter_find_entry_idx(inter_t* inter, const str_t n) {
   return dict.size();
 }
 
-ALWAYS_INLINE dict_entry* inter_lookup_entry(inter_t* inter, t_dict_entry e) {
-  CHECK(e < inter->dict.size(), "bad dict entry");
-  return &inter->dict[e];
+dict_entry* inter_t::lookup_entry(t_dict_entry e) {
+  CHECK(e < dict.size(), "bad dict entry");
+  return &dict[e];
 }
 
-dict_entry* inter_find_entry(inter_t* inter, str_t n) {
-  size_t e = inter_find_entry_idx(inter, n);
-  if (e == inter->dict.size()) return NULL;
-  return &inter->dict[e];
+dict_entry* inter_t::find_entry(str_t n) {
+  size_t e = find_entry_idx(n);
+  if (e == dict.size()) return NULL;
+  return &dict[e];
 }
 
-void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
-  stack&      stack = inter->stack;
-  dict_entry* e     = inter_lookup_entry(inter, e_idx);
+void inter_t::entry(t_dict_entry e_idx) {
+  dict_entry* e = lookup_entry(e_idx);
   if (e->f & ENTRY_CONST || e->f & ENTRY_VAR) {
     PUSH(e->v);
     return;
@@ -85,27 +90,27 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
   array* a = e->v;
   switch (a->t) {
     case T_FFI: {
-      t_ffi f;
-      auto  d = a->data<ffi_t>();
+      ffi  f;
+      auto d = a->data<ffi_t>();
 
       switch (a->n) {
         case 1: {
           f = *d;
           CHECK(f, "not implemented");
-          return f(inter, stack);
+          return f(this, stack);
         }
         case T_MAX: {
           auto& x = stack.peek(0);
           f       = d[x.t];
           CHECK(f, "{} is not supported", x.t);
-          return f(inter, stack);
+          return f(this, stack);
         }
         case T_MAX* T_MAX: {
           auto& y = stack.peek(0);
           auto& x = stack.peek(1);
-          f       = ((t_ffi(*)[T_MAX])d)[x.t][y.t];
+          f       = ((ffi(*)[T_MAX])d)[x.t][y.t];
           CHECK(f, "{} {} are not supported", x.t, y.t);
-          return f(inter, stack);
+          return f(this, stack);
         }
         default: panicf("unexpected ffi length: {}", a->n);
       }
@@ -123,7 +128,7 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
           case T_FFI:        NOT_IMPLEMENTED;
           case T_DICT_ENTRY: {
             if ((*p)->f & FLAG_QUOTE) PUSH(*p);
-            else inter_dict_entry(inter, *(*p)->data<dict_entry_t>());
+            else entry(*(*p)->data<dict_entry_t>());
             break;
           };
         }
@@ -134,36 +139,36 @@ void inter_dict_entry(inter_t* inter, t_dict_entry e_idx) {
   }
 }
 
-str_t inter_next_word(inter_t* inter) {
-  token_t next = _inter_next_token(inter);
+str_t inter_t::next_word() {
+  token_t next = next_token();
   CHECK(next.tok == TOK_WORD, "word expected");
   return next.text;
 }
 
-void inter_token(inter_t* inter, token_t t) {
-  stack& stack = inter->mode == inter_t::COMPILE ? inter->comp_stack : inter->stack;
+void inter_t::token(token_t t) {
+  auto& stack = mode == inter_t::COMPILE ? comp_stack : this->stack;
 
   switch (t.tok) {
     case TOK_EOF:      return;
     case TOK_ERR:      panicf("unexpected token: '{}'", t.text);
     case TOK_ARR_OPEN: {
-      assert(inter->arr_level < sizeof(inter->arr_marks) / sizeof(inter->arr_marks[0]));
-      inter->arr_marks[inter->arr_level++] = stack.len();
+      assert(arr_level < sizeof(arr_marks) / sizeof(arr_marks[0]));
+      arr_marks[arr_level++] = stack.len();
       return;
     }
     case TOK_ARR_CLOSE: {
-      CHECK(inter->arr_level, "unbalanced ]");
-      size_t mark = inter->arr_marks[--inter->arr_level];
+      CHECK(arr_level, "unbalanced ]");
+      size_t mark = arr_marks[--arr_level];
       CHECK(stack.len() >= mark, "stack underflow");
       array_p a = cat(stack, stack.len() - mark);
       PUSH(a);
       return;
     }
     case TOK_WORD: {
-      size_t e = inter_find_entry_idx(inter, t.text);
-      CHECK(e < inter->dict.size(), "unknown word '{}'", t.text);
-      dict_entry* entry = inter_lookup_entry(inter, e);
-      if (inter->mode == inter_t::INTERPRET || (entry->f & ENTRY_IMM)) inter_dict_entry(inter, e);
+      size_t e = find_entry_idx(t.text);
+      CHECK(e < dict.size(), "unknown word '{}'", t.text);
+      dict_entry* en = lookup_entry(e);
+      if (mode == inter_t::INTERPRET || (en->f & ENTRY_IMM)) entry(e);
       else PUSH(array::atom<dict_entry_t>(e));
 
       return;
@@ -183,8 +188,8 @@ void inter_token(inter_t* inter, token_t t) {
       return;
     }
     case TOK_QUOTE: {
-      size_t e = inter_find_entry_idx(inter, t.val.s);
-      CHECK(e < inter->dict.size(), "unknown word '{}'", t.text);
+      size_t e = find_entry_idx(t.val.s);
+      CHECK(e < dict.size(), "unknown word '{}'", t.text);
       array_p a = array::atom<dict_entry_t>(e);
       a->f      = a->f | FLAG_QUOTE;
       PUSH(a);
@@ -194,48 +199,42 @@ void inter_token(inter_t* inter, token_t t) {
   UNREACHABLE;
 }
 
-inter_t* current;
-inter_t* inter_current() {
-  assert(current != NULL);
-  return current;
-}
-void inter_reset_current(bool*) { current = NULL; }
-void inter_set_current(inter_t* inter) {
-  assert(inter != NULL);
-  current = inter;
+inter_t& inter_t::current() {
+  assert(global_inter != NULL);
+  return *global_inter;
 }
 
-void inter_line(inter_t* inter, const char* s) {
-  inter->line = s;
+void inter_t::line(const char* s) {
+  in = s;
 
   for (;;) {
-    token_t t = _inter_next_token(inter);
+    token_t t = next_token();
     if (t.tok == TOK_EOF) return;
-    inter_token(inter, t);
+    token(t);
   }
 }
 
-std::string inter_line_capture_out(inter_t* inter, const char* line) {
+std::string inter_t::line_capture_out(const char* l) {
   std::ostringstream buf;
-  inter->out = &buf;
-  defer { inter->out = &cout; };
+  out = &buf;
+  defer { out = &cout; };
   try {
-    inter_line(inter, line);
+    line(l);
     return buf.str();
   } catch (std::exception& e) { return std::format("ERROR: {}\n", e.what()); }
 }
 
-void inter_load_prelude(inter_t* inter) {
+void inter_t::load_prelude() {
   str_t prelude((char*)__prelude_nk, __prelude_nk_len);
   own(char) c_prelude = str_toc(prelude);
-  inter_line(inter, c_prelude);
+  line(c_prelude);
 }
 
-void inter_reset(inter_t* inter) {
-  inter->stack.clear();
-  inter->comp_stack.clear();
-  inter->arr_level = 0;
-  inter->mode      = inter_t::INTERPRET;
+void inter_t::reset() {
+  stack.clear();
+  comp_stack.clear();
+  arr_level = 0;
+  mode      = inter_t::INTERPRET;
 }
 
 #pragma region words
@@ -244,8 +243,8 @@ void inter_reset(inter_t* inter) {
 
 DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
   CHECK(inter->mode == inter_t::INTERPRET, ": can be used only in interpret mode");
-  str_t        next = inter_next_word(inter);
-  t_dict_entry prev = inter_find_entry_idx(inter, next);
+  str_t        next = inter->next_word();
+  t_dict_entry prev = inter->find_entry_idx(next);
   if (prev < inter->dict.size()) {
     dict_entry* e = &inter->dict[prev];
     if (e->f & (ENTRY_CONST | ENTRY_SYS)) panicf("`{}` can't be redefined", next);
@@ -258,7 +257,7 @@ DEF_WORD_FLAGS(":", def, ENTRY_IMM) {
 DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
   CHECK(inter->mode == inter_t::COMPILE, ": can be used only in compile mode");
   array_p     a    = array::create(T_ARR, inter->comp_stack.len(), (flags_t)0, inter->comp_stack.begin());
-  dict_entry* prev = inter_find_entry(inter, inter->comp);
+  dict_entry* prev = inter->find_entry(inter->comp);
   if (prev) {
     prev->v = a;
     prev->f = (entry_flags)(prev->f & ~ENTRY_VAR);
@@ -273,16 +272,16 @@ DEF_WORD_FLAGS(";", enddef, ENTRY_IMM) {
 
 DEF_WORD_FLAGS("const", _const, ENTRY_IMM) {
   CHECK(inter->mode == inter_t::INTERPRET, "const can be used only in interpret mode");
-  str_t next = inter_next_word(inter);
-  if (inter_find_entry_idx(inter, next) < inter->dict.size()) panicf("`{}` can't be redefined", next);
+  str_t next = inter->next_word();
+  if (inter->find_entry_idx(next) < inter->dict.size()) panicf("`{}` can't be redefined", next);
   POP(x);
   inter->dict.push_back({next.to_owned(), x, ENTRY_CONST});
 }
 
 DEF_WORD_FLAGS("var", _var, ENTRY_IMM) {
   CHECK(inter->mode == inter_t::INTERPRET, "var can be used only in interpret mode");
-  str_t next = inter_next_word(inter);
-  if (inter_find_entry_idx(inter, next) < inter->dict.size()) panicf("`{}` can't be redefined", next);
+  str_t next = inter->next_word();
+  if (inter->find_entry_idx(next) < inter->dict.size()) panicf("`{}` can't be redefined", next);
   POP(x);
   inter->dict.push_back({next.to_owned(), x, ENTRY_VAR});
 }
@@ -298,7 +297,7 @@ DEF_WORD_FLAGS("literal", literal, ENTRY_IMM) {
 DEF_WORD("!", store) {
   POP(v);
   POP(x);
-  dict_entry* e = inter_lookup_entry(inter, as_dict_entry(v));
+  dict_entry* e = inter->lookup_entry(as_dict_entry(v));
   CHECK(e->f & ENTRY_VAR || !e->f, "{} is not a valid store target", e->v);
   e->v = x;
   e->f = e->f | ENTRY_VAR;
@@ -306,7 +305,7 @@ DEF_WORD("!", store) {
 
 DEF_WORD("@", load) {
   POP(v);
-  dict_entry* e = inter_lookup_entry(inter, as_dict_entry(v));
+  dict_entry* e = inter->lookup_entry(as_dict_entry(v));
   PUSH(e->v);
 }
 

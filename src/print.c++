@@ -20,7 +20,7 @@ ttT T format_atom(type_t t, flags_t f, const void* ptr, T out) {
     case T_FFI:        NOT_IMPLEMENTED;  // return fprintf(f, "<native_function>");
     case T_DICT_ENTRY: {
       size_t      idx = *(t_dict_entry*)ptr;
-      dict_entry& e   = inter_current()->dict[idx];
+      dict_entry& e   = inter_t::current().dict[idx];
       if (f & FLAG_QUOTE) return format_to(out, "{}'", e.k);
       else return format_to(out, "{}", e.k);
     }

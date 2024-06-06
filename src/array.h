@@ -35,9 +35,9 @@ struct arr_t {
 
 struct inter_t;
 struct stack;
-typedef void (*t_ffi)(inter_t* inter, stack& s);
+typedef void (*ffi)(inter_t* inter, stack& s);
 struct ffi_t {
-  using t                   = t_ffi;
+  using t                   = ffi;
   static constexpr type_t e = type_t::T_FFI;
 };
 
