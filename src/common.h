@@ -171,3 +171,19 @@ deferrer<F> operator*(defer_dummy, F f) {
   defer {                                   \
     if (std::uncaught_exceptions()) { s; }; \
   };
+
+//
+
+template <template <typename> class Func, typename... Types>
+struct call_each;
+
+template <template <typename> class Func, typename T, typename... Types>
+struct call_each<Func, T, Types...> {
+  call_each() {
+    Func<T>();
+    call_each<Func, Types...>();
+  }
+};
+
+template <template <typename> class Func>
+struct call_each<Func> {};

@@ -112,21 +112,21 @@ ERROR: unbalanced ]
 ```nkt
 > : test_1 1 ; test_1 .
 1
-> 10 index test_1 + .
+> [ 0 1 2 3 4 5 6 7 8 9 ] test_1 + .
 [ 1 2 3 4 5 6 7 8 9 10 ]
-> : test_1+ test_1 + ; 10 index test_1+ .
+> : test_1+ test_1 + ; [ 0 1 2 3 4 5 6 7 8 9 ] test_1+ .
 [ 1 2 3 4 5 6 7 8 9 10 ]
-> 10 index test_1+ .
+> [ 0 1 2 3 4 5 6 7 8 9 ] test_1+ .
 [ 1 2 3 4 5 6 7 8 9 10 ]
-> : 100+ 100 + ; 10 index 100+ .
+> : 100+ 100 + ; [ 0 1 2 3 4 5 6 7 8 9 ] 100+ .
 [ 100 101 102 103 104 105 106 107 108 109 ]
 > : centigrade 32 - 5 * 9. / ; 72 centigrade .
 22.2222222222222
 > : test_sum +' ,fold ;
-> 10 index test_sum .
+> [ 0 1 2 3 4 5 6 7 8 9 ] test_sum .
 45
 > : sums +' ,scan ; 
-> 10 index sums .
+> [ 0 1 2 3 4 5 6 7 8 9 ] sums .
 [ 0 1 3 6 10 15 21 28 36 45 ]
 > : test_1. 1. ;
 > test_1. .

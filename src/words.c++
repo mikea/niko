@@ -1,5 +1,6 @@
 #include <jemalloc/jemalloc.h>
 #include <math.h>
+#include <array>
 #include <fstream>
 #include <sstream>
 
@@ -9,14 +10,24 @@
 
 // common utilities
 
-void global_dict_add_ffi1(const char* n, ffi ffi[T_MAX]) {
-  auto a = array::create(T_FFI, T_MAX, ffi);
-  global_dict_add_new({string(n), a});
+using ffi1_table = std::array<ffi, T_MAX>;
+using ffi2_table = std::array<ffi1_table, T_MAX>;
+
+void global_dict_add_ffi1(str n, const ffi1_table& ffi) {
+  global_dict_add_new({string(n), array::create(T_FFI, ffi.size(), ffi.begin())});
 }
 
-void global_dict_add_ffi2(const char* n, ffi ffi[T_MAX][T_MAX]) {
-  global_dict_add_new({string(n), array::create(T_FFI, T_MAX * T_MAX, ffi)});
+void global_dict_add_ffi2(str n, const ffi2_table& ffi) {
+  global_dict_add_new({string(n), array::create(T_FFI, ffi.size() * ffi.size(), ffi.begin())});
 }
+
+template <template <typename, typename> class Func>
+struct ffi2_registrar {
+  ffi2_registrar(str name, ffi2_table& table) {
+    call_each_type2<Func>();
+    global_dict_add_ffi2(name, table);
+  }
+};
 
 #pragma region stack
 
@@ -113,9 +124,8 @@ void thread1(inter_t& inter, stack& stack, ffi ffi_table[T_MAX]) {
 
 #pragma region bool
 
-ffi not_table[T_MAX];
-
-GEN_THREAD1(not, not_table);
+ffi1_table not_table{};
+GEN_THREAD1(not, not_table.begin());
 
 ttT void w_not(inter_t& inter, stack& stack) {
   POP(x);
@@ -136,7 +146,7 @@ CONSTRUCTOR void reg_not() {
 
 // neg
 
-ffi neg_table[T_MAX];
+ffi1_table neg_table{};
 
 ttT void w_neg(inter_t& inter, stack& stack) {
   POP(x);
@@ -144,7 +154,7 @@ ttT void w_neg(inter_t& inter, stack& stack) {
   DO(i, x->n) { y->mut_data<T>()[i] = -x->data<T>()[i]; }
   PUSH(y);
 }
-GEN_THREAD1(neg, neg_table)
+GEN_THREAD1(neg, neg_table.begin())
 
 CONSTRUCTOR void reg_neg() {
   neg_table[T_I64] = w_neg<i64_t>;
@@ -155,7 +165,7 @@ CONSTRUCTOR void reg_neg() {
 
 // abs
 
-ffi abs_table[T_MAX];
+ffi1_table abs_table{};
 
 #define GEN_ABS(t, op)                                           \
   DEF_WORD_HANDLER_1_1(abs_##t) {                                \
@@ -166,7 +176,7 @@ ffi abs_table[T_MAX];
 
 GEN_ABS(i64_t, labs);
 GEN_ABS(f64_t, fabs);
-GEN_THREAD1(abs, abs_table)
+GEN_THREAD1(abs, abs_table.begin())
 
 CONSTRUCTOR void reg_abs() {
   abs_table[T_I64] = abs_i64_t;
@@ -180,16 +190,16 @@ template <typename X, typename Y, typename Op>
 void w_math(struct inter_t& inter, class stack& stack) {
   POP(x);
   array_p y = x->alloc_as<Y>();
-  DO(i, x->n) { y->mut_data<Y>()[i] = Op::apply(x->data<X>()[i]); }
+  DO(i, x->n) { y->mut_data<Y>()[i] = Op::call(x->data<X>()[i]); }
   PUSH(y);
 }
 
 #define GEN_FLOAT(name, fn)                         \
-  ffi name##_table[T_MAX];                          \
-  GEN_THREAD1(name, name##_table)                   \
+  ffi1_table name##_table;                          \
+  GEN_THREAD1(name, name##_table.begin())           \
   CONSTRUCTOR void reg_##name() {                   \
     struct op {                                     \
-      static f64 apply(f64 x) { return fn(x); }     \
+      static f64 call(f64 x) { return fn(x); }      \
     };                                              \
     name##_table[T_I64] = w_math<i64_t, f64_t, op>; \
     name##_table[T_F64] = w_math<f64_t, f64_t, op>; \
@@ -224,11 +234,11 @@ GEN_FLOAT(tan, tan)
 GEN_FLOAT(tanh, tanh)
 
 #define GEN_ROUND(name, fn)                         \
-  ffi name##_table[T_MAX];                          \
-  GEN_THREAD1(name, name##_table)                   \
+  ffi1_table name##_table{};                        \
+  GEN_THREAD1(name, name##_table.begin())           \
   CONSTRUCTOR void reg_##name() {                   \
     struct op {                                     \
-      static i64 apply(f64 x) { return fn(x); }     \
+      static i64 call(f64 x) { return fn(x); }      \
     };                                              \
     name##_table[T_I64] = w_math<i64_t, i64_t, op>; \
     name##_table[T_F64] = w_math<f64_t, i64_t, op>; \
@@ -275,7 +285,7 @@ ttXYZ void w_binop(stack& stack, binop_kernel_t<typename X::t, typename Y::t, ty
   GEN_BINOP_SPECIALIZATION(name, i64_t, f64_t, f64_t, op) \
   GEN_BINOP_SPECIALIZATION(name, f64_t, i64_t, f64_t, op) \
   GEN_BINOP_SPECIALIZATION(name, f64_t, f64_t, f64_t, op) \
-  ffi              name##_table[T_MAX][T_MAX] = {};       \
+  ffi2_table       name##_table{};                        \
   CONSTRUCTOR void __register_w_##name() {                \
     name##_table[T_I64][T_I64] = name##_i64_t_i64_t;      \
     name##_table[T_F64][T_I64] = name##_f64_t_i64_t;      \
@@ -301,7 +311,7 @@ GEN_BINOP("&", min, MIN_OP)
 
 #pragma region divide
 
-ffi divide_table[T_MAX][T_MAX] = {};
+ffi2_table divide_table{};
 
 #define DIVIDE(x, y) ((f64)(x)) / ((f64)(y))
 
@@ -322,7 +332,7 @@ CONSTRUCTOR void register_divide() {
 
 #pragma region div
 
-ffi div_table[T_MAX][T_MAX] = {};
+ffi2_table div_table{};
 
 #define DIV_INT(x, y)   (x) / (y)
 #define DIV_FLOAT(x, y) trunc((x) / (y))
@@ -344,7 +354,7 @@ CONSTRUCTOR void register_div() {
 
 #pragma region mod
 
-ffi mod_table[T_MAX][T_MAX] = {};
+ffi2_table mod_table{};
 
 #define MOD_PERCENT(x, y) ((x) % (y))
 #define MOD_FMOD(x, y)    fmod((x), (y))
@@ -366,7 +376,7 @@ CONSTRUCTOR void register_mod() {
 
 #pragma region equal
 
-ffi equal_table[T_MAX][T_MAX] = {};
+ffi2_table equal_table{};
 
 #define EQUAL_OP(a, b) (a) == (b)
 
@@ -399,7 +409,7 @@ CONSTRUCTOR void register_equal() {
 
 #pragma region less
 
-ffi less_table[T_MAX][T_MAX] = {};
+ffi2_table less_table{};
 
 #define LESS_OP(a, b) (a) < (b)
 
@@ -445,6 +455,8 @@ DEF_WORD_1_1("index", index) {
 
 #pragma region array_ops
 
+DEF_WORD_1_1("len", len) { return array::atom<i64_t>(x->n); }
+
 ttX void reverse(inter_t& inter, stack& stack) {
   POP(x);
   array_p y = x->alloc_as();
@@ -454,7 +466,7 @@ ttX void reverse(inter_t& inter, stack& stack) {
 
 #define REGISTER_REVERSE(t) reverse_table[t::e] = reverse<t>;
 CONSTRUCTOR void register_reverse() {
-  ffi reverse_table[T_MAX] = {};
+  ffi1_table reverse_table{};
   TYPE_FOREACH(REGISTER_REVERSE);
   global_dict_add_ffi1("reverse", reverse_table);
 }
@@ -468,14 +480,11 @@ ttX void take(inter_t& inter, stack& stack) {
   PUSH(z);
 }
 
-#define REGISTER_TAKE(t) take_table[t::e][T_I64] = take<t>;
-CONSTRUCTOR void register_take() {
-  ffi take_table[T_MAX][T_MAX] = {};
-  TYPE_FOREACH(REGISTER_TAKE);
-  global_dict_add_ffi2("take", take_table);
-}
-
-DEF_WORD_1_1("len", len) { return array::atom<i64_t>(x->n); }
+ffi2_table take_table;
+ttXY struct reg_take {
+  reg_take() { take_table[X::e][T_I64] = take<X>; }
+};
+ffi2_registrar<reg_take> take_registrar("take", take_table);
 
 ttX void cell(inter_t& inter, stack& stack) {
   POP(y);
@@ -485,7 +494,7 @@ ttX void cell(inter_t& inter, stack& stack) {
     PUSH(x->data<arr_t>()[WRAP(*ii, x->n)]);
     return;
   }
-  array_p z  = y->alloc_as<X>();
+  array_p z = y->alloc_as<X>();
   DO_MUT_ARRAY(z, X, i, p) {
     size_t j = WRAP(ii[i], x->n);
     *p       = x->data<X>()[j];
@@ -493,12 +502,11 @@ ttX void cell(inter_t& inter, stack& stack) {
   PUSH(z);
 }
 
-#define REGISTER_CELL(t) cell_table[t::e][T_I64] = cell<t>;
-CONSTRUCTOR void register_cell() {
-  ffi cell_table[T_MAX][T_MAX] = {};
-  TYPE_FOREACH(REGISTER_CELL);
-  global_dict_add_ffi2("[]", cell_table);
-}
+ffi2_table cell_table;
+ttXY struct reg_cell {
+  reg_cell() { cell_table[X::e][T_I64] = cell<X>; }
+};
+ffi2_registrar<reg_cell> cell_registrar("[]", cell_table);
 
 DEF_WORD("cat", cat) {
   POP(x);
@@ -522,7 +530,7 @@ ttX void repeat(inter_t& inter, stack& stack) {
 
 #define REGISTER_REPEAT(t) repeat_table[t::e][T_I64] = repeat<t>;
 CONSTRUCTOR void register_repeat() {
-  ffi repeat_table[T_MAX][T_MAX] = {};
+  ffi2_table repeat_table{};
   TYPE_FOREACH(REGISTER_REPEAT);
   global_dict_add_ffi2("repeat", repeat_table);
 }

@@ -57,7 +57,8 @@
         "streambuf": "cpp",
         "variant": "cpp",
         "print": "cpp",
-        "text_encoding": "cpp"
+        "text_encoding": "cpp",
+        "fstream": "cpp"
     },
     "C_Cpp.default.cStandard": "gnu23",
     "cmake.configureOnOpen": true,

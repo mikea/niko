@@ -48,6 +48,45 @@ struct dict_entry_t {
   static constexpr type_t e = type_t::T_DICT_ENTRY;
 };
 
+template <template <typename> class Func>
+using call_each_type = call_each<Func, c8_t, i64_t, f64_t, arr_t, ffi_t, dict_entry_t>;
+
+template <template <typename, typename> class Func>
+struct call_each_type2 {
+  call_each_type2() {
+    Func<c8_t, c8_t>();
+    Func<c8_t, i64_t>();
+    Func<c8_t, f64_t>();
+    Func<c8_t, arr_t>();
+    Func<c8_t, ffi_t>();
+    Func<c8_t, dict_entry_t>();
+    Func<i64_t, c8_t>();
+    Func<i64_t, i64_t>();
+    Func<i64_t, f64_t>();
+    Func<i64_t, arr_t>();
+    Func<i64_t, ffi_t>();
+    Func<i64_t, dict_entry_t>();
+    Func<f64_t, c8_t>();
+    Func<f64_t, i64_t>();
+    Func<f64_t, f64_t>();
+    Func<f64_t, arr_t>();
+    Func<f64_t, ffi_t>();
+    Func<f64_t, dict_entry_t>();
+    Func<arr_t, c8_t>();
+    Func<arr_t, i64_t>();
+    Func<arr_t, f64_t>();
+    Func<arr_t, arr_t>();
+    Func<arr_t, ffi_t>();
+    Func<arr_t, dict_entry_t>();
+    Func<dict_entry_t, c8_t>();
+    Func<dict_entry_t, i64_t>();
+    Func<dict_entry_t, f64_t>();
+    Func<dict_entry_t, arr_t>();
+    Func<dict_entry_t, ffi_t>();
+    Func<dict_entry_t, dict_entry_t>();
+  }
+};
+
 #define TYPE_ROW(v_c8, v_i64, v_f64, v_arr, v_ffi, v_dict_entry) \
   { v_c8, v_i64, v_f64, v_arr, v_ffi, v_dict_entry }
 
