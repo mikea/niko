@@ -16,7 +16,7 @@ add_compile_options(
   -fno-math-errno -fno-trapping-math 
   -fno-omit-frame-pointer -fverbose-asm)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-inline-small-functions -Og")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g -Wno-unknown-pragmas")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g -Wno-unknown-pragmas -Werror")
 add_link_options(-z execstack)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)

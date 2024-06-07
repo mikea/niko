@@ -492,38 +492,28 @@ DEF_WORD("[]", cell) {
 
 DEF_WORD("cat", cat) {
   POP(x);
-  array_p y = cat(stack, as_size_t(x));
-  PUSH(y);
+  PUSH(cat(stack, as_size_t(x)));
 }
 
-#define GEN_REPEAT_SPECIALIZATION(xt)                                            \
-  DEF_WORD_HANDLER(repeat_##xt) {                                                \
-    POP(y);                                                                      \
-    DO_ARRAY(y, i64_t, i, p) { CHECK(*p >= 0, "non-negative values expected"); } \
-    size_t n = 0;                                                                \
-    DO_ARRAY(y, i64_t, i, p) { n += *p; }                                        \
-    POP(x);                                                                      \
-    array_p z   = array::alloc(x->t, n);                                         \
-    auto    dst = z->mut_data<xt>();                                             \
-    auto    src = x->data<xt>();                                                 \
-    DO_ARRAY(y, i64_t, i, p) {                                                   \
-      DO(j, *p) { *dst++ = *(src + i); }                                         \
-    }                                                                            \
-    PUSH(z);                                                                     \
+ttX void repeat(inter_t& inter, stack& stack) {
+  POP(y);
+  POP(x);
+  DO_ARRAY(y, i64_t, i, p) { CHECK(*p >= 0, "non-negative values expected"); }
+  size_t n = 0;
+  DO_ARRAY(y, i64_t, i, p) { n += *p; }
+  array_p z   = array::alloc<X>(n);
+  auto    dst = z->mut_data<X>();
+  auto    src = x->data<X>();
+  DO_ARRAY(y, i64_t, i, p) {
+    DO(j, *p) { *dst++ = src[i]; }
   }
+  PUSH(z);
+}
 
-GEN_REPEAT_SPECIALIZATION(c8_t);
-GEN_REPEAT_SPECIALIZATION(i64_t);
-GEN_REPEAT_SPECIALIZATION(f64_t);
-GEN_REPEAT_SPECIALIZATION(arr_t);
-
-ffi repeat_table[T_MAX][T_MAX] = {};
-
+#define REGISTER_REPEAT(t) repeat_table[t::e][T_I64] = repeat<t>;
 CONSTRUCTOR void register_repeat() {
-  repeat_table[T_C8][T_I64]  = repeat_c8_t;
-  repeat_table[T_I64][T_I64] = repeat_i64_t;
-  repeat_table[T_F64][T_I64] = repeat_f64_t;
-  repeat_table[T_ARR][T_I64] = repeat_arr_t;
+  ffi repeat_table[T_MAX][T_MAX] = {};
+  TYPE_FOREACH(REGISTER_REPEAT);
   global_dict_add_ffi2("repeat", repeat_table);
 }
 
@@ -553,10 +543,9 @@ DEF_WORD("\\s", slash_stack) {
 #pragma region adverbs
 
 DEF_WORD(",fold", fold) {
-  POP(op);
+  POP(y);
   POP(x);
-
-  t_dict_entry e    = as_dict_entry(op);
+  t_dict_entry e    = as_dict_entry(y);
   auto         iter = [&](size_t i, array_p slice) mutable {
     PUSH(slice);
     if (i > 0) inter.entry(e);
@@ -565,10 +554,9 @@ DEF_WORD(",fold", fold) {
 }
 
 DEF_WORD(",scan", scan) {
-  POP(op);
+  POP(y);
   POP(x);
-
-  t_dict_entry e    = as_dict_entry(op);
+  t_dict_entry e    = as_dict_entry(y);
   auto         iter = [&](size_t i, array_p slice) mutable {
     if (i > 0) DUP;
     PUSH(slice);
@@ -580,10 +568,9 @@ DEF_WORD(",scan", scan) {
 }
 
 DEF_WORD(",apply", apply) {
-  POP(op);
+  POP(y);
   POP(x);
-
-  t_dict_entry e    = as_dict_entry(op);
+  t_dict_entry e    = as_dict_entry(y);
   auto         iter = [&](size_t i, array_p slice) mutable {
     PUSH(slice);
     inter.entry(e);
@@ -594,12 +581,10 @@ DEF_WORD(",apply", apply) {
 }
 
 DEF_WORD(",pairwise", pairwise) {
-  POP(op);
+  POP(y);
   POP(x);
-
-  t_dict_entry e = as_dict_entry(op);
-
-  auto iter      = [&](size_t i, array_p slice) mutable {
+  t_dict_entry e    = as_dict_entry(y);
+  auto         iter = [&](size_t i, array_p slice) mutable {
     PUSH(slice);
     if (i > 0) inter.entry(e);
     PUSH(slice);
@@ -611,17 +596,16 @@ DEF_WORD(",pairwise", pairwise) {
 }
 
 DEF_WORD(",power", power) {
-  POP(op);
-  POP(n);
-
-  t_dict_entry e = as_dict_entry(op);
-  DO(i, as_size_t(n)) { inter.entry(e); }
+  POP(y);
+  POP(x);
+  t_dict_entry e = as_dict_entry(y);
+  DO(i, as_size_t(x)) { inter.entry(e); }
 }
 
 DEF_WORD(",collect", collect) {
-  POP(op);
+  POP(y);
   POP(x);
-  t_dict_entry e = as_dict_entry(op);
+  t_dict_entry e = as_dict_entry(y);
   size_t       n = as_size_t(x);
   DO(i, n) { inter.entry(e); }
   DROP;
@@ -630,17 +614,14 @@ DEF_WORD(",collect", collect) {
 }
 
 DEF_WORD(",trace", trace) {
-  POP(op);
+  POP(y);
   POP(x);
-
-  t_dict_entry e = as_dict_entry(op);
+  t_dict_entry e = as_dict_entry(y);
   size_t       n = as_size_t(x);
-
   DO(i, n) {
     if (i > 0) DUP;
     inter.entry(e);
   }
-
   PUSH(cat(stack, n));
 }
 
