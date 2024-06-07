@@ -187,3 +187,19 @@ struct call_each<Func, T, Types...> {
 
 template <template <typename> class Func>
 struct call_each<Func> {};
+
+template <template <typename> class Func, typename Arg, typename... Types>
+struct call_each_arg;
+
+template <template <typename> class Func, typename Arg, typename T, typename... Types>
+struct call_each_arg<Func, Arg, T, Types...> {
+  call_each_arg(Arg& arg) {
+    Func<T>                            _1(arg);
+    call_each_arg<Func, Arg, Types...> _2(arg);
+  }
+};
+
+template <template <typename> class Func, typename Arg>
+struct call_each_arg<Func, Arg> {
+  call_each_arg(Arg& arg) {}
+};

@@ -17,6 +17,18 @@ void global_dict_add_ffi1(str n, const ffi1_table& ffi) {
   global_dict_add_new({string(n), array::create(T_FFI, ffi.size(), ffi.begin())});
 }
 
+template <template <typename> class Word, typename... Types>
+struct ffi1_registrar {
+  ttX struct reg {
+    reg(ffi1_table& table) { table[X::e] = Word<X>::call; }
+  };
+
+  ffi1_registrar(str name, ffi1_table& table) {
+    call_each_arg<reg, ffi1_table&, Types...> _(table);
+    global_dict_add_ffi1(name, table);
+  }
+};
+
 void global_dict_add_ffi2(str n, const ffi2_table& ffi) {
   global_dict_add_new({string(n), array::create(T_FFI, ffi.size() * ffi.size(), ffi.begin())});
 }
@@ -103,7 +115,7 @@ DEF_WORD("2over", _2over) {
 
 #pragma endregion stack
 
-void thread1(inter_t& inter, stack& stack, ffi ffi_table[T_MAX]) {
+void thread1(inter_t& inter, stack& stack, const ffi1_table& table) {
   POP(x);
   assert(x->t == T_ARR);
   array_p        out = x->alloc_as();
@@ -111,7 +123,7 @@ void thread1(inter_t& inter, stack& stack, ffi ffi_table[T_MAX]) {
   array_p*       dst = out->mut_data<arr_t>();
   DO(i, x->n) {
     PUSH(src[i]);
-    ffi f = ffi_table[src[i]->t];
+    ffi f = table[src[i]->t];
     assert(f);
     f(inter, stack);
     dst[i] = stack.pop();
@@ -122,46 +134,45 @@ void thread1(inter_t& inter, stack& stack, ffi ffi_table[T_MAX]) {
 #define GEN_THREAD1(name, ffi_table) \
   DEF_WORD_HANDLER(name##_arr_t) { thread1(inter, stack, ffi_table); }
 
+#define GEN_THREAD_SPEC1(name, ffi_table)                                                \
+  template <>                                                                            \
+  struct name<arr_t> {                                                                   \
+    static void call(inter_t& inter, stack& stack) { thread1(inter, stack, ffi_table); } \
+  };
+
 #pragma region bool
 
+ttX struct w_not {
+  static void call(inter_t& inter, stack& stack) {
+    POP(x);
+    array_p y = x->alloc_as<i64_t>();
+    DO(i, x->n) { y->mut_data<i64_t>()[i] = !(x->data<X>()[i]); }
+    PUSH(y);
+  }
+};
+
 ffi1_table not_table{};
-GEN_THREAD1(not, not_table.begin());
+GEN_THREAD_SPEC1(w_not, not_table);
+ffi1_registrar<w_not, c8_t, i64_t, f64_t, arr_t> _not_registrar("not", not_table);
 
-ttT void w_not(inter_t& inter, stack& stack) {
-  POP(x);
-  array_p y = x->alloc_as<i64_t>();
-  DO(i, x->n) { y->mut_data<i64_t>()[i] = !(x->data<T>()[i]); }
-  PUSH(y);
-}
-
-CONSTRUCTOR void reg_not() {
-  not_table[T_I64] = w_not<i64_t>;
-  not_table[T_F64] = w_not<f64_t>;
-  not_table[T_ARR] = not_arr_t;
-  global_dict_add_ffi1("not", not_table);
-}
 #pragma endregion bool
 
 #pragma region math
 
 // neg
 
+ttX struct w_neg {
+  static void call(inter_t& inter, stack& stack) {
+    POP(x);
+    array_p y = x->alloc_as();
+    DO(i, x->n) { y->mut_data<X>()[i] = -x->data<X>()[i]; }
+    PUSH(y);
+  }
+};
+
 ffi1_table neg_table{};
-
-ttT void w_neg(inter_t& inter, stack& stack) {
-  POP(x);
-  array_p y = x->alloc_as();
-  DO(i, x->n) { y->mut_data<T>()[i] = -x->data<T>()[i]; }
-  PUSH(y);
-}
-GEN_THREAD1(neg, neg_table.begin())
-
-CONSTRUCTOR void reg_neg() {
-  neg_table[T_I64] = w_neg<i64_t>;
-  neg_table[T_F64] = w_neg<f64_t>;
-  neg_table[T_ARR] = neg_arr_t;
-  global_dict_add_ffi1("neg", neg_table);
-}
+GEN_THREAD_SPEC1(w_neg, neg_table);
+ffi1_registrar<w_neg, c8_t, i64_t, f64_t, arr_t> _neg_registrar("neg", neg_table);
 
 // abs
 
@@ -176,7 +187,7 @@ ffi1_table abs_table{};
 
 GEN_ABS(i64_t, labs);
 GEN_ABS(f64_t, fabs);
-GEN_THREAD1(abs, abs_table.begin())
+GEN_THREAD1(abs, abs_table)
 
 CONSTRUCTOR void reg_abs() {
   abs_table[T_I64] = abs_i64_t;
@@ -196,7 +207,7 @@ void w_math(struct inter_t& inter, class stack& stack) {
 
 #define GEN_FLOAT(name, fn)                         \
   ffi1_table name##_table;                          \
-  GEN_THREAD1(name, name##_table.begin())           \
+  GEN_THREAD1(name, name##_table)                   \
   CONSTRUCTOR void reg_##name() {                   \
     struct op {                                     \
       static f64 call(f64 x) { return fn(x); }      \
@@ -235,7 +246,7 @@ GEN_FLOAT(tanh, tanh)
 
 #define GEN_ROUND(name, fn)                         \
   ffi1_table name##_table{};                        \
-  GEN_THREAD1(name, name##_table.begin())           \
+  GEN_THREAD1(name, name##_table)                   \
   CONSTRUCTOR void reg_##name() {                   \
     struct op {                                     \
       static i64 call(f64 x) { return fn(x); }      \
@@ -457,19 +468,17 @@ DEF_WORD_1_1("index", index) {
 
 DEF_WORD_1_1("len", len) { return array::atom<i64_t>(x->n); }
 
-ttX void reverse(inter_t& inter, stack& stack) {
-  POP(x);
-  array_p y = x->alloc_as();
-  DO(i, x->n) { y->mut_data<X>()[i] = x->data<X>()[x->n - i - 1]; }
-  PUSH(y);
-}
+ttX struct w_reverse {
+  static void call(inter_t& inter, stack& stack) {
+    POP(x);
+    array_p y = x->alloc_as();
+    DO(i, x->n) { y->mut_data<X>()[i] = x->data<X>()[x->n - i - 1]; }
+    PUSH(y);
+  }
+};
 
-#define REGISTER_REVERSE(t) reverse_table[t::e] = reverse<t>;
-CONSTRUCTOR void register_reverse() {
-  ffi1_table reverse_table{};
-  TYPE_FOREACH(REGISTER_REVERSE);
-  global_dict_add_ffi1("reverse", reverse_table);
-}
+ffi1_table                                           reverse_table{};
+ffi1_registrar<w_reverse, c8_t, i64_t, f64_t, arr_t> _reverse_registrar("reverse", reverse_table);
 
 ttX void take(inter_t& inter, stack& stack) {
   POP(y);

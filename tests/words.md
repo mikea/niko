@@ -217,7 +217,7 @@ ERROR: expected single value
 
 ## unary words
 
-### not
+### `not`
 
 ```nkt
 > 1 not .
@@ -230,6 +230,8 @@ ERROR: expected single value
 1
 > [ 0. 1. 2. 3. ] not .
 [ 1 0 0 0 ]
+> [ [ 0 1 ] [ 1 0 ] ] not .
+[ [ 1 0 ] [ 0 1 ] ]
 ```
 
 ### neg
