@@ -134,7 +134,6 @@ struct array {
 
   inline array*       assert_simd_aligned() { return assert_this(simd_aligned()); }
   inline const array* assert_simd_aligned() const { return assert_this(simd_aligned()); }
-
   inline array*       assert_type(type_t t) { return assert_this(this->t == t); }
   inline const array* assert_type(type_t t) const { return assert_this(this->t == t); }
 

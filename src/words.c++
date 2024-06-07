@@ -245,42 +245,30 @@ GEN_ROUND(trunc, trunc)
 
 #pragma region binops
 
-typedef void (*binop_kernel_t)(const void* restrict x,
-                               size_t x_n,
-                               const void* restrict y,
-                               size_t y_n,
-                               void* restrict out,
-                               size_t out_n);
+ttXYZ using binop_kernel_t =
+    void(*)(const X* restrict x, size_t x_n, const Y* restrict y, size_t y_n, Z* restrict out, size_t out_n);
 
-ttT void w_binop(stack& stack, binop_kernel_t kernel) {
-  size_t yn = stack.peek(0).n;
-  size_t xn = stack.peek(1).n;
-  CHECK(yn == xn || yn == 1 || xn == 1, "array lengths are incompatible: {} vs {}", xn, yn);
-
+ttXYZ void w_binop(stack& stack, binop_kernel_t<typename X::t, typename Y::t, typename Z::t> kernel) {
   POP(y);
   POP(x);
-
-  array_p out = array::alloc<T>(max(xn, yn));
-  out->a      = x->a & y->a;
-  kernel(x->data(), x->n, y->data(), y->n, out->mut_data(), out->n);
-  PUSH(out);
+  CHECK(y->n == x->n || y->n == 1 || x->n == 1, "array lengths are incompatible: {} vs {}", x->n, y->n);
+  array_p z = array::alloc<Z>(max(x->n, y->n));
+  z->a      = x->a & y->a;
+  kernel(x->data<X>(), x->n, y->data<Y>(), y->n, z->mut_data<Z>(), z->n);
+  PUSH(z);
 }
 
-#define GEN_BINOP_KERNEL(name, a_t, b_t, y_t, op)                                                                 \
-  void name(const void* restrict a_ptr, size_t a_n, const void* restrict b_ptr, size_t b_n, void* restrict y_ptr, \
-            size_t y_n) {                                                                                         \
-    y_t* restrict y       = (y_t*)y_ptr;                                                                          \
-    const a_t* restrict a = (a_t*)a_ptr;                                                                          \
-    const b_t* restrict b = (b_t*)b_ptr;                                                                          \
-    if (y_n == a_n && y_n == b_n) DO(i, y_n) y[i] = op(a[i], b[i]);                                               \
-    else if (a_n == 1 && y_n == b_n) DO(i, y_n) y[i] = op(a[0], b[i]);                                            \
-    else if (b_n == 1 && y_n == a_n) DO(i, y_n) y[i] = op(a[i], b[0]);                                            \
-    else DO(i, y_n) y[i] = op(a[i % a_n], b[i % b_n]);                                                            \
+#define GEN_BINOP_KERNEL(name, xt, yt, zt, op)                                                             \
+  void name(const xt* restrict x, size_t xn, const yt* restrict y, size_t yn, zt* restrict z, size_t zn) { \
+    if (zn == xn && zn == yn) DO(i, zn) z[i] = op(x[i], y[i]);                                             \
+    else if (xn == 1 && zn == yn) DO(i, zn) z[i] = op(x[0], y[i]);                                         \
+    else if (yn == 1 && zn == xn) DO(i, zn) z[i] = op(x[i], y[0]);                                         \
+    else DO(i, zn) z[i] = op(x[i % xn], y[i % yn]);                                                        \
   }
 
-#define GEN_BINOP_SPECIALIZATION(name, a_t, b_t, y_t, op)                   \
-  GEN_BINOP_KERNEL(name##_kernel_##a_t##_##b_t, a_t::t, b_t::t, y_t::t, op) \
-  DEF_WORD_HANDLER(name##_##a_t##_##b_t) { return w_binop<y_t>(stack, name##_kernel_##a_t##_##b_t); }
+#define GEN_BINOP_SPECIALIZATION(name, xt, yt, zt, op)                 \
+  GEN_BINOP_KERNEL(name##_kernel_##xt##_##yt, xt::t, yt::t, zt::t, op) \
+  DEF_WORD_HANDLER(name##_##xt##_##yt) { return w_binop<xt, yt, zt>(stack, name##_kernel_##xt##_##yt); }
 
 #define GEN_BINOP(word, name, op)                         \
   GEN_BINOP_SPECIALIZATION(name, i64_t, i64_t, i64_t, op) \
@@ -464,14 +452,22 @@ DEF_WORD("reverse", reverse) {
   PUSH(y);
 }
 
-DEF_WORD("take", take) {
+ttX void take(inter_t& inter, stack& stack) {
   POP(y);
   POP(x);
-  size_t  n  = as_size_t(y);
-  array_p z  = array::alloc(x->t, n);
-  size_t  ys = type_sizeof(x->t, x->n);
-  DO(i, type_sizeof(x->t, z->n)) { ((char*)z->mut_data())[i] = ((char*)x->data())[i % ys]; }
+  size_t  n = as_size_t(y);
+  array_p z = array::alloc<X>(n);
+  DO(i, n) { z->mut_data<X>()[i] = x->data<X>()[i % x->n]; }
   PUSH(z);
+}
+
+CONSTRUCTOR void register_take() {
+  ffi take_table[T_MAX][T_MAX] = {};
+  take_table[T_I64][T_I64]     = take<i64_t>;
+  take_table[T_F64][T_I64]     = take<f64_t>;
+  take_table[T_C8][T_I64]      = take<c8_t>;
+  take_table[T_ARR][T_I64]     = take<arr_t>;
+  global_dict_add_ffi2("take", take_table);
 }
 
 DEF_WORD_1_1("len", len) { return array::atom<i64_t>(x->n); }

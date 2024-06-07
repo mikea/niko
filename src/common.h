@@ -31,7 +31,10 @@ static_assert(sizeof(f64) == sizeof(i64));
 
 #define restrict __restrict__
 #define ttT      template <typename T>
-#define ttTtU    template <typename T, typename U>
+#define ttTU     template <typename T, typename U>
+#define ttX      template <typename X>
+#define ttXY     template <typename X, typename Y>
+#define ttXYZ    template <typename X, typename Y, typename Z>
 
 #define ATTR(attr)    __attribute__((attr))
 #define CLEANUP(func) ATTR(cleanup(func))

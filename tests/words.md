@@ -137,6 +137,12 @@ ERROR: stack underflow
 [ 0 1 2 3 4 0 1 2 ]
 > 5 index 3 take .
 [ 0 1 2 ]
+> 2. 2 take .
+[ 2. 2. ]
+> "abcdef" 3 take .
+"abc"
+> [ 1 1. ] 4 take .
+[ 1 1. 1 1. ]
 ```
 
 ### reverse
