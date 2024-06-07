@@ -44,8 +44,7 @@ array_p cat(stack& stack, size_t n) {
   }
 
   array_p a;
-  if (same_type && atom) {
-    assert(t != T_ARR);  // not implemented
+  if (same_type && atom && t != T_ARR) {
     a          = array::alloc(t, n);
     void*  ptr = a->mut_data();
     size_t s   = type_sizeof(t, 1);

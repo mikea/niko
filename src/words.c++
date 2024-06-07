@@ -477,17 +477,27 @@ CONSTRUCTOR void register_take() {
 
 DEF_WORD_1_1("len", len) { return array::atom<i64_t>(x->n); }
 
-DEF_WORD("[]", cell) {
+ttX void cell(inter_t& inter, stack& stack) {
   POP(y);
-  CHECK(y->n >= 1, "expected length > 0");
-  CHECK(y->t == T_I64, "i64 array expected");
   POP(x);
-
-  size_t  i = WRAP(*y->data<i64_t>(), x->n);
-  array_p z;
-  if (x->t == T_ARR) z = *(x->data<arr_t>() + i);
-  else z = array::atom(x->t, x->data_i(i));
+  auto ii = y->data<i64_t>();
+  if (y->a && X::e == T_ARR) {
+    PUSH(x->data<arr_t>()[WRAP(*ii, x->n)]);
+    return;
+  }
+  array_p z  = y->alloc_as<X>();
+  DO_MUT_ARRAY(z, X, i, p) {
+    size_t j = WRAP(ii[i], x->n);
+    *p       = x->data<X>()[j];
+  }
   PUSH(z);
+}
+
+#define REGISTER_CELL(t) cell_table[t::e][T_I64] = cell<t>;
+CONSTRUCTOR void register_cell() {
+  ffi cell_table[T_MAX][T_MAX] = {};
+  TYPE_FOREACH(REGISTER_CELL);
+  global_dict_add_ffi2("[]", cell_table);
 }
 
 DEF_WORD("cat", cat) {
