@@ -150,6 +150,12 @@ ERROR: stack underflow
 ```nkt
 > 5 index reverse .
 [ 4 3 2 1 0 ]
+> [ 1. 2. ] reverse .
+[ 2. 1. ]
+> "abc" reverse .
+"cba"
+> [ 1 1. ] reverse .
+[ 1. 1 ]
 ```
 
 ### `[]`

@@ -11,7 +11,8 @@ using array_p = rc<array>;
 
 // type
 typedef enum { T_C8, T_I64, T_F64, T_ARR, T_FFI, T_DICT_ENTRY } type_t;
-#define T_MAX (T_DICT_ENTRY + 1)
+#define T_MAX           (T_DICT_ENTRY + 1)
+#define TYPE_FOREACH(f) APPLY(f, c8_t, i64_t, f64_t, arr_t, ffi_t, dict_entry_t)
 
 struct c8_t {
   using t                   = char;
@@ -51,8 +52,6 @@ struct dict_entry_t {
   { v_c8, v_i64, v_f64, v_arr, v_ffi, v_dict_entry }
 
 #define TYPE_ROW_FOREACH(f) TYPE_ROW(f(c8_t), f(i64_t), f(f64_t), f(arr_t), f(ffi_t), f(dict_entry_t))
-
-#define TYPE_ROW_ID TYPE_ROW(T_C8, T_I64, T_F64, T_ARR, T_FFI)
 
 #define __TYPE_SIZEOF(x) sizeof(x::t)
 static size_t type_sizeof_table[T_MAX] = TYPE_ROW_FOREACH(__TYPE_SIZEOF);
@@ -127,7 +126,6 @@ struct array {
   inline const void* data() const { return p; }
   inline void* restrict mut_data() { return assert_mut()->p; }
   inline const void* data_i(size_t i) const { return data() + type_sizeof(t, i); }
-  inline void*       mut_data_i(size_t i) { return mut_data() + type_sizeof(t, i); }
 
   ttT inline const T::t* data() const { return rcast<const T::t*>(assert_type(T::e)->data()); }
   ttT inline T::t* restrict mut_data() { return rcast<T::t* restrict>(assert_type(T::e)->mut_data()); }

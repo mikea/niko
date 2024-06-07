@@ -445,11 +445,18 @@ DEF_WORD_1_1("index", index) {
 
 #pragma region array_ops
 
-DEF_WORD("reverse", reverse) {
+ttX void reverse(inter_t& inter, stack& stack) {
   POP(x);
   array_p y = x->alloc_as();
-  DO(i, x->n) { memcpy(y->mut_data_i(i), x->data_i(x->n - i - 1), type_sizeof(x->t, 1)); }
+  DO(i, x->n) { y->mut_data<X>()[i] = x->data<X>()[x->n - i - 1]; }
   PUSH(y);
+}
+
+#define REGISTER_REVERSE(t) reverse_table[t::e] = reverse<t>;
+CONSTRUCTOR void register_reverse() {
+  ffi reverse_table[T_MAX] = {};
+  TYPE_FOREACH(REGISTER_REVERSE);
+  global_dict_add_ffi1("reverse", reverse_table);
 }
 
 ttX void take(inter_t& inter, stack& stack) {
@@ -461,12 +468,10 @@ ttX void take(inter_t& inter, stack& stack) {
   PUSH(z);
 }
 
+#define REGISTER_TAKE(t) take_table[t::e][T_I64] = take<t>;
 CONSTRUCTOR void register_take() {
   ffi take_table[T_MAX][T_MAX] = {};
-  take_table[T_I64][T_I64]     = take<i64_t>;
-  take_table[T_F64][T_I64]     = take<f64_t>;
-  take_table[T_C8][T_I64]      = take<c8_t>;
-  take_table[T_ARR][T_I64]     = take<arr_t>;
+  TYPE_FOREACH(REGISTER_TAKE);
   global_dict_add_ffi2("take", take_table);
 }
 

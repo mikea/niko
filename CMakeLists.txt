@@ -12,11 +12,9 @@ add_compile_options(
   -Wall
   -Werror=implicit-fallthrough -Werror=switch -Werror=return-type
   # todo
-  -Wno-narrowing 
   -Wno-pointer-arith
-  # -fpermissive
-  # -Wno-psabi 
-  -fno-math-errno -fno-trapping-math -fno-omit-frame-pointer -fverbose-asm)
+  -fno-math-errno -fno-trapping-math 
+  -fno-omit-frame-pointer -fverbose-asm)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-inline-small-functions -Og")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g -Wno-unknown-pragmas")
 add_link_options(-z execstack)
