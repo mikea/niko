@@ -39,7 +39,7 @@ next:
     try {
       inter.line(input.c_str());
     } catch (std::exception& e) {
-      cerr << "ERROR: " << e.what() << "\n";
+      ERROR("ERROR: {}", e.what());
       goto next;
     }
   }
@@ -92,8 +92,7 @@ int test(inter_t& inter, const char* fname, bool v, bool f) {
         rest_out   = out;
         continue;
       } else if (!rest_out.starts_with(line + "\n")) {
-        cerr << "ERROR " << fname << ":" << in_line_no << " : mismatched output, expected: '" << line << "' actual: '"
-             << rest_out << "'\n";
+        ERROR("ERROR {}:{} : mismatched output, expected: '{}' actual: '{}'", fname, in_line_no, line, rest_out);
         ret      = 1;
         rest_out = "";
       } else {
@@ -158,7 +157,7 @@ int main(int argc, char* argv[]) {
     else repl(inter);
     return 0;
   } catch (std::exception& e) {
-    cerr << "ERROR: " << e.what() << "\n";
+    ERROR("ERROR: {}", e.what());
     return 1;
   }
 }
