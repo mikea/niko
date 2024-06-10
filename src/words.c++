@@ -132,7 +132,8 @@ void thread1(inter_t& inter, stack& stack, const ffi1_table& table) {
 }
 
 #define GEN_THREAD1(name, ffi_table) \
-  DEF_WORD_HANDLER(name##_arr_t) { thread1(inter, stack, ffi_table); }
+  DECL_HANDLER(name##_arr_t);        \
+  DEF_HANDLER(name##_arr_t) { thread1(inter, stack, ffi_table); }
 
 #define GEN_THREAD_SPEC1(name, ffi_table)                                                \
   template <>                                                                            \
@@ -142,18 +143,16 @@ void thread1(inter_t& inter, stack& stack, const ffi1_table& table) {
 
 #pragma region bool
 
-ttX struct w_not {
-  static void call(inter_t& inter, stack& stack) {
-    POP(x);
-    array_p y = x->alloc_as<i64_t>();
-    DO(i, x->n) { y->mut_data<i64_t>()[i] = !(x->data<X>()[i]); }
-    PUSH(y);
-  }
-};
+DEF_HANDLER_X(w_not) {
+  POP(x);
+  array_p y = x->alloc_as<i64_t>();
+  DO(i, x->n) { y->mut_data<i64_t>()[i] = !(x->data<X>()[i]); }
+  PUSH(y);
+}
 
 ffi1_table not_table{};
 GEN_THREAD_SPEC1(w_not, not_table);
-ffi1_registrar<w_not, c8_t, i64_t, f64_t, arr_t> _not_registrar("not", not_table);
+ffi1_registrar<w_not, c8_t, i64_t, f64_t, arr_t> not_registrar("not", not_table);
 
 #pragma endregion bool
 
@@ -161,40 +160,35 @@ ffi1_registrar<w_not, c8_t, i64_t, f64_t, arr_t> _not_registrar("not", not_table
 
 // neg
 
-ttX struct w_neg {
-  static void call(inter_t& inter, stack& stack) {
-    POP(x);
-    array_p y = x->alloc_as();
-    DO(i, x->n) { y->mut_data<X>()[i] = -x->data<X>()[i]; }
-    PUSH(y);
-  }
-};
+DEF_HANDLER_X(w_neg) {
+  POP(x);
+  array_p y = x->alloc_as();
+  DO(i, x->n) { y->mut_data<X>()[i] = -x->data<X>()[i]; }
+  PUSH(y);
+}
 
 ffi1_table neg_table{};
 GEN_THREAD_SPEC1(w_neg, neg_table);
-ffi1_registrar<w_neg, c8_t, i64_t, f64_t, arr_t> _neg_registrar("neg", neg_table);
+ffi1_registrar<w_neg, c8_t, i64_t, f64_t, arr_t> neg_registrar("neg", neg_table);
 
 // abs
 
-ffi1_table abs_table{};
-
-#define GEN_ABS(t, op)                                           \
-  DEF_WORD_HANDLER_1_1(abs_##t) {                                \
-    array_p out = x->alloc_as();                                 \
-    DO(i, x->n) { out->mut_data<t>()[i] = op(x->data<t>()[i]); } \
-    return out;                                                  \
-  }
-
-GEN_ABS(i64_t, labs);
-GEN_ABS(f64_t, fabs);
-GEN_THREAD1(abs, abs_table)
-
-CONSTRUCTOR void reg_abs() {
-  abs_table[T_I64] = abs_i64_t;
-  abs_table[T_F64] = abs_f64_t;
-  abs_table[T_ARR] = abs_arr_t;
-  global_dict_add_ffi1("abs", abs_table);
+ttX X abs_impl(X x) { return labs(x); }
+template <>
+f64 abs_impl<f64>(f64 x) {
+  return fabs(x);
 }
+
+DEF_HANDLER_X(w_abs) {
+  POP(x);
+  array_p y = x->alloc_as();
+  DO(i, x->n) { y->mut_data<X>()[i] = abs_impl(x->data<X>()[i]); }
+  PUSH(y);
+}
+
+ffi1_table abs_table{};
+GEN_THREAD_SPEC1(w_abs, abs_table);
+ffi1_registrar<w_abs, i64_t, f64_t, arr_t> abs_registrar("abs", abs_table);
 
 // sqrt, sin, et. al.
 template <typename X, typename Y, typename Op>
@@ -214,7 +208,7 @@ void w_math(struct inter_t& inter, class stack& stack) {
     };                                              \
     name##_table[T_I64] = w_math<i64_t, f64_t, op>; \
     name##_table[T_F64] = w_math<f64_t, f64_t, op>; \
-    name##_table[T_ARR] = name##_arr_t;             \
+    name##_table[T_ARR] = name##_arr_t::call;       \
     global_dict_add_ffi1(#name, name##_table);      \
   }
 
@@ -253,7 +247,7 @@ GEN_FLOAT(tanh, tanh)
     };                                              \
     name##_table[T_I64] = w_math<i64_t, i64_t, op>; \
     name##_table[T_F64] = w_math<f64_t, i64_t, op>; \
-    name##_table[T_ARR] = name##_arr_t;             \
+    name##_table[T_ARR] = name##_arr_t::call;       \
     global_dict_add_ffi1(#name, name##_table);      \
   }
 
@@ -289,20 +283,21 @@ ttXYZ void w_binop(stack& stack, binop_kernel_t<typename X::t, typename Y::t, ty
 
 #define GEN_BINOP_SPECIALIZATION(name, xt, yt, zt, op)                 \
   GEN_BINOP_KERNEL(name##_kernel_##xt##_##yt, xt::t, yt::t, zt::t, op) \
-  DEF_WORD_HANDLER(name##_##xt##_##yt) { return w_binop<xt, yt, zt>(stack, name##_kernel_##xt##_##yt); }
+  DECL_HANDLER(name##_##xt##_##yt);                                    \
+  DEF_HANDLER(name##_##xt##_##yt) { return w_binop<xt, yt, zt>(stack, name##_kernel_##xt##_##yt); }
 
-#define GEN_BINOP(word, name, op)                         \
-  GEN_BINOP_SPECIALIZATION(name, i64_t, i64_t, i64_t, op) \
-  GEN_BINOP_SPECIALIZATION(name, i64_t, f64_t, f64_t, op) \
-  GEN_BINOP_SPECIALIZATION(name, f64_t, i64_t, f64_t, op) \
-  GEN_BINOP_SPECIALIZATION(name, f64_t, f64_t, f64_t, op) \
-  ffi2_table       name##_table{};                        \
-  CONSTRUCTOR void __register_w_##name() {                \
-    name##_table[T_I64][T_I64] = name##_i64_t_i64_t;      \
-    name##_table[T_F64][T_I64] = name##_f64_t_i64_t;      \
-    name##_table[T_I64][T_F64] = name##_i64_t_f64_t;      \
-    name##_table[T_F64][T_F64] = name##_f64_t_f64_t;      \
-    global_dict_add_ffi2(word, name##_table);             \
+#define GEN_BINOP(word, name, op)                          \
+  GEN_BINOP_SPECIALIZATION(name, i64_t, i64_t, i64_t, op)  \
+  GEN_BINOP_SPECIALIZATION(name, i64_t, f64_t, f64_t, op)  \
+  GEN_BINOP_SPECIALIZATION(name, f64_t, i64_t, f64_t, op)  \
+  GEN_BINOP_SPECIALIZATION(name, f64_t, f64_t, f64_t, op)  \
+  ffi2_table       name##_table{};                         \
+  CONSTRUCTOR void __register_w_##name() {                 \
+    name##_table[T_I64][T_I64] = name##_i64_t_i64_t::call; \
+    name##_table[T_F64][T_I64] = name##_f64_t_i64_t::call; \
+    name##_table[T_I64][T_F64] = name##_i64_t_f64_t::call; \
+    name##_table[T_F64][T_F64] = name##_f64_t_f64_t::call; \
+    global_dict_add_ffi2(word, name##_table);              \
   }
 
 #define PLUS_OP(a, b) (a) + (b)
@@ -332,10 +327,10 @@ GEN_BINOP_SPECIALIZATION(divide, f64_t, i64_t, f64_t, DIVIDE)
 GEN_BINOP_SPECIALIZATION(divide, f64_t, f64_t, f64_t, DIVIDE)
 
 CONSTRUCTOR void register_divide() {
-  divide_table[T_I64][T_I64] = divide_i64_t_i64_t;
-  divide_table[T_I64][T_F64] = divide_i64_t_f64_t;
-  divide_table[T_F64][T_I64] = divide_f64_t_i64_t;
-  divide_table[T_F64][T_F64] = divide_f64_t_f64_t;
+  divide_table[T_I64][T_I64] = divide_i64_t_i64_t::call;
+  divide_table[T_I64][T_F64] = divide_i64_t_f64_t::call;
+  divide_table[T_F64][T_I64] = divide_f64_t_i64_t::call;
+  divide_table[T_F64][T_F64] = divide_f64_t_f64_t::call;
   global_dict_add_ffi2("/", divide_table);
 }
 
@@ -354,10 +349,10 @@ GEN_BINOP_SPECIALIZATION(div, f64_t, i64_t, f64_t, DIV_FLOAT)
 GEN_BINOP_SPECIALIZATION(div, f64_t, f64_t, f64_t, DIV_FLOAT)
 
 CONSTRUCTOR void register_div() {
-  div_table[T_I64][T_I64] = div_i64_t_i64_t;
-  div_table[T_I64][T_F64] = div_i64_t_f64_t;
-  div_table[T_F64][T_I64] = div_f64_t_i64_t;
-  div_table[T_F64][T_F64] = div_f64_t_f64_t;
+  div_table[T_I64][T_I64] = div_i64_t_i64_t::call;
+  div_table[T_I64][T_F64] = div_i64_t_f64_t::call;
+  div_table[T_F64][T_I64] = div_f64_t_i64_t::call;
+  div_table[T_F64][T_F64] = div_f64_t_f64_t::call;
   global_dict_add_ffi2("div", div_table);
 }
 
@@ -376,10 +371,10 @@ GEN_BINOP_SPECIALIZATION(mod, f64_t, i64_t, f64_t, MOD_FMOD)
 GEN_BINOP_SPECIALIZATION(mod, f64_t, f64_t, f64_t, MOD_FMOD)
 
 CONSTRUCTOR void register_mod() {
-  mod_table[T_I64][T_I64] = mod_i64_t_i64_t;
-  mod_table[T_I64][T_F64] = mod_i64_t_f64_t;
-  mod_table[T_F64][T_I64] = mod_f64_t_i64_t;
-  mod_table[T_F64][T_F64] = mod_f64_t_f64_t;
+  mod_table[T_I64][T_I64] = mod_i64_t_i64_t::call;
+  mod_table[T_I64][T_F64] = mod_i64_t_f64_t::call;
+  mod_table[T_F64][T_I64] = mod_f64_t_i64_t::call;
+  mod_table[T_F64][T_F64] = mod_f64_t_f64_t::call;
   global_dict_add_ffi2("mod", mod_table);
 }
 
@@ -401,7 +396,7 @@ GEN_BINOP_SPECIALIZATION(equal, f64_t, c8_t, i64_t, EQUAL_OP);
 GEN_BINOP_SPECIALIZATION(equal, f64_t, i64_t, i64_t, EQUAL_OP);
 GEN_BINOP_SPECIALIZATION(equal, f64_t, f64_t, i64_t, EQUAL_OP);
 
-#define REGISTER_EQUAL(t1, t2) equal_table[t1::e][t2::e] = equal_##t1##_##t2;
+#define REGISTER_EQUAL(t1, t2) equal_table[t1::e][t2::e] = equal_##t1##_##t2::call;
 
 CONSTRUCTOR void register_equal() {
   REGISTER_EQUAL(c8_t, c8_t);
@@ -434,7 +429,7 @@ GEN_BINOP_SPECIALIZATION(less, f64_t, c8_t, i64_t, LESS_OP);
 GEN_BINOP_SPECIALIZATION(less, f64_t, i64_t, i64_t, LESS_OP);
 GEN_BINOP_SPECIALIZATION(less, f64_t, f64_t, i64_t, LESS_OP);
 
-#define REGISTER_less(t1, t2) less_table[t1::e][t2::e] = less_##t1##_##t2;
+#define REGISTER_less(t1, t2) less_table[t1::e][t2::e] = less_##t1##_##t2::call;
 
 CONSTRUCTOR void register_less() {
   REGISTER_less(c8_t, c8_t);
