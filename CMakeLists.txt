@@ -22,7 +22,7 @@ add_link_options(-z execstack)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-# code coverage
+# code coverage: todo (doesn't work)
 if (DEFINED ENV{COVERAGE})
   message("Enabling code coverage")
   add_compile_options(--coverage -ftest-coverage)

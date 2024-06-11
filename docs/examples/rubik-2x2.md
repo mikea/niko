@@ -99,7 +99,6 @@ to explore variations of the moves:
 
 List of states can be compared to the initial the same way:
 
-
 ```
 TODO
 > I dup [ U D ] [] = .
