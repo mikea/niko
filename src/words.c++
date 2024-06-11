@@ -16,40 +16,40 @@ void global_dict_add_ffi1(str n, const ffi1_table& ffi) {
   global_dict_add_new({string(n), array::create(T_FFI, ffi.size(), ffi.begin())});
 }
 
+template <template <typename> class Word, typename X, typename... Types>
+inline void _reg1(ffi1_table& t) {
+  t[X::e] = Word<X>::call;
+  _reg1<Word, Types...>(t);
+}
+template <template <typename> class Word>
+inline void _reg1(ffi1_table& t) {}
+
 template <template <typename> class Word, typename... Types>
 struct ffi1_registrar {
-  ttX struct reg {
-    reg(ffi1_table& table) { table[X::e] = Word<X>::call; }
-  };
-
   ffi1_registrar(str name) {
-    ffi1_table                                table{};
-    call_each_arg<reg, ffi1_table&, Types...> _(table);
+    ffi1_table table{};
+    _reg1<Word, Types...>(table);
     global_dict_add_ffi1(name, table);
   }
 };
 
-template <template <typename> class Kernel, typename... Types>
-struct dispatch_thread;
 template <template <typename> class Kernel, typename X, typename... Types>
-struct dispatch_thread<Kernel, X, Types...> {
-  static array_p dispatch(array_p x) {
-    if (X::e == x->t) {
-      using Y   = Kernel<X>::Y;
-      array_p y = x->alloc_as<Y>();
-      DO(i, x->n) { y->mut_data<Y>()[i] = Kernel<X>::apply(x->data<X>()[i]); }
-      return y;
-    }
-    return dispatch_thread<Kernel, Types...>::dispatch(x);
+inline array_p _apply1(array_p x) {
+  if (X::e == x->t) {
+    using Y   = Kernel<X>::Y;
+    array_p y = x->alloc_as<Y>();
+    DO(i, x->n) { y->mut_data<Y>()[i] = Kernel<X>::apply(x->data<X>()[i]); }
+    return y;
   }
-};
+  return _apply1<Kernel, Types...>(x);
+}
 template <template <typename> class Kernel>
-struct dispatch_thread<Kernel> {
-  static array_p dispatch(array_p x) { return nullptr; }
-};
+inline array_p _apply1(array_p x) {
+  return nullptr;
+}
 
 template <template <typename> class Fn, typename... Types>
-struct fn_1_1_registrar {
+struct fn11_registrar {
   ttX struct reg {
     reg(ffi1_table& table) { table[X::e] = call; }
 
@@ -62,7 +62,7 @@ struct fn_1_1_registrar {
     }
   };
 
-  fn_1_1_registrar(str name) {
+  fn11_registrar(str name) {
     ffi1_table                                table{};
     call_each_arg<reg, ffi1_table&, Types...> _(table);
     table[T_ARR] = thread;
@@ -79,19 +79,19 @@ struct fn_1_1_registrar {
     array_p        y   = x->alloc_as();
     array_p const* src = x->data<arr_t>();
     DO_MUT_ARRAY(y, arr_t, i, dst) {
-      *dst = src[i]->t == T_ARR ? thread_impl(src[i]) : dispatch_thread<Fn, Types...>::dispatch(src[i]);
+      *dst = src[i]->t == T_ARR ? thread_impl(src[i]) : _apply1<Fn, Types...>(src[i]);
       CHECK(*dst, "{} is not supported", src[i]->t);
     }
     return y;
   }
 };
 
-#define REG_FN_1_1(name, y_t, fn)                      \
+#define REG_FN11(name, y_t, fn)                      \
   ttX struct name##_k {                                \
     using Y = y_t;                                     \
     ALWAYS_INLINE Y::t apply(X::t x) { return fn(x); } \
   };                                                   \
-  fn_1_1_registrar<name##_k, c8_t, i64_t, f64_t> name##_registrar(#name);
+  fn11_registrar<name##_k, c8_t, i64_t, f64_t> name##_registrar(#name);
 
 #pragma endregion ffi1_support
 
@@ -190,51 +190,51 @@ DEF_WORD("2over", _2over) {
 #pragma region bool
 
 ttX X not_impl(X x) { return !x; }
-REG_FN_1_1(not, i64_t, not_impl);
+REG_FN11(not, i64_t, not_impl);
 
 #pragma endregion bool
 
 #pragma region math
 
 ttX X neg_impl(X x) { return -x; }
-REG_FN_1_1(neg, X, neg_impl);
+REG_FN11(neg, X, neg_impl);
 
 ttX X abs_impl(X x) { return labs(x); }
 template <>
 f64 abs_impl<f64>(f64 x) {
   return fabs(x);
 }
-REG_FN_1_1(abs, X, abs_impl);
+REG_FN11(abs, X, abs_impl);
 
-REG_FN_1_1(acos, f64_t, acos)
-REG_FN_1_1(acosh, f64_t, acosh)
-REG_FN_1_1(asin, f64_t, asin)
-REG_FN_1_1(asinh, f64_t, asinh)
-REG_FN_1_1(atan, f64_t, atan)
-REG_FN_1_1(atanh, f64_t, atanh)
-REG_FN_1_1(cbrt, f64_t, cbrt)
-REG_FN_1_1(cos, f64_t, cos)
-REG_FN_1_1(cosh, f64_t, cosh)
-REG_FN_1_1(erf, f64_t, erf)
-REG_FN_1_1(exp, f64_t, exp)
-REG_FN_1_1(bessel1_0, f64_t, j0)
-REG_FN_1_1(bessel1_1, f64_t, j1)
-REG_FN_1_1(bessel2_0, f64_t, y0)
-REG_FN_1_1(bessel2_1, f64_t, y1)
-REG_FN_1_1(lgamma, f64_t, lgamma)
-REG_FN_1_1(log, f64_t, log)
-REG_FN_1_1(log10, f64_t, log10)
-REG_FN_1_1(log1p, f64_t, log1p)
-REG_FN_1_1(log2, f64_t, log2)
-REG_FN_1_1(sin, f64_t, sin)
-REG_FN_1_1(sinh, f64_t, sinh)
-REG_FN_1_1(sqrt, f64_t, sqrt)
-REG_FN_1_1(tan, f64_t, tan)
-REG_FN_1_1(tanh, f64_t, tanh)
-REG_FN_1_1(ceil, i64_t, ceil)
-REG_FN_1_1(floor, i64_t, floor)
-REG_FN_1_1(round, i64_t, round)
-REG_FN_1_1(trunc, i64_t, trunc)
+REG_FN11(acos, f64_t, acos)
+REG_FN11(acosh, f64_t, acosh)
+REG_FN11(asin, f64_t, asin)
+REG_FN11(asinh, f64_t, asinh)
+REG_FN11(atan, f64_t, atan)
+REG_FN11(atanh, f64_t, atanh)
+REG_FN11(cbrt, f64_t, cbrt)
+REG_FN11(cos, f64_t, cos)
+REG_FN11(cosh, f64_t, cosh)
+REG_FN11(erf, f64_t, erf)
+REG_FN11(exp, f64_t, exp)
+REG_FN11(bessel1_0, f64_t, j0)
+REG_FN11(bessel1_1, f64_t, j1)
+REG_FN11(bessel2_0, f64_t, y0)
+REG_FN11(bessel2_1, f64_t, y1)
+REG_FN11(lgamma, f64_t, lgamma)
+REG_FN11(log, f64_t, log)
+REG_FN11(log10, f64_t, log10)
+REG_FN11(log1p, f64_t, log1p)
+REG_FN11(log2, f64_t, log2)
+REG_FN11(sin, f64_t, sin)
+REG_FN11(sinh, f64_t, sinh)
+REG_FN11(sqrt, f64_t, sqrt)
+REG_FN11(tan, f64_t, tan)
+REG_FN11(tanh, f64_t, tanh)
+REG_FN11(ceil, i64_t, ceil)
+REG_FN11(floor, i64_t, floor)
+REG_FN11(round, i64_t, round)
+REG_FN11(trunc, i64_t, trunc)
 
 #pragma endregion math
 
