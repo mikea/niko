@@ -21,7 +21,7 @@ struct ffi1_registrar {
   };
 
   ffi1_registrar(str name) {
-    ffi1_table table{};
+    ffi1_table                                table{};
     call_each_arg<reg, ffi1_table&, Types...> _(table);
     global_dict_add_ffi1(name, table);
   }
@@ -461,25 +461,36 @@ ttXY struct reg_take {
 };
 ffi2_registrar<reg_take> take_registrar("take", take_table);
 
+ttX array_p cell_impl(array_p x, array_p y) {
+  switch (y->t) {
+    case T_ARR: {
+      array_p z = y->alloc_as();
+      DO_MUT_ARRAY(z, arr_t, i, p) { *p = cell_impl<X>(x, y->data<arr_t>()[i]); }
+      return z;
+    }
+    case T_I64: {
+      auto ii = y->data<i64_t>();
+      if (y->a && X::e == T_ARR) return x->data<arr_t>()[WRAP(ii[0], x->n)];
+      array_p z = y->alloc_as<X>();
+      DO_MUT_ARRAY(z, X, i, p) { *p = x->data<X>()[WRAP(ii[i], x->n)]; }
+      return z;
+    }
+    default: panicf("{} is not supported", y->t);
+  }
+}
+
 ttX void cell(inter_t& inter, stack& stack) {
   POP(y);
   POP(x);
-  auto ii = y->data<i64_t>();
-  if (y->a && X::e == T_ARR) {
-    PUSH(x->data<arr_t>()[WRAP(*ii, x->n)]);
-    return;
-  }
-  array_p z = y->alloc_as<X>();
-  DO_MUT_ARRAY(z, X, i, p) {
-    size_t j = WRAP(ii[i], x->n);
-    *p       = x->data<X>()[j];
-  }
-  PUSH(z);
+  PUSH(cell_impl<X>(x, y));
 }
 
 ffi2_table cell_table;
 ttXY struct reg_cell {
-  reg_cell() { cell_table[X::e][T_I64] = cell<X>; }
+  reg_cell() {
+    cell_table[X::e][T_I64] = cell<X>;
+    cell_table[X::e][T_ARR] = cell<X>;
+  }
 };
 ffi2_registrar<reg_cell> cell_registrar("[]", cell_table);
 
