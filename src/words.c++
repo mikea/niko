@@ -23,9 +23,67 @@ struct ffi1_registrar {
     reg(ffi1_table& table) { table[X::e] = Word<X>::call; }
   };
 
-  ffi1_registrar(str name, ffi1_table& table) {
+  ffi1_registrar(str name) {
+    ffi1_table table{};
     call_each_arg<reg, ffi1_table&, Types...> _(table);
     global_dict_add_ffi1(name, table);
+  }
+};
+
+template <template <typename> class Kernel, typename... Types>
+struct dispatch_thread;
+template <template <typename> class Kernel, typename X, typename... Types>
+struct dispatch_thread<Kernel, X, Types...> {
+  static array_p dispatch(array_p x) {
+    if (X::e == x->t) {
+      using Y   = Kernel<X>::Y;
+      array_p y = x->alloc_as<Y>();
+      DO(i, x->n) { y->mut_data<Y>()[i] = Kernel<X>::apply(x->data<X>()[i]); }
+      return y;
+    }
+    return dispatch_thread<Kernel, Types...>::dispatch(x);
+  }
+};
+template <template <typename> class Kernel>
+struct dispatch_thread<Kernel> {
+  static array_p dispatch(array_p x) { return nullptr; }
+};
+
+template <template <typename> class Fn, typename... Types>
+struct fn_1_1_registrar {
+  ttX struct reg {
+    reg(ffi1_table& table) { table[X::e] = call; }
+
+    inline static void call(inter_t& inter, stack& stack) {
+      POP(x);
+      using Y   = Fn<X>::Y;
+      array_p y = x->alloc_as<Y>();
+      DO(i, x->n) { y->mut_data<Y>()[i] = Fn<X>::apply(x->data<X>()[i]); }
+      PUSH(y);
+    }
+  };
+
+  fn_1_1_registrar(str name) {
+    ffi1_table                                table{};
+    call_each_arg<reg, ffi1_table&, Types...> _(table);
+    table[T_ARR] = thread;
+    global_dict_add_ffi1(name, table);
+  }
+
+  inline static void thread(inter_t& inter, stack& stack) {
+    POP(x);
+    PUSH(thread_impl(x));
+  }
+
+  inline static array_p thread_impl(array_p x) {
+    assert(x->t == T_ARR);
+    array_p        y   = x->alloc_as();
+    array_p const* src = x->data<arr_t>();
+    DO_MUT_ARRAY(y, arr_t, i, dst) {
+      *dst = src[i]->t == T_ARR ? thread_impl(src[i]) : dispatch_thread<Fn, Types...>::dispatch(src[i]);
+      CHECK(*dst, "{} is not supported", src[i]->t);
+    }
+    return y;
   }
 };
 
@@ -115,146 +173,64 @@ DEF_WORD("2over", _2over) {
 
 #pragma endregion stack
 
-void thread1(inter_t& inter, stack& stack, const ffi1_table& table) {
-  POP(x);
-  assert(x->t == T_ARR);
-  array_p        out = x->alloc_as();
-  array_p const* src = x->data<arr_t>();
-  array_p*       dst = out->mut_data<arr_t>();
-  DO(i, x->n) {
-    PUSH(src[i]);
-    ffi f = table[src[i]->t];
-    assert(f);
-    f(inter, stack);
-    dst[i] = stack.pop();
-  }
-  PUSH(out);
-}
-
-#define GEN_THREAD1(name, ffi_table) \
-  DECL_HANDLER(name##_arr_t);        \
-  DEF_HANDLER(name##_arr_t) { thread1(inter, stack, ffi_table); }
-
-#define GEN_THREAD_SPEC1(name, ffi_table)                                                \
-  template <>                                                                            \
-  struct name<arr_t> {                                                                   \
-    static void call(inter_t& inter, stack& stack) { thread1(inter, stack, ffi_table); } \
-  };
-
 #pragma region bool
 
-DEF_HANDLER_X(w_not) {
-  POP(x);
-  array_p y = x->alloc_as<i64_t>();
-  DO(i, x->n) { y->mut_data<i64_t>()[i] = !(x->data<X>()[i]); }
-  PUSH(y);
-}
+#define REG_FN_1_1(name, y_t, fn)                      \
+  ttX struct name##_k {                                \
+    using Y = y_t;                                     \
+    ALWAYS_INLINE Y::t apply(X::t x) { return fn(x); } \
+  };                                                   \
+  fn_1_1_registrar<name##_k, i64_t, f64_t> name##_registrar(#name);
 
-ffi1_table not_table{};
-GEN_THREAD_SPEC1(w_not, not_table);
-ffi1_registrar<w_not, c8_t, i64_t, f64_t, arr_t> not_registrar("not", not_table);
+ttX struct not_impl {
+  using Y = i64_t;
+  inline static Y::t apply(X::t x) { return !x; }
+};
+fn_1_1_registrar<not_impl, c8_t, i64_t, f64_t> not_registrar("not");
 
 #pragma endregion bool
 
 #pragma region math
 
-// neg
-
-DEF_HANDLER_X(w_neg) {
-  POP(x);
-  array_p y = x->alloc_as();
-  DO(i, x->n) { y->mut_data<X>()[i] = -x->data<X>()[i]; }
-  PUSH(y);
-}
-
-ffi1_table neg_table{};
-GEN_THREAD_SPEC1(w_neg, neg_table);
-ffi1_registrar<w_neg, c8_t, i64_t, f64_t, arr_t> neg_registrar("neg", neg_table);
-
-// abs
+ttX X neg_impl(X x) { return -x; }
+REG_FN_1_1(neg, X, neg_impl);
 
 ttX X abs_impl(X x) { return labs(x); }
 template <>
 f64 abs_impl<f64>(f64 x) {
   return fabs(x);
 }
+REG_FN_1_1(abs, X, abs_impl);
 
-DEF_HANDLER_X(w_abs) {
-  POP(x);
-  array_p y = x->alloc_as();
-  DO(i, x->n) { y->mut_data<X>()[i] = abs_impl(x->data<X>()[i]); }
-  PUSH(y);
-}
-
-ffi1_table abs_table{};
-GEN_THREAD_SPEC1(w_abs, abs_table);
-ffi1_registrar<w_abs, i64_t, f64_t, arr_t> abs_registrar("abs", abs_table);
-
-// sqrt, sin, et. al.
-template <typename X, typename Y, typename Op>
-void w_math(struct inter_t& inter, class stack& stack) {
-  POP(x);
-  array_p y = x->alloc_as<Y>();
-  DO(i, x->n) { y->mut_data<Y>()[i] = Op::call(x->data<X>()[i]); }
-  PUSH(y);
-}
-
-#define GEN_FLOAT(name, fn)                         \
-  ffi1_table name##_table;                          \
-  GEN_THREAD1(name, name##_table)                   \
-  CONSTRUCTOR void reg_##name() {                   \
-    struct op {                                     \
-      static f64 call(f64 x) { return fn(x); }      \
-    };                                              \
-    name##_table[T_I64] = w_math<i64_t, f64_t, op>; \
-    name##_table[T_F64] = w_math<f64_t, f64_t, op>; \
-    name##_table[T_ARR] = name##_arr_t::call;       \
-    global_dict_add_ffi1(#name, name##_table);      \
-  }
-
-GEN_FLOAT(acos, acos)
-GEN_FLOAT(acosh, acosh)
-GEN_FLOAT(asin, asin)
-GEN_FLOAT(asinh, asinh)
-GEN_FLOAT(atan, atan)
-GEN_FLOAT(atanh, atanh)
-GEN_FLOAT(cbrt, cbrt)
-GEN_FLOAT(cos, cos)
-GEN_FLOAT(cosh, cosh)
-GEN_FLOAT(erf, erf)
-GEN_FLOAT(exp, exp)
-GEN_FLOAT(bessel1_0, j0)
-GEN_FLOAT(bessel1_1, j1)
-GEN_FLOAT(bessel2_0, y0)
-GEN_FLOAT(bessel2_1, y1)
-GEN_FLOAT(lgamma, lgamma)
-GEN_FLOAT(log, log)
-GEN_FLOAT(log10, log10)
-GEN_FLOAT(log1p, log1p)
-GEN_FLOAT(log2, log2)
-GEN_FLOAT(sin, sin)
-GEN_FLOAT(sinh, sinh)
-GEN_FLOAT(sqrt, sqrt)
-GEN_FLOAT(tan, tan)
-GEN_FLOAT(tanh, tanh)
-
-#define GEN_ROUND(name, fn)                         \
-  ffi1_table name##_table{};                        \
-  GEN_THREAD1(name, name##_table)                   \
-  CONSTRUCTOR void reg_##name() {                   \
-    struct op {                                     \
-      static i64 call(f64 x) { return fn(x); }      \
-    };                                              \
-    name##_table[T_I64] = w_math<i64_t, i64_t, op>; \
-    name##_table[T_F64] = w_math<f64_t, i64_t, op>; \
-    name##_table[T_ARR] = name##_arr_t::call;       \
-    global_dict_add_ffi1(#name, name##_table);      \
-  }
-
-GEN_ROUND(ceil, ceil)
-GEN_ROUND(floor, floor)
-GEN_ROUND(round, round)
-GEN_ROUND(trunc, trunc)
+REG_FN_1_1(acos, f64_t, acos)
+REG_FN_1_1(acosh, f64_t, acosh)
+REG_FN_1_1(asin, f64_t, asin)
+REG_FN_1_1(asinh, f64_t, asinh)
+REG_FN_1_1(atan, f64_t, atan)
+REG_FN_1_1(atanh, f64_t, atanh)
+REG_FN_1_1(cbrt, f64_t, cbrt)
+REG_FN_1_1(cos, f64_t, cos)
+REG_FN_1_1(cosh, f64_t, cosh)
+REG_FN_1_1(erf, f64_t, erf)
+REG_FN_1_1(exp, f64_t, exp)
+REG_FN_1_1(bessel1_0, f64_t, j0)
+REG_FN_1_1(bessel1_1, f64_t, j1)
+REG_FN_1_1(bessel2_0, f64_t, y0)
+REG_FN_1_1(bessel2_1, f64_t, y1)
+REG_FN_1_1(lgamma, f64_t, lgamma)
+REG_FN_1_1(log, f64_t, log)
+REG_FN_1_1(log10, f64_t, log10)
+REG_FN_1_1(log1p, f64_t, log1p)
+REG_FN_1_1(log2, f64_t, log2)
+REG_FN_1_1(sin, f64_t, sin)
+REG_FN_1_1(sinh, f64_t, sinh)
+REG_FN_1_1(sqrt, f64_t, sqrt)
+REG_FN_1_1(tan, f64_t, tan)
+REG_FN_1_1(tanh, f64_t, tanh)
+REG_FN_1_1(ceil, i64_t, ceil)
+REG_FN_1_1(floor, i64_t, floor)
+REG_FN_1_1(round, i64_t, round)
+REG_FN_1_1(trunc, i64_t, trunc)
 
 #pragma endregion math
 
@@ -471,9 +447,7 @@ ttX struct w_reverse {
     PUSH(y);
   }
 };
-
-ffi1_table                                           reverse_table{};
-ffi1_registrar<w_reverse, c8_t, i64_t, f64_t, arr_t> _reverse_registrar("reverse", reverse_table);
+ffi1_registrar<w_reverse, c8_t, i64_t, f64_t, arr_t> reverse_registrar("reverse");
 
 ttX void take(inter_t& inter, stack& stack) {
   POP(y);
