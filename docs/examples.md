@@ -2,7 +2,7 @@
 
 See also:
 
-- [Rbuik's 2x2 Cube](examples/rubik-2x2.md)
+- [Rubik's 2x2 Cube](examples/rubik-2x2.md)
 
 ## Advanced Calculator
 

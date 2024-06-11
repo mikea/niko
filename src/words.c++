@@ -8,7 +8,9 @@
 #include "print.h"
 #include "words.h"
 
-// common utilities
+#pragma region support
+
+#pragma region ffi1_support
 
 void global_dict_add_ffi1(str n, const ffi1_table& ffi) {
   global_dict_add_new({string(n), array::create(T_FFI, ffi.size(), ffi.begin())});
@@ -84,6 +86,17 @@ struct fn_1_1_registrar {
   }
 };
 
+#define REG_FN_1_1(name, y_t, fn)                      \
+  ttX struct name##_k {                                \
+    using Y = y_t;                                     \
+    ALWAYS_INLINE Y::t apply(X::t x) { return fn(x); } \
+  };                                                   \
+  fn_1_1_registrar<name##_k, c8_t, i64_t, f64_t> name##_registrar(#name);
+
+#pragma endregion ffi1_support
+
+#pragma region ffi2_support
+
 void global_dict_add_ffi2(str n, const ffi2_table& ffi) {
   global_dict_add_new({string(n), array::create(T_FFI, ffi.size() * ffi.size(), ffi.begin())});
 }
@@ -95,6 +108,10 @@ struct ffi2_registrar {
     global_dict_add_ffi2(name, table);
   }
 };
+
+#pragma endregion ffi2_support
+
+#pragma endregion support
 
 #pragma region stack
 
@@ -172,18 +189,8 @@ DEF_WORD("2over", _2over) {
 
 #pragma region bool
 
-#define REG_FN_1_1(name, y_t, fn)                      \
-  ttX struct name##_k {                                \
-    using Y = y_t;                                     \
-    ALWAYS_INLINE Y::t apply(X::t x) { return fn(x); } \
-  };                                                   \
-  fn_1_1_registrar<name##_k, i64_t, f64_t> name##_registrar(#name);
-
-ttX struct not_impl {
-  using Y = i64_t;
-  inline static Y::t apply(X::t x) { return !x; }
-};
-fn_1_1_registrar<not_impl, c8_t, i64_t, f64_t> not_registrar("not");
+ttX X not_impl(X x) { return !x; }
+REG_FN_1_1(not, i64_t, not_impl);
 
 #pragma endregion bool
 
