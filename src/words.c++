@@ -10,9 +10,6 @@
 
 // common utilities
 
-using ffi1_table = std::array<ffi, T_MAX>;
-using ffi2_table = std::array<ffi1_table, T_MAX>;
-
 void global_dict_add_ffi1(str n, const ffi1_table& ffi) {
   global_dict_add_new({string(n), array::create(T_FFI, ffi.size(), ffi.begin())});
 }

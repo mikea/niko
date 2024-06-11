@@ -88,6 +88,9 @@ struct dict_entry {
 
 void global_dict_add_new(dict_entry&& e);
 
+using ffi1_table = std::array<ffi, T_MAX>;
+using ffi2_table = std::array<ffi1_table, T_MAX>;
+
 // interpreter
 
 using dict_t = std::vector<dict_entry>;
