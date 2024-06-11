@@ -86,7 +86,7 @@ struct fn11_registrar {
   }
 };
 
-#define REG_FN11(name, y_t, fn)                      \
+#define REG_FN11(name, y_t, fn)                        \
   ttX struct name##_k {                                \
     using Y = y_t;                                     \
     ALWAYS_INLINE Y::t apply(X::t x) { return fn(x); } \
@@ -452,6 +452,35 @@ ttX struct w_reverse {
   }
 };
 ffi1_registrar<w_reverse, c8_t, i64_t, f64_t, arr_t> reverse_registrar("reverse");
+
+ttX struct w_split {
+  static void call(inter_t& inter, stack& stack) {
+    POP(y);
+    POP(x);
+    CHECK(x->t == y->t, "types are not the same: {} vs {}", x->t, y->t);
+    assert(y->a);  // not implemented
+
+    auto   needle = y->data<X>()[0];
+    size_t s      = 0;
+    size_t parts  = 0;
+    DO_ARRAY(x, X, i, p) {
+      if (*p == needle) {
+        if (i != s) {
+          PUSH(array::create<X>(i - s, x->data<X>() + s));
+          parts++;
+        }
+        s = i + 1;
+      }
+    }
+    if (s != x->n) {
+      PUSH(array::create<X>(x->n - s, x->data<X>() + s));
+      parts++;
+    }
+
+    PUSH(cat(stack, parts));
+  }
+};
+ffi1_registrar<w_split, c8_t, i64_t, f64_t> split_registrar("split");
 
 ttX void take(inter_t& inter, stack& stack) {
   POP(y);

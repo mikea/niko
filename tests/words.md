@@ -158,6 +158,15 @@ ERROR: stack underflow
 [ 1. 1 ]
 ```
 
+### `split`
+
+```nkt
+> 5 index 2 split .
+[ [ 0 1 ] [ 3 4 ] ]
+> [ 0 1 2 0 0 3 4 0 0 0 ] 0 split .
+[ [ 1 2 ] [ 3 4 ] ]
+```
+
 ### `[]`
 
 ```nkt
