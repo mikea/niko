@@ -260,6 +260,18 @@ ERROR: expected single value
 [ -1 -1. ]
 ```
 
+### conversions
+
+#### `c8`
+
+```nkt
+> [ 50 51 52 ] c8 .
+"234"
+> 10 c8 .
+'
+'
+```
+
 ### abs
 
 ```nkt
@@ -632,7 +644,7 @@ ERROR: stack underflow
 
 ## IO
 
-### 
+### `.`
 
 ```nkt
 > 1000 index .

@@ -194,6 +194,13 @@ REG_FN11(not, i64_t, not_impl);
 
 #pragma endregion bool
 
+#pragma region conversions
+
+ttX char c8_impl(X x) { return (char)x; }
+REG_FN11(c8, c8_t, c8_impl);
+
+#pragma endregion conversions
+
 #pragma region math
 
 ttX X neg_impl(X x) { return -x; }
@@ -458,7 +465,7 @@ ttX struct w_split {
     POP(y);
     POP(x);
     CHECK(x->t == y->t, "types are not the same: {} vs {}", x->t, y->t);
-    assert(y->a);  // not implemented
+    assert(y->n == 1);  // not implemented
 
     auto   needle = y->data<X>()[0];
     size_t s      = 0;

@@ -67,14 +67,20 @@ Words that starts from '\' are indended to be used during development
 |`take`|`(x s -> y)`|takes `x` according to the shape `s` repeating or truncating if necessary|
 |`reverse`|`(x -> y)`|reverses all values in the array `x` keeping its shape|
 |`repeat`|`(x n -> y)`|repeat cells of `x` according to values of `n`|
+|`split`|`(x y -> z)`|splits x using content of y as delimiter|
 
 ## Unary Operations
 
 |Word|Signature|Description|
 |---|---|---|
-|`abs`|`(x -> y)`|replaces array with new array of the same type and shape with absolute values
-|`neg`|`(x -> y)`|replaces array with new array of the same type and shape with negative values
+|`abs`|`(x -> y)`|replaces array with new array of the same type and shape with absolute values|
+|`neg`|`(x -> y)`|replaces array with new array of the same type and shape with negative values|
 
+### Conversions
+
+|Word|Signature|Description|
+|---|---|---|
+|`c8`|`(x -> y)`|converts array to c8 type|
 
 ### Mathematical Functions
 

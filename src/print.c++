@@ -15,7 +15,7 @@ ttT T format_atom(type_t t, bool quote, const void* ptr, T out) {
       if (strchr(s, '.') || strchr(s, 'e')) return format_to(out, "{}", s);
       else return format_to(out, "{}.", s);
     }
-    case T_C8:         NOT_IMPLEMENTED;
+    case T_C8:         return format_to(out, "'{}'", *(char*)ptr);
     case T_ARR:        return format_to(out, "{}", *(array_p*)ptr);
     case T_FFI:        NOT_IMPLEMENTED;  // return fprintf(f, "<native_function>");
     case T_DICT_ENTRY: {

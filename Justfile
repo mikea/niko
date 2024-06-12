@@ -67,6 +67,7 @@ _test:
     bin/niko -t docs/reference.md
     bin/niko -t docs/example_test.md
     bin/niko -t docs/examples/rubik-2x2.md
+    bin/niko -t docs/examples/h2o.md
 
 [private]
 _benchmarks:
