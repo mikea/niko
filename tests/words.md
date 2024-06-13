@@ -297,6 +297,21 @@ ERROR: expected single value
 '
 ```
 
+#### `i64`
+
+```nkt
+> "abc" i64 .
+[ 97 98 99 ]
+```
+
+#### `f64`
+
+```nkt
+> 5 index f64 .
+[ 0. 1. 2. 3. 4. ]
+```
+
+
 ### abs
 
 ```nkt

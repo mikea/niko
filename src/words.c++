@@ -199,6 +199,12 @@ REG_FN11(not, i64_t, not_impl);
 ttX char c8_impl(X x) { return (char)x; }
 REG_FN11(c8, c8_t, c8_impl);
 
+ttX char i64_impl(X x) { return (char)x; }
+REG_FN11(i64, i64_t, i64_impl);
+
+ttX char f64_impl(X x) { return (char)x; }
+REG_FN11(f64, f64_t, f64_impl);
+
 #pragma endregion conversions
 
 #pragma region math
