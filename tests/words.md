@@ -237,6 +237,13 @@ ERROR: expected single value
 [ [ 0 3 6 9 ] [ 1. 4. 7 10 ] [ 2 5 8 11 ] [ [ ] [ ] [ ] "name" ] ]
 ```
 
+```nkt
+> [ "abc" "def" ] flip .
+[ "ad" "be" "cf" ]
+> [ [ "abc" "def" "ghi" ] [ "klm" "nop" "qrs" ] ] flip .
+[ [ "abc" "klm" ] [ "def" "nop" ] [ "ghi" "qrs" ] ]
+```
+
 ### `tail`
 
 ```nkt

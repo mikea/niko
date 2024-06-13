@@ -584,7 +584,7 @@ ttX struct w_flip {
   static vector<type_t> guess_types(array_p x) {
     if (x->t != T_ARR) return vector<type_t>(x->n, x->t);
     vector<type_t> v;
-    DO_ARRAY(x, arr_t, i, e) { v.push_back(e->t); }
+    DO_ARRAY(x, arr_t, i, e) { v.push_back(e->a ? e->t : T_ARR); }
     return v;
   }
 
