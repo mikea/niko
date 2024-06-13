@@ -553,6 +553,11 @@ DEF_WORD("cat", cat) {
   PUSH(cat(stack, as_size_t(x)));
 }
 
+DEF_WORD("tail", tail) {
+  POP(x);
+  PUSH(array::create(x->t, x->n - 1, x->data_i(1)));
+}
+
 ttX void repeat(inter_t& inter, stack& stack) {
   POP(y);
   POP(x);
@@ -574,6 +579,60 @@ CONSTRUCTOR void register_repeat() {
   TYPE_FOREACH(REGISTER_REPEAT);
   global_dict_add_ffi2("repeat", repeat_table);
 }
+
+ttX struct w_flip {
+  static vector<type_t> guess_types(array_p x) {
+    if (x->t != T_ARR) return vector<type_t>(x->n, x->t);
+    vector<type_t> v;
+    DO_ARRAY(x, arr_t, i, p) { v.push_back((*p)->t); }
+    return v;
+  }
+  static void call(inter_t& inter, stack& stack) {
+    POP(x);
+    if (x->n == 0) {
+      PUSH(x);
+      return;
+    }
+
+    size_t         w_max = 0;
+    size_t         w_min = size_t_max;
+    vector<type_t> types = guess_types(x->data<arr_t>()[0]);
+    DO_ARRAY(x, arr_t, i, p) {
+      w_max = max(w_max, (*p)->n);
+      w_min = min(w_min, (*p)->n);
+      while (types.size() < w_max) types.push_back(T_ARR);
+      vector<type_t> gt = guess_types(*p);
+      DO(j, gt.size()) {
+        if (gt[j] != types[j]) types[j] = T_ARR;
+      }
+    }
+    assert(w_max == types.size());
+
+    vector<array_p> cols;
+    DO(i, w_max) { cols.push_back(array::alloc(types[i], x->n)); }
+
+    DO_ARRAY(x, arr_t, i, p) {
+      array_p row = *p;
+      DO(j, cols.size()) {
+        if (j >= row->n) {
+          assert(types[j] == T_ARR);
+          cols[j]->copy_ij(i, array::atom<arr_t>(array::create<arr_t>(0, nullptr)), 0, 1);
+          continue;
+        }
+        if (types[j] == T_ARR)
+          if (row->t == T_ARR) cols[j]->copy_ij(i, row, j, 1);
+          else cols[j]->copy_ij(i, array::atom<arr_t>(array::atom(row->t, row->data_i(j))), 0, 1);
+        else if (row->t == T_ARR) {
+          array_p v = row->data<arr_t>()[j];
+          cols[j]->copy_ij(i, v, 0, 1);
+        } else cols[j]->copy_ij(i, row, j, 1);
+      }
+    }
+
+    PUSH(array::create<arr_t>(cols.size(), &(*cols.begin())));
+  }
+};
+ffi1_registrar<w_flip, arr_t> flip_registrar("flip");
 
 #pragma endregion array_ops
 

@@ -34,7 +34,7 @@ token_t next_token(const char** s);
 #include <vector>
 
 class stack {
-  std::vector<array_p> data;
+  vector<array_p> data;
   stack(const stack&) = delete;
   stack(stack&&)      = delete;
 
@@ -93,7 +93,7 @@ using ffi2_table = std::array<ffi1_table, T_MAX>;
 
 // interpreter
 
-using dict_t = std::vector<dict_entry>;
+using dict_t = vector<dict_entry>;
 
 struct inter_t {
  private:

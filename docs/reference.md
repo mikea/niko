@@ -64,10 +64,12 @@ Words that starts from '\' are indended to be used during development
 
 |Word|Signature|Description|
 |---|---|---|
+|`tail`|`(x -> y)`|removes one element from x|
 |`take`|`(x s -> y)`|takes `x` according to the shape `s` repeating or truncating if necessary|
 |`reverse`|`(x -> y)`|reverses all values in the array `x` keeping its shape|
 |`repeat`|`(x n -> y)`|repeat cells of `x` according to values of `n`|
 |`split`|`(x y -> z)`|splits x using content of y as delimiter|
+|`flip`|`(x -> y)`|flips array of rows to array of columns|
 
 ## Unary Operations
 

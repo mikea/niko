@@ -8,6 +8,7 @@
 
 struct array;
 using array_p = rc<array>;
+static_assert(sizeof(array_p) == sizeof(array*));
 
 // type
 typedef enum { T_C8, T_I64, T_F64, T_ARR, T_FFI, T_DICT_ENTRY } type_t;
@@ -122,6 +123,8 @@ struct array {
     q = o->q;
   }
 
+  inline void* mut_data_i(size_t i) { return mut_data() + type_sizeof(t, i); }
+
  public:
   type_t  t;
   size_t  rc = 1;
@@ -164,6 +167,8 @@ struct array {
 
   inline const void* data() const { return p; }
   inline void* restrict mut_data() { return assert_mut()->p; }
+
+  // todo: private
   inline const void* data_i(size_t i) const { return data() + type_sizeof(t, i); }
 
   ttT inline const T::t* data() const { return rcast<const T::t*>(assert_type(T::e)->data()); }
@@ -176,6 +181,15 @@ struct array {
 
   template <typename Fn>
   inline void for_each_atom(Fn callback) const;
+
+  // todo should be private
+  inline void copy_ij(size_t i, array_p o, size_t j, size_t n) {
+    assert(t == o->t);
+    memcpy(mut_data_i(i), o->data_i(j), type_sizeof(t, n));
+    if (t == T_ARR) DO(k, n) {
+        (*((array**)mut_data_i(k + i)))->rc++;
+      }
+  }
 };
 
 using array_p = rc<array>;

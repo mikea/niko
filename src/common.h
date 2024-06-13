@@ -15,10 +15,14 @@
 using std::cerr;
 using std::cout;
 using std::max;
+using std::min;
 using std::print;
 using std::println;
 using std::string;
+using std::vector;
 using str = std::string_view;
+
+#define size_t_max std::numeric_limits<size_t>::max()
 
 #define mv(x) std::move(x)
 #define rcast reinterpret_cast
