@@ -194,14 +194,15 @@ struct array {
 
 using array_p = rc<array>;
 
-#define __DO_ARRAY_IMPL(a, i, p, u, p_decl) \
-  for (bool u##b = 1; u##b; u##b = 0)       \
-    for (p_decl; u##b; u##b = 0)            \
-      for (size_t i = 0, u##n = a->n; i < u##n && u##b; i++, p++)
+#define __DO_ARRAY_IMPL(a, i, u, p) \
+  DO(i, a->n)                       \
+  for (bool u = true; u; u = false) \
+    for (p; u; u = false)
 
-#define _DO_ARRAY_IMPL(a, i, p, u, p_decl) __DO_ARRAY_IMPL(a, i, p, u, p_decl)
-#define DO_MUT_ARRAY(a, t, i, p)           _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), auto p = a->mut_data<t>())
-#define DO_ARRAY(a, t, i, p)               _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), auto p = a->data<t>())
+#define _DO_ARRAY_IMPL(a, i, p, u, p_decl) __DO_ARRAY_IMPL(a, i, u, p_decl)
+
+#define DO_MUT_ARRAY(a, typ, i, p) _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), auto& p = a->mut_data<typ>()[i])
+#define DO_ARRAY(a, t, i, p)       _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), auto p = a->data<t>()[i])
 
 template <typename Fn>
 inline void array::for_each_atom(Fn callback) const {
@@ -213,6 +214,6 @@ inline void array::for_each_atom(Fn callback) const {
       callback(i, y);
     }
   } else {
-    DO_ARRAY(this, arr_t, i, p) callback(i, *p);
+    DO_ARRAY(this, arr_t, i, e) callback(i, e);
   }
 }

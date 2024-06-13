@@ -79,8 +79,8 @@ struct fn11_registrar {
     array_p        y   = x->alloc_as();
     array_p const* src = x->data<arr_t>();
     DO_MUT_ARRAY(y, arr_t, i, dst) {
-      *dst = src[i]->t == T_ARR ? thread_impl(src[i]) : _apply1<Fn, Types...>(src[i]);
-      CHECK(*dst, "{} is not supported", src[i]->t);
+      dst = src[i]->t == T_ARR ? thread_impl(src[i]) : _apply1<Fn, Types...>(src[i]);
+      CHECK(dst, "{} is not supported", src[i]->t);
     }
     return y;
   }
@@ -440,7 +440,7 @@ CONSTRUCTOR void register_less() {
 DEF_WORD_1_1("index", index) {
   size_t  n = as_size_t(x);
   array_p y = array::alloc(T_I64, n);
-  DO_MUT_ARRAY(y, i64_t, i, ptr) { (*ptr) = i; }
+  DO_MUT_ARRAY(y, i64_t, i, dst) { dst = i; }
   return y;
 }
 
@@ -464,7 +464,7 @@ ttX struct w_split {
   static array_p split_impl(array_p x, array_p y) {
     if (x->t == T_ARR) {
       array_p z = x->alloc_as();
-      DO_MUT_ARRAY(z, arr_t, i, dst) { *dst = split_impl(x->data<arr_t>()[i], y); }
+      DO_MUT_ARRAY(z, arr_t, i, dst) { dst = split_impl(x->data<arr_t>()[i], y); }
       return z;
     }
 
@@ -475,8 +475,8 @@ ttX struct w_split {
     auto   needle = y->data<X>()[0];
     size_t s      = 0;
     size_t parts  = 0;
-    DO_ARRAY(x, X, i, p) {
-      if (*p == needle) {
+    DO_ARRAY(x, X, i, e) {
+      if (e == needle) {
         if (i != s) {
           PUSH(array::create<X>(i - s, x->data<X>() + s));
           parts++;
@@ -519,14 +519,14 @@ ttX array_p cell_impl(array_p x, array_p y) {
   switch (y->t) {
     case T_ARR: {
       array_p z = y->alloc_as();
-      DO_MUT_ARRAY(z, arr_t, i, p) { *p = cell_impl<X>(x, y->data<arr_t>()[i]); }
+      DO_MUT_ARRAY(z, arr_t, i, dst) { dst = cell_impl<X>(x, y->data<arr_t>()[i]); }
       return z;
     }
     case T_I64: {
       auto ii = y->data<i64_t>();
       if (y->a && X::e == T_ARR) return x->data<arr_t>()[WRAP(ii[0], x->n)];
       array_p z = y->alloc_as<X>();
-      DO_MUT_ARRAY(z, X, i, p) { *p = x->data<X>()[WRAP(ii[i], x->n)]; }
+      DO_MUT_ARRAY(z, X, i, dst) { dst = x->data<X>()[WRAP(ii[i], x->n)]; }
       return z;
     }
     default: panicf("{} is not supported", y->t);
@@ -561,14 +561,14 @@ DEF_WORD("tail", tail) {
 ttX void repeat(inter_t& inter, stack& stack) {
   POP(y);
   POP(x);
-  DO_ARRAY(y, i64_t, i, p) { CHECK(*p >= 0, "non-negative values expected"); }
+  DO_ARRAY(y, i64_t, i, e) { CHECK(e >= 0, "non-negative values expected"); }
   size_t n = 0;
-  DO_ARRAY(y, i64_t, i, p) { n += *p; }
+  DO_ARRAY(y, i64_t, i, e) { n += e; }
   array_p z   = array::alloc<X>(n);
   auto    dst = z->mut_data<X>();
   auto    src = x->data<X>();
-  DO_ARRAY(y, i64_t, i, p) {
-    DO(j, *p) { *dst++ = src[i]; }
+  DO_ARRAY(y, i64_t, i, e) {
+    DO(j, e) { *dst++ = src[i]; }
   }
   PUSH(z);
 }
@@ -584,24 +584,21 @@ ttX struct w_flip {
   static vector<type_t> guess_types(array_p x) {
     if (x->t != T_ARR) return vector<type_t>(x->n, x->t);
     vector<type_t> v;
-    DO_ARRAY(x, arr_t, i, p) { v.push_back((*p)->t); }
+    DO_ARRAY(x, arr_t, i, e) { v.push_back(e->t); }
     return v;
   }
-  static void call(inter_t& inter, stack& stack) {
-    POP(x);
-    if (x->n == 0) {
-      PUSH(x);
-      return;
-    }
+
+  static array_p flip_impl(array_p x) {
+    if (!x->n) return x;
 
     size_t         w_max = 0;
     size_t         w_min = size_t_max;
     vector<type_t> types = guess_types(x->data<arr_t>()[0]);
-    DO_ARRAY(x, arr_t, i, p) {
-      w_max = max(w_max, (*p)->n);
-      w_min = min(w_min, (*p)->n);
+    DO_ARRAY(x, arr_t, i, row) {
+      w_max = max(w_max, row->n);
+      w_min = min(w_min, row->n);
       while (types.size() < w_max) types.push_back(T_ARR);
-      vector<type_t> gt = guess_types(*p);
+      vector<type_t> gt = guess_types(row);
       DO(j, gt.size()) {
         if (gt[j] != types[j]) types[j] = T_ARR;
       }
@@ -611,8 +608,7 @@ ttX struct w_flip {
     vector<array_p> cols;
     DO(i, w_max) { cols.push_back(array::alloc(types[i], x->n)); }
 
-    DO_ARRAY(x, arr_t, i, p) {
-      array_p row = *p;
+    DO_ARRAY(x, arr_t, i, row) {
       DO(j, cols.size()) {
         if (j >= row->n) {
           assert(types[j] == T_ARR);
@@ -622,14 +618,16 @@ ttX struct w_flip {
         if (types[j] == T_ARR)
           if (row->t == T_ARR) cols[j]->copy_ij(i, row, j, 1);
           else cols[j]->copy_ij(i, array::atom<arr_t>(array::atom(row->t, row->data_i(j))), 0, 1);
-        else if (row->t == T_ARR) {
-          array_p v = row->data<arr_t>()[j];
-          cols[j]->copy_ij(i, v, 0, 1);
-        } else cols[j]->copy_ij(i, row, j, 1);
+        else if (row->t == T_ARR) cols[j]->copy_ij(i, row->data<arr_t>()[j], 0, 1);
+        else cols[j]->copy_ij(i, row, j, 1);
       }
     }
 
-    PUSH(array::create<arr_t>(cols.size(), &(*cols.begin())));
+    return array::create<arr_t>(cols.size(), &(*cols.begin()));
+  }
+  static void call(inter_t& inter, stack& stack) {
+    POP(x);
+    PUSH(flip_impl(x));
   }
 };
 ffi1_registrar<w_flip, arr_t> flip_registrar("flip");

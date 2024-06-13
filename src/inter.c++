@@ -51,7 +51,7 @@ array_p cat(stack& stack, size_t n) {
     DO(i, n) { memcpy(ptr + s * i, stack.peek(n - i - 1).data(), s); }
   } else {
     a = array::alloc(T_ARR, n);
-    DO_MUT_ARRAY(a, arr_t, i, p) { *p = stack[n - i - 1]; }
+    DO_MUT_ARRAY(a, arr_t, i, dst) { dst = stack[n - i - 1]; }
   }
   DO(i, n) stack.drop();
   return a;
@@ -119,19 +119,19 @@ void inter_t::entry(dict_entry* e) {
       }
     }
     case T_ARR: {
-      DO_ARRAY(a, arr_t, i, p) {
-        switch ((*p)->t) {
+      DO_ARRAY(a, arr_t, i, e) {
+        switch (e->t) {
           case T_C8:
           case T_I64:
           case T_F64: {
-            PUSH(*p);
+            PUSH(e);
             break;
           }
           case T_ARR:        NOT_IMPLEMENTED;
           case T_FFI:        NOT_IMPLEMENTED;
           case T_DICT_ENTRY: {
-            if ((*p)->q) PUSH(*p);
-            else entry(*p);
+            if (e->q) PUSH(e);
+            else entry(e);
             break;
           };
         }
