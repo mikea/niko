@@ -36,6 +36,6 @@ array_p array::create_slice(array* x, size_t n, const void* p) {
 }
 
 array::~array() {
-  if (t == T_ARR) DO(i, n) data<arr_t>()[i].get()->~array();
+  if (t == T_ARR) DO(i, n) data<arr_t>()[i].~array_p();
   if (simd_aligned()) free(p);
 }
