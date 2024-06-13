@@ -461,12 +461,17 @@ ttX struct w_reverse {
 ffi1_registrar<w_reverse, c8_t, i64_t, f64_t, arr_t> reverse_registrar("reverse");
 
 ttX struct w_split {
-  static void call(inter_t& inter, stack& stack) {
-    POP(y);
-    POP(x);
+  static array_p split_impl(array_p x, array_p y) {
+    if (x->t == T_ARR) {
+      array_p z = x->alloc_as();
+      DO_MUT_ARRAY(z, arr_t, i, dst) { *dst = split_impl(x->data<arr_t>()[i], y); }
+      return z;
+    }
+
     CHECK(x->t == y->t, "types are not the same: {} vs {}", x->t, y->t);
     assert(y->n == 1);  // not implemented
 
+    stack  stack;
     auto   needle = y->data<X>()[0];
     size_t s      = 0;
     size_t parts  = 0;
@@ -484,7 +489,13 @@ ttX struct w_split {
       parts++;
     }
 
-    PUSH(cat(stack, parts));
+    return cat(stack, parts);
+  }
+
+  static void call(inter_t& inter, stack& stack) {
+    POP(y);
+    POP(x);
+    PUSH(split_impl(x, y));
   }
 };
 ffi1_registrar<w_split, c8_t, i64_t, f64_t> split_registrar("split");
