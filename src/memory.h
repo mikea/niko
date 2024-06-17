@@ -25,6 +25,8 @@ ttT class rc {
   rc(rc&& o) : t(o.t) { o.t = nullptr; }
   inline              operator T*() { return t; }          // todo: remove
   inline static rc<T> from_raw(T* t) { return rc<T>(t); }  // todo: remove
+  inline T&           operator*() { return *t; }
+  inline const T&     operator*() const { return *t; }
   inline T*           operator->() { return t; }
   inline const T*     operator->() const { return t; }
   inline T*           get() { return t; }        // todo: remove

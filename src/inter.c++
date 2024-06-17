@@ -45,10 +45,8 @@ array_p cat(stack& stack, size_t n) {
 
   array_p a;
   if (same_type && atom && t != T_ARR) {
-    a          = array::alloc(t, n);
-    void*  ptr = a->mut_data();
-    size_t s   = type_sizeof(t, 1);
-    DO(i, n) { memcpy(ptr + s * i, stack.peek(n - i - 1).data(), s); }
+    a = array::alloc(t, n);
+    DO(i, n) { a->copy_ij(i, stack[n - i - 1], 0, 1); }
   } else {
     a = array::alloc(T_ARR, n);
     DO_MUT_ARRAY(a, arr_t, i, dst) { dst = stack[n - i - 1]; }

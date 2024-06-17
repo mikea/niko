@@ -561,7 +561,7 @@ DEF_WORD("cat", cat) {
 
 DEF_WORD("tail", tail) {
   POP(x);
-  PUSH(array::create(x->t, x->n - 1, x->data_i(1)));
+  PUSH(x->tail());
 }
 
 ttX void repeat(inter_t& inter, stack& stack) {
@@ -623,7 +623,7 @@ ttX struct w_flip {
         }
         if (types[j] == T_ARR)
           if (row->t == T_ARR) cols[j]->copy_ij(i, row, j, 1);
-          else cols[j]->copy_ij(i, array::atom<arr_t>(array::atom(row->t, row->data_i(j))), 0, 1);
+          else cols[j]->copy_ij(i, array::atom<arr_t>(row->atom_i(j)), 0, 1);
         else if (row->t == T_ARR) cols[j]->copy_ij(i, row->data<arr_t>()[j], 0, 1);
         else cols[j]->copy_ij(i, row, j, 1);
       }

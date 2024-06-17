@@ -123,7 +123,11 @@ struct array {
     q = o->q;
   }
 
-  inline void* mut_data_i(size_t i) { return mut_data() + type_sizeof(t, i); }
+  inline const void* data() const { return p; }
+  inline void* restrict mut_data() { return assert_mut()->p; }
+
+  inline void*       mut_data_i(size_t i) { return mut_data() + type_sizeof(t, i); }
+  inline const void* data_i(size_t i) const { return data() + type_sizeof(t, i); }
 
  public:
   type_t  t;
@@ -165,12 +169,6 @@ struct array {
     return a;
   }
 
-  inline const void* data() const { return p; }
-  inline void* restrict mut_data() { return assert_mut()->p; }
-
-  // todo: private
-  inline const void* data_i(size_t i) const { return data() + type_sizeof(t, i); }
-
   ttT inline const T::t* data() const { return rcast<const T::t*>(assert_type(T::e)->data()); }
   ttT inline T::t* restrict mut_data() { return rcast<T::t* restrict>(assert_type(T::e)->mut_data()); }
 
@@ -183,13 +181,16 @@ struct array {
   inline void for_each_atom(Fn callback) const;
 
   // todo should be private
-  inline void copy_ij(size_t i, array_p o, size_t j, size_t n) {
+  inline void copy_ij(size_t i, const array_p o, size_t j, size_t n) {
     assert(t == o->t);
     memcpy(mut_data_i(i), o->data_i(j), type_sizeof(t, n));
     if (t == T_ARR) DO(k, n) {
         (*((array**)mut_data_i(k + i)))->rc++;
       }
   }
+
+  inline array_p atom_i(size_t i) const { return atom(t, data_i(i)); }
+  inline array_p tail() const { return create(t, n - 1, data_i(1)); }
 };
 
 using array_p = rc<array>;
@@ -206,14 +207,9 @@ using array_p = rc<array>;
 
 template <typename Fn>
 inline void array::for_each_atom(Fn callback) const {
-  size_t      stride = type_sizeof(t, 1);
-  const void* ptr    = data();
   if (t != T_ARR) {
-    DO(i, n) {
-      array_p y = array::atom(t, ptr + stride * i);
-      callback(i, y);
-    }
+    DO(i, n) { callback(i, array::atom_i(i)); }
   } else {
-    DO_ARRAY(this, arr_t, i, e) callback(i, e);
+    DO_ARRAY(this, arr_t, i, e) { callback(i, e); }
   }
 }

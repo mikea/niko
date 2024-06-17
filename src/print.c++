@@ -5,23 +5,23 @@
 
 using std::format_to;
 
-ttT T format_atom(type_t t, bool quote, const void* ptr, T out) {
-  switch (t) {
-    case T_I64: return format_to(out, "{}", *(i64*)ptr);
+ttT T format_atom(T out, const array& a, size_t i) {
+  switch (a.t) {
+    case T_I64: return format_to(out, "{}", a.data<i64_t>()[i]);
     case T_F64: {
       char* s = NULL;
-      (void)!asprintf(&s, "%.15g", *(f64*)ptr);
+      (void)!asprintf(&s, "%.15g", a.data<f64_t>()[i]);
       defer { free(s); };
       if (strchr(s, '.') || strchr(s, 'e')) return format_to(out, "{}", s);
       else return format_to(out, "{}.", s);
     }
-    case T_C8:         return format_to(out, "'{}'", *(char*)ptr);
-    case T_ARR:        return format_to(out, "{}", *(array_p*)ptr);
+    case T_C8:         return format_to(out, "'{}'", a.data<c8_t>()[i]);
+    case T_ARR:        return format_to(out, "{}", a.data<arr_t>()[i]);
     case T_FFI:        NOT_IMPLEMENTED;  // return fprintf(f, "<native_function>");
     case T_DICT_ENTRY: {
-      size_t      idx = *(t_dict_entry*)ptr;
+      size_t      idx = a.data<dict_entry_t>()[i];
       dict_entry& e   = inter_t::current().dict[idx];
-      if (quote) return format_to(out, "{}'", e.k);
+      if (a.q) return format_to(out, "{}'", e.k);
       else return format_to(out, "{}", e.k);
     }
   }
@@ -29,17 +29,15 @@ ttT T format_atom(type_t t, bool quote, const void* ptr, T out) {
 }
 
 std::format_context::iterator std::formatter<array_p>::format(const array_p& a, std::format_context& ctx) const {
-  if (a->a) return format_atom(a->t, a->q, a->data(), ctx.out());
+  if (a->a) return format_atom(ctx.out(), *a, 0);
   if (a->t == type_t::T_C8) return format_to(ctx.out(), "\"{}\"", str(a->data<c8_t>(), a->n));
-  string      out    = "[ ";
-  size_t      stride = type_sizeof(a->t, 1);
-  const void* ptr    = a->data();
+  string out = "[ ";
   DO(i, a->n) {
     if (width && width < out.size() + 4) {
       out += "... ";
       break;
     }
-    format_atom(a->t, a->q, ptr + stride * i, std::back_inserter(out));
+    format_atom(std::back_inserter(out), *a, i);
     out += " ";
   }
   out += "]";
