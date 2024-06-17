@@ -666,24 +666,22 @@ DEF_WORD("\\s", slash_stack) {
 DEF_WORD(",fold", fold) {
   POP(y);
   POP(x);
-  t_dict_entry e    = as_dict_entry(y);
-  auto         iter = [&](size_t i, array_p slice) mutable {
-    PUSH(slice);
+  t_dict_entry e = as_dict_entry(y);
+  DO(i, x->n) {
+    PUSH(x->atom_i(i));
     if (i > 0) inter.entry(e);
-  };
-  x->for_each_atom(iter);
+  }
 }
 
 DEF_WORD(",scan", scan) {
   POP(y);
   POP(x);
-  t_dict_entry e    = as_dict_entry(y);
-  auto         iter = [&](size_t i, array_p slice) mutable {
+  t_dict_entry e = as_dict_entry(y);
+  DO(i, x->n) {
     if (i > 0) DUP;
-    PUSH(slice);
+    PUSH(x->atom_i(i));
     if (i > 0) inter.entry(e);
-  };
-  x->for_each_atom(iter);
+  }
   array_p result = cat(stack, x->n);
   PUSH(result);
 }
@@ -691,12 +689,11 @@ DEF_WORD(",scan", scan) {
 DEF_WORD(",apply", apply) {
   POP(y);
   POP(x);
-  t_dict_entry e    = as_dict_entry(y);
-  auto         iter = [&](size_t i, array_p slice) mutable {
-    PUSH(slice);
+  t_dict_entry e = as_dict_entry(y);
+  DO(i, x->n) {
+    PUSH(x->atom_i(i));
     inter.entry(e);
   };
-  x->for_each_atom(iter);
   array_p result = cat(stack, x->n);
   PUSH(result);
 }
@@ -704,13 +701,12 @@ DEF_WORD(",apply", apply) {
 DEF_WORD(",pairwise", pairwise) {
   POP(y);
   POP(x);
-  t_dict_entry e    = as_dict_entry(y);
-  auto         iter = [&](size_t i, array_p slice) mutable {
-    PUSH(slice);
+  t_dict_entry e = as_dict_entry(y);
+  DO(i, x->n) {
+    PUSH(x->atom_i(i));
     if (i > 0) inter.entry(e);
-    PUSH(slice);
+    PUSH(x->atom_i(i));
   };
-  x->for_each_atom(iter);
   DROP;
   array_p result = cat(stack, x->n);
   PUSH(result);

@@ -189,7 +189,10 @@ struct array {
       }
   }
 
-  inline array_p atom_i(size_t i) const { return atom(t, data_i(i)); }
+  inline array_p atom_i(size_t i) const {
+    if (t == T_ARR) return data<arr_t>()[i];
+    else return atom(t, data_i(i));
+  }
   inline array_p tail() const { return create(t, n - 1, data_i(1)); }
 };
 
@@ -204,12 +207,3 @@ using array_p = rc<array>;
 
 #define DO_MUT_ARRAY(a, typ, i, p) _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), auto& p = a->mut_data<typ>()[i])
 #define DO_ARRAY(a, t, i, p)       _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), auto p = a->data<t>()[i])
-
-template <typename Fn>
-inline void array::for_each_atom(Fn callback) const {
-  if (t != T_ARR) {
-    DO(i, n) { callback(i, array::atom_i(i)); }
-  } else {
-    DO_ARRAY(this, arr_t, i, e) { callback(i, e); }
-  }
-}
