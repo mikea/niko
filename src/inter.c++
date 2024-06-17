@@ -292,17 +292,17 @@ DEF_IWORD("literal", literal) {
 #pragma endregion immediate
 
 DEF_WORD("!", store) {
-  POP(v);
+  POP_DICT_ENTRY(y);
   POP(x);
-  dict_entry* e = inter.lookup_entry(as_dict_entry(v));
+  dict_entry* e = inter.lookup_entry(y);
   CHECK(e->var || (!e->sys && !e->cons), "{} is not a valid store target", e->v);
   e->v   = x;
   e->var = true;
 }
 
 DEF_WORD("@", load) {
-  POP(v);
-  dict_entry* e = inter.lookup_entry(as_dict_entry(v));
+  POP_DICT_ENTRY(y);
+  dict_entry* e = inter.lookup_entry(y);
   PUSH(e->v);
 }
 

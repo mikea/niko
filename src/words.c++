@@ -155,8 +155,8 @@ DEF_WORD("tuck", tuck) {
 }
 
 DEF_WORD("pick", pick) {
-  POP(n);
-  PUSH(stack[as_size_t(n)]);
+  POP_SIZE(x);
+  PUSH(stack[x]);
 }
 
 DEF_WORD("2dup", _2dup) {
@@ -443,18 +443,21 @@ CONSTRUCTOR void register_less() {
 
 #pragma region array_create
 
-DEF_WORD_1_1("index", index) {
-  size_t  n = as_size_t(x);
-  array_p y = array::alloc(T_I64, n);
+DEF_WORD("index", index) {
+  POP_SIZE(x);
+  array_p y = array::alloc(T_I64, x);
   DO_MUT_ARRAY(y, i64_t, i, dst) { dst = i; }
-  return y;
+  PUSH(y);
 }
 
 #pragma endregion array_create
 
 #pragma region array_ops
 
-DEF_WORD_1_1("len", len) { return array::atom<i64_t>(x->n); }
+DEF_WORD("len", len) {
+  POP(x);
+  PUSH(array::atom<i64_t>(x->n));
+}
 
 ttX struct w_reverse {
   static void call(inter_t& inter, stack& stack) {
@@ -507,11 +510,10 @@ ttX struct w_split {
 ffi1_registrar<w_split, c8_t, i64_t, f64_t> split_registrar("split");
 
 ttX void take(inter_t& inter, stack& stack) {
-  POP(y);
+  POP_SIZE(y);
   POP(x);
-  size_t  n = as_size_t(y);
-  array_p z = array::alloc<X>(n);
-  DO(i, n) { z->mut_data<X>()[i] = x->data<X>()[i % x->n]; }
+  array_p z = array::alloc<X>(y);
+  DO(i, y) { z->mut_data<X>()[i] = x->data<X>()[i % x->n]; }
   PUSH(z);
 }
 
@@ -555,8 +557,8 @@ ttXY struct reg_cell {
 ffi2_registrar<reg_cell> cell_registrar("[]", cell_table);
 
 DEF_WORD("cat", cat) {
-  POP(x);
-  PUSH(cat(stack, as_size_t(x)));
+  POP_SIZE(x);
+  PUSH(cat(stack, x));
 }
 
 DEF_WORD("tail", tail) {
@@ -664,82 +666,69 @@ DEF_WORD("\\s", slash_stack) {
 #pragma region adverbs
 
 DEF_WORD(",fold", fold) {
-  POP(y);
+  POP_DICT_ENTRY(y);
   POP(x);
-  t_dict_entry e = as_dict_entry(y);
   DO(i, x->n) {
     PUSH(x->atom_i(i));
-    if (i > 0) inter.entry(e);
+    if (i > 0) inter.entry(y);
   }
 }
 
 DEF_WORD(",scan", scan) {
-  POP(y);
+  POP_DICT_ENTRY(y);
   POP(x);
-  t_dict_entry e = as_dict_entry(y);
   DO(i, x->n) {
     if (i > 0) DUP;
     PUSH(x->atom_i(i));
-    if (i > 0) inter.entry(e);
+    if (i > 0) inter.entry(y);
   }
-  array_p result = cat(stack, x->n);
-  PUSH(result);
+  PUSH(cat(stack, x->n));
 }
 
 DEF_WORD(",apply", apply) {
-  POP(y);
+  POP_DICT_ENTRY(y);
   POP(x);
-  t_dict_entry e = as_dict_entry(y);
   DO(i, x->n) {
     PUSH(x->atom_i(i));
-    inter.entry(e);
+    inter.entry(y);
   };
-  array_p result = cat(stack, x->n);
-  PUSH(result);
+  PUSH(cat(stack, x->n));
 }
 
 DEF_WORD(",pairwise", pairwise) {
-  POP(y);
+  POP_DICT_ENTRY(y);
   POP(x);
-  t_dict_entry e = as_dict_entry(y);
   DO(i, x->n) {
     PUSH(x->atom_i(i));
-    if (i > 0) inter.entry(e);
+    if (i > 0) inter.entry(y);
     PUSH(x->atom_i(i));
   };
   DROP;
-  array_p result = cat(stack, x->n);
-  PUSH(result);
+  PUSH(cat(stack, x->n));
 }
 
 DEF_WORD(",power", power) {
-  POP(y);
-  POP(x);
-  t_dict_entry e = as_dict_entry(y);
-  DO(i, as_size_t(x)) { inter.entry(e); }
+  POP_DICT_ENTRY(y);
+  POP_SIZE(x);
+  DO(i, x) { inter.entry(y); }
 }
 
 DEF_WORD(",collect", collect) {
-  POP(y);
-  POP(x);
-  t_dict_entry e = as_dict_entry(y);
-  size_t       n = as_size_t(x);
-  DO(i, n) { inter.entry(e); }
+  POP_DICT_ENTRY(y);
+  POP_SIZE(x);
+  DO(i, x) { inter.entry(y); }
   DROP;
-  array_p result = cat(stack, n);
-  PUSH(result);
+  PUSH(cat(stack, x));
 }
 
 DEF_WORD(",trace", trace) {
-  POP(y);
-  POP(x);
-  t_dict_entry e = as_dict_entry(y);
-  size_t       n = as_size_t(x);
-  DO(i, n) {
+  POP_DICT_ENTRY(y);
+  POP_SIZE(x);
+  DO(i, x) {
     if (i > 0) DUP;
-    inter.entry(e);
+    inter.entry(y);
   }
-  PUSH(cat(stack, n));
+  PUSH(cat(stack, x));
 }
 
 #pragma endregion adverbs
@@ -751,14 +740,15 @@ DEF_WORD(".", dot) {
   std::println(*inter.out, "{}", x);
 }
 
-DEF_WORD_1_1("load_text", load_text) {
+DEF_WORD("load_text", load_text) {
+  POP(x);
   CHECK(x->t == T_C8, "c8 array expected");
   auto               name = string(x->data<c8_t>(), x->n);
   std::ifstream      file(name);
   std::ostringstream buf;
   buf << file.rdbuf();
   auto content = buf.str();
-  return array::create<c8_t>(content.size(), content.c_str());
+  PUSH(array::create<c8_t>(content.size(), content.c_str()));
 }
 
 #pragma endregion io
