@@ -49,9 +49,6 @@ struct dict_entry_t {
   static constexpr type_t e = type_t::T_DICT_ENTRY;
 };
 
-template <template <typename> class Func>
-using call_each_type = call_each<Func, c8_t, i64_t, f64_t, arr_t, ffi_t, dict_entry_t>;
-
 template <template <typename, typename> class Func>
 struct call_each_type2 {
   call_each_type2() {
