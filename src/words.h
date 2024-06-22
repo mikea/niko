@@ -1,5 +1,6 @@
 #pragma once
 
+#include "array.h"
 #include "inter.h"
 #include "print.h"
 
@@ -58,3 +59,30 @@ INLINE t_dict_entry as_dict_entry(const array* x) {
   POP(tmp);                     \
   t_dict_entry v = as_dict_entry(tmp)
 #define POP_DICT_ENTRY(v) _POP_DICT_ENTRY(v, UNIQUE(v))
+
+#pragma region ffi2_support
+
+INLINE void global_dict_add_ffi2(str n, const ffi2_table& ffi) {
+  global_dict_add_new({string(n), array::create<ffi_t>(ffi.size() * ffi.size(), ffi[0].begin())});
+}
+
+template <template <typename, typename> class Word, typename Pair, typename... Pairs>
+inline void _reg2(ffi2_table& t) {
+  using X       = typename std::tuple_element<0, Pair>::type;
+  using Y       = typename std::tuple_element<1, Pair>::type;
+  t[X::e][Y::e] = Word<X, Y>::call;
+  _reg2<Word, Pairs...>(t);
+}
+template <template <typename, typename> class>
+inline void _reg2(ffi2_table& t) {}
+
+template <template <typename, typename> class Word, typename... Pairs>
+struct ffi2_registrar {
+  ffi2_registrar(str name) {
+    ffi2_table table{};
+    _reg2<Word, Pairs...>(table);
+    global_dict_add_ffi2(name, table);
+  }
+};
+
+#pragma endregion ffi2_support

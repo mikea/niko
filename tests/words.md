@@ -184,6 +184,8 @@ ERROR: stack underflow
 99
 ```
 
+picking complicated shapes
+
 ```nkt
 > 5 index [ 0 2 4 ] [] .
 [ 0 2 4 ]
@@ -191,8 +193,10 @@ ERROR: stack underflow
 [ [ 2 0 ] [ 2 ] 4 ]
 ```
 
+picking elements of arr
+
 ```nkt
->[ [ 1 2 ] [ 3 4 ] ] 0 [] .
+> [ [ 1 2 ] [ 3 4 ] ] 0 [] .
 [ 1 2 ]
 >[ [ 1 2 ] [ 3 4 ] ] [ 0 ] [] .
 [ [ 1 2 ] ]
@@ -449,7 +453,7 @@ ERROR: array lengths are incompatible: 10 vs 2
 0: [ 1 1 ]
 1: [ 0 1 2 3 4 5 6 7 8 9 ]
 > "abc" 2 +
-ERROR: c8 i64 are not supported
+ERROR: '+' does not support c8, i64
 > \s \c
 0: 2
 1: "abc"
@@ -510,6 +514,10 @@ cells:
 [ 0 0 0 1 0 0 ]
 > 1 6 index = .
 [ 0 1 0 0 0 0 ]
+> [ 2 2 ] [ [ 0 1 ] [ 2 3 ] [ 4 5 ] ] = .
+[ [ 0 0 ] [ 1 0 ] [ 0 0 ] ]
+> [ [ 0 1 ] [ 2 3 ] [ 4 5 ] ] [ 2 2 ] = .
+[ [ 0 0 ] [ 1 0 ] [ 0 0 ] ]
 ```
 
 types:

@@ -16,6 +16,7 @@ using std::cerr;
 using std::cout;
 using std::max;
 using std::min;
+using std::pair;
 using std::print;
 using std::println;
 using std::string;
@@ -37,6 +38,7 @@ static_assert(sizeof(f64) == sizeof(i64));
 #define ttT      template <typename T>
 #define ttTU     template <typename T, typename U>
 #define ttX      template <typename X>
+#define ttY      template <typename Y>
 #define ttXY     template <typename X, typename Y>
 #define ttXYZ    template <typename X, typename Y, typename Z>
 

@@ -48,7 +48,7 @@ array_p cat(stack& stack, size_t n) {
     a = array::alloc(t, n);
     DO(i, n) { a->copy_ij(i, stack[n - i - 1], 0, 1); }
   } else {
-    a = array::alloc(T_ARR, n);
+    a = array::alloc<arr_t>(n);
     DO_MUT_ARRAY(a, arr_t, i, dst) { dst = stack[n - i - 1]; }
   }
   DO(i, n) stack.drop();
@@ -97,20 +97,20 @@ void inter_t::entry(dict_entry* e) {
       switch (a->n) {
         case 1: {
           f = *d;
-          CHECK(f, "not implemented");
+          CHECK(f, "'{}' not implemented", e->k);
           return f(*this, stack);
         }
         case T_MAX: {
           auto& x = stack.peek(0);
           f       = d[x.t];
-          CHECK(f, "{} is not supported", x.t);
+          CHECK(f, "'{}' does not support {}", e->k, x.t);
           return f(*this, stack);
         }
         case T_MAX* T_MAX: {
           auto& y = stack.peek(0);
           auto& x = stack.peek(1);
           f       = ((ffi(*)[T_MAX])d)[x.t][y.t];
-          CHECK(f, "{} {} are not supported", x.t, y.t);
+          CHECK(f, "'{}' does not support {}, {}", e->k, x.t, y.t);
           return f(*this, stack);
         }
         default: panicf("unexpected ffi length: {}", a->n);
@@ -253,7 +253,7 @@ DEF_IWORD(":", def) {
 
 DEF_IWORD(";", enddef) {
   CHECK(inter.mode == inter_t::COMPILE, ": can be used only in compile mode");
-  array_p     a    = array::create(T_ARR, inter.comp_stack.len(), inter.comp_stack.begin());
+  array_p     a    = array::create<arr_t>(inter.comp_stack.len(), inter.comp_stack.begin());
   dict_entry* prev = inter.find_entry(inter.comp);
   if (prev) {
     prev->v    = a;

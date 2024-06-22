@@ -13,7 +13,7 @@
 #pragma region ffi1_support
 
 void global_dict_add_ffi1(str n, const ffi1_table& ffi) {
-  global_dict_add_new({string(n), array::create(T_FFI, ffi.size(), ffi.begin())});
+  global_dict_add_new({string(n), array::create<ffi_t>(ffi.size(), ffi.begin())});
 }
 
 template <template <typename> class Word, typename X, typename... Types>
@@ -94,22 +94,6 @@ struct fn11_registrar {
   fn11_registrar<name##_k, c8_t, i64_t, f64_t> name##_registrar(#name);
 
 #pragma endregion ffi1_support
-
-#pragma region ffi2_support
-
-void global_dict_add_ffi2(str n, const ffi2_table& ffi) {
-  global_dict_add_new({string(n), array::create(T_FFI, ffi.size() * ffi.size(), ffi.begin())});
-}
-
-template <template <typename, typename> class Func>
-struct ffi2_registrar {
-  ffi2_registrar(str name, ffi2_table& table) {
-    call_each_type2<Func>();
-    global_dict_add_ffi2(name, table);
-  }
-};
-
-#pragma endregion ffi2_support
 
 #pragma endregion support
 
@@ -308,144 +292,13 @@ GEN_BINOP("|", max, MAX_OP)
 #define MIN_OP(a, b) (a) > (b) ? (b) : (a)
 GEN_BINOP("&", min, MIN_OP)
 
-#pragma region divide
-
-ffi2_table divide_table{};
-
-#define DIVIDE(x, y) ((f64)(x)) / ((f64)(y))
-
-GEN_BINOP_SPECIALIZATION(divide, i64_t, i64_t, f64_t, DIVIDE)
-GEN_BINOP_SPECIALIZATION(divide, i64_t, f64_t, f64_t, DIVIDE)
-GEN_BINOP_SPECIALIZATION(divide, f64_t, i64_t, f64_t, DIVIDE)
-GEN_BINOP_SPECIALIZATION(divide, f64_t, f64_t, f64_t, DIVIDE)
-
-CONSTRUCTOR void register_divide() {
-  divide_table[T_I64][T_I64] = divide_i64_t_i64_t::call;
-  divide_table[T_I64][T_F64] = divide_i64_t_f64_t::call;
-  divide_table[T_F64][T_I64] = divide_f64_t_i64_t::call;
-  divide_table[T_F64][T_F64] = divide_f64_t_f64_t::call;
-  global_dict_add_ffi2("/", divide_table);
-}
-
-#pragma endregion divide
-
-#pragma region div
-
-ffi2_table div_table{};
-
-#define DIV_INT(x, y)   (x) / (y)
-#define DIV_FLOAT(x, y) trunc((x) / (y))
-
-GEN_BINOP_SPECIALIZATION(div, i64_t, i64_t, i64_t, DIV_INT)
-GEN_BINOP_SPECIALIZATION(div, i64_t, f64_t, f64_t, DIV_FLOAT)
-GEN_BINOP_SPECIALIZATION(div, f64_t, i64_t, f64_t, DIV_FLOAT)
-GEN_BINOP_SPECIALIZATION(div, f64_t, f64_t, f64_t, DIV_FLOAT)
-
-CONSTRUCTOR void register_div() {
-  div_table[T_I64][T_I64] = div_i64_t_i64_t::call;
-  div_table[T_I64][T_F64] = div_i64_t_f64_t::call;
-  div_table[T_F64][T_I64] = div_f64_t_i64_t::call;
-  div_table[T_F64][T_F64] = div_f64_t_f64_t::call;
-  global_dict_add_ffi2("div", div_table);
-}
-
-#pragma endregion mod
-
-#pragma region mod
-
-ffi2_table mod_table{};
-
-#define MOD_PERCENT(x, y) ((x) % (y))
-#define MOD_FMOD(x, y)    fmod((x), (y))
-
-GEN_BINOP_SPECIALIZATION(mod, i64_t, i64_t, i64_t, MOD_PERCENT)
-GEN_BINOP_SPECIALIZATION(mod, i64_t, f64_t, f64_t, MOD_FMOD)
-GEN_BINOP_SPECIALIZATION(mod, f64_t, i64_t, f64_t, MOD_FMOD)
-GEN_BINOP_SPECIALIZATION(mod, f64_t, f64_t, f64_t, MOD_FMOD)
-
-CONSTRUCTOR void register_mod() {
-  mod_table[T_I64][T_I64] = mod_i64_t_i64_t::call;
-  mod_table[T_I64][T_F64] = mod_i64_t_f64_t::call;
-  mod_table[T_F64][T_I64] = mod_f64_t_i64_t::call;
-  mod_table[T_F64][T_F64] = mod_f64_t_f64_t::call;
-  global_dict_add_ffi2("mod", mod_table);
-}
-
-#pragma endregion mod
-
-#pragma region equal
-
-ffi2_table equal_table{};
-
-#define EQUAL_OP(a, b) (a) == (b)
-
-GEN_BINOP_SPECIALIZATION(equal, c8_t, c8_t, i64_t, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, c8_t, i64_t, i64_t, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, c8_t, f64_t, i64_t, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, i64_t, c8_t, i64_t, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, i64_t, i64_t, i64_t, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, i64_t, f64_t, i64_t, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, f64_t, c8_t, i64_t, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, f64_t, i64_t, i64_t, EQUAL_OP);
-GEN_BINOP_SPECIALIZATION(equal, f64_t, f64_t, i64_t, EQUAL_OP);
-
-#define REGISTER_EQUAL(t1, t2) equal_table[t1::e][t2::e] = equal_##t1##_##t2::call;
-
-CONSTRUCTOR void register_equal() {
-  REGISTER_EQUAL(c8_t, c8_t);
-  REGISTER_EQUAL(c8_t, i64_t);
-  REGISTER_EQUAL(c8_t, f64_t);
-  REGISTER_EQUAL(i64_t, c8_t);
-  REGISTER_EQUAL(i64_t, i64_t);
-  REGISTER_EQUAL(i64_t, f64_t);
-  REGISTER_EQUAL(f64_t, c8_t);
-  REGISTER_EQUAL(f64_t, i64_t);
-  REGISTER_EQUAL(f64_t, f64_t);
-  global_dict_add_ffi2("=", equal_table);
-}
-
-#pragma endregion equal
-
-#pragma region less
-
-ffi2_table less_table{};
-
-#define LESS_OP(a, b) (a) < (b)
-
-GEN_BINOP_SPECIALIZATION(less, c8_t, c8_t, i64_t, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, c8_t, i64_t, i64_t, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, c8_t, f64_t, i64_t, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, i64_t, c8_t, i64_t, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, i64_t, i64_t, i64_t, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, i64_t, f64_t, i64_t, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, f64_t, c8_t, i64_t, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, f64_t, i64_t, i64_t, LESS_OP);
-GEN_BINOP_SPECIALIZATION(less, f64_t, f64_t, i64_t, LESS_OP);
-
-#define REGISTER_less(t1, t2) less_table[t1::e][t2::e] = less_##t1##_##t2::call;
-
-CONSTRUCTOR void register_less() {
-  REGISTER_less(c8_t, c8_t);
-  REGISTER_less(c8_t, i64_t);
-  REGISTER_less(c8_t, f64_t);
-  REGISTER_less(i64_t, c8_t);
-  REGISTER_less(i64_t, i64_t);
-  REGISTER_less(i64_t, f64_t);
-  REGISTER_less(f64_t, c8_t);
-  REGISTER_less(f64_t, i64_t);
-  REGISTER_less(f64_t, f64_t);
-  global_dict_add_ffi2("<", less_table);
-}
-
-#pragma endregion less
-
 #pragma endregion binops
 
 #pragma region array_create
 
 DEF_WORD("index", index) {
   POP_SIZE(x);
-  array_p y = array::alloc(T_I64, x);
+  array_p y = array::alloc<i64_t>(x);
   DO_MUT_ARRAY(y, i64_t, i, dst) { dst = i; }
   PUSH(y);
 }
@@ -509,52 +362,53 @@ ttX struct w_split {
 };
 ffi1_registrar<w_split, c8_t, i64_t, f64_t> split_registrar("split");
 
-ttX void take(inter_t& inter, stack& stack) {
-  POP_SIZE(y);
-  POP(x);
-  array_p z = array::alloc<X>(y);
-  DO(i, y) { z->mut_data<X>()[i] = x->data<X>()[i % x->n]; }
-  PUSH(z);
-}
-
-ffi2_table take_table;
-ttXY struct reg_take {
-  reg_take() { take_table[X::e][T_I64] = take<X>; }
-};
-ffi2_registrar<reg_take> take_registrar("take", take_table);
-
-ttX array_p cell_impl(array_p x, array_p y) {
-  switch (y->t) {
-    case T_ARR: {
-      array_p z = y->alloc_as();
-      DO_MUT_ARRAY(z, arr_t, i, dst) { dst = cell_impl<X>(x, y->data<arr_t>()[i]); }
-      return z;
-    }
-    case T_I64: {
-      auto ii = y->data<i64_t>();
-      if (y->a && X::e == T_ARR) return x->data<arr_t>()[WRAP(ii[0], x->n)];
-      array_p z = y->alloc_as<X>();
-      DO_MUT_ARRAY(z, X, i, dst) { dst = x->data<X>()[WRAP(ii[i], x->n)]; }
-      return z;
-    }
-    default: panicf("{} is not supported", y->t);
-  }
-}
-
-ttX void cell(inter_t& inter, stack& stack) {
-  POP(y);
-  POP(x);
-  PUSH(cell_impl<X>(x, y));
-}
-
-ffi2_table cell_table;
-ttXY struct reg_cell {
-  reg_cell() {
-    cell_table[X::e][T_I64] = cell<X>;
-    cell_table[X::e][T_ARR] = cell<X>;
+ttXY struct w_take {
+  static void call(inter_t& inter, stack& stack) {
+    POP_SIZE(y);
+    POP(x);
+    array_p z = array::alloc<X>(y);
+    DO(i, y) { z->mut_data<X>()[i] = x->data<X>()[i % x->n]; }
+    PUSH(z);
   }
 };
-ffi2_registrar<reg_cell> cell_registrar("[]", cell_table);
+ffi2_registrar<w_take, pair<c8_t, i64_t>, pair<i64_t, i64_t>, pair<f64_t, i64_t>, pair<arr_t, i64_t>> take_registrar(
+    "take");
+
+ttXY struct w_cell {
+  static array_p cell_impl(array_p x, array_p y) {
+    switch (y->t) {
+      case T_ARR: {
+        array_p z = y->alloc_as();
+        DO_MUT_ARRAY(z, arr_t, i, dst) { dst = cell_impl(x, y->data<arr_t>()[i]); }
+        return z;
+      }
+      case T_I64: {
+        auto ii = y->data<i64_t>();
+        if (y->a && X::e == T_ARR) return x->data<arr_t>()[WRAP(ii[0], x->n)];
+        array_p z = y->alloc_as<X>();
+        DO_MUT_ARRAY(z, X, i, dst) { dst = x->data<X>()[WRAP(ii[i], x->n)]; }
+        return z;
+      }
+      default: panicf("{} is not supported", y->t);
+    }
+  }
+
+  static void call(inter_t& inter, stack& stack) {
+    POP(y);
+    POP(x);
+    PUSH(cell_impl(x, y));
+  }
+};
+ffi2_registrar<w_cell,
+               pair<c8_t, i64_t>,
+               pair<i64_t, i64_t>,
+               pair<f64_t, i64_t>,
+               pair<arr_t, i64_t>,
+               pair<c8_t, arr_t>,
+               pair<i64_t, arr_t>,
+               pair<f64_t, arr_t>,
+               pair<arr_t, arr_t>>
+    cell_registrar("[]");
 
 DEF_WORD("cat", cat) {
   POP_SIZE(x);

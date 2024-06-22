@@ -21,6 +21,7 @@ And primitive moves permutations:
 [ 3 1 2 7 0 5 6 4 ] const L`
 [ 0 1 2 3 5 6 7 4 ] const D
 [ 0 1 2 3 7 4 5 6 ] const D`
+[ U U` F F` R R` L L` D D` ] const A
 ```
 
 Individual permutations can be applied using the `[]` word:
@@ -30,7 +31,7 @@ Individual permutations can be applied using the `[]` word:
 [ 3 0 1 2 4 5 6 7 ]
 ```
 
-You can compare result with the original to detect all the cubes, 
+You can compare result with the original to detect all the cubes,
 that stayed in place.
 
 ```nkt
@@ -89,7 +90,7 @@ Let's finish testing the primitives:
 
 ## Exploring states
 
-It is possible to apply multiple permutations to the same initial position 
+It is possible to apply multiple permutations to the same initial position
 to explore variations of the moves:
 
 ```nkt
@@ -99,7 +100,7 @@ to explore variations of the moves:
 
 List of states can be compared to the initial the same way:
 
-```
-TODO
+```nkt
 > I dup [ U D ] [] = .
+[ [ 0 0 0 0 1 1 1 1 ] [ 1 1 1 1 0 0 0 0 ] ]
 ```

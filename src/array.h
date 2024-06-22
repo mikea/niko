@@ -99,6 +99,8 @@ INLINE const str type_name(type_t t) { return type_name_table[t]; }
 
 struct array {
  private:
+  static array_p create(type_t t, size_t n, const void* x);
+
   array(type_t t, size_t n, array_p owner, void* restrict p) : t(t), n(n), owner(owner), p(p) {}
 
   friend class rc<array>;
@@ -138,8 +140,6 @@ struct array {
   ~array();
 
   static array_p alloc(type_t t, size_t n);
-  static array_p create(type_t t, size_t n, const void* x);
-  static array_p create_slice(array* x, size_t n, const void* p);
   static array_p atom(type_t t, const void* x) {
     auto a = create(t, 1, x);
     a->a   = true;
@@ -151,12 +151,12 @@ struct array {
   ttT static inline array_p atom(const T::t& x) { return atom(T::e, &x); }
 
   inline array_p alloc_as() const {
-    auto a = array::alloc(t, n);
+    auto a = alloc(t, n);
     a->copy_flags(this);
     return a;
   }
   ttT inline array_p alloc_as() const {
-    auto a = array::alloc<T>(n);
+    auto a = alloc<T>(n);
     a->copy_flags(this);
     return a;
   }
