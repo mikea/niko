@@ -1,6 +1,6 @@
 #include "array.h"
 
-inline array_p array::alloc(type_t t, size_t n) {
+array_p array::alloc(type_t t, size_t n) {
   array* a;
   if (data_simd_aligned(t, n)) {
     auto buf = new std::byte[sizeof(array)];
