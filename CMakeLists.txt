@@ -31,7 +31,7 @@ endif()
 
 add_executable(niko 
   src/main.c++ src/inter.c++ src/array.c++ src/words.c++ src/print.c++
-  src/words/binop.c++
+  src/words/binop.c++ src/words/math.c++
   ${CMAKE_CURRENT_BINARY_DIR}/lexer.c++
   ${CMAKE_CURRENT_BINARY_DIR}/prelude.h)
 target_link_libraries(niko m)

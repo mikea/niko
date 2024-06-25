@@ -60,6 +60,91 @@ INLINE t_dict_entry as_dict_entry(const array* x) {
   t_dict_entry v = as_dict_entry(tmp)
 #define POP_DICT_ENTRY(v) _POP_DICT_ENTRY(v, UNIQUE(v))
 
+#pragma region ffi1_support
+
+inline void global_dict_add_ffi1(str n, const ffi1_table& ffi) {
+  global_dict_add_new({string(n), array::create<ffi_t>(ffi.size(), ffi.begin())});
+}
+
+template <template <typename> class Word, typename X, typename... Types>
+inline void _reg1(ffi1_table& t) {
+  t[X::e] = Word<X>::call;
+  _reg1<Word, Types...>(t);
+}
+template <template <typename> class Word>
+inline void _reg1(ffi1_table& t) {}
+
+template <template <typename> class Word, typename... Types>
+struct ffi1_registrar {
+  ffi1_registrar(str name) {
+    ffi1_table table{};
+    _reg1<Word, Types...>(table);
+    global_dict_add_ffi1(name, table);
+  }
+};
+
+template <template <typename> class Kernel, typename X, typename... Types>
+inline array_p _apply1(array_p x) {
+  if (X::e == x->t) {
+    using Y   = Kernel<X>::Y;
+    array_p y = x->alloc_as<Y>();
+    DO(i, x->n) { y->mut_data<Y>()[i] = Kernel<X>::apply(x->data<X>()[i]); }
+    return y;
+  }
+  return _apply1<Kernel, Types...>(x);
+}
+template <template <typename> class Kernel>
+inline array_p _apply1(array_p x) {
+  return nullptr;
+}
+
+template <template <typename> class Fn, typename... Types>
+struct fn11_registrar {
+  ttX struct reg {
+    reg(ffi1_table& table) { table[X::e] = call; }
+
+    inline static void call(inter_t& inter, stack& stack) {
+      POP(x);
+      using Y   = Fn<X>::Y;
+      array_p y = x->alloc_as<Y>();
+      DO(i, x->n) { y->mut_data<Y>()[i] = Fn<X>::apply(x->data<X>()[i]); }
+      PUSH(y);
+    }
+  };
+
+  fn11_registrar(str name) {
+    ffi1_table                                table{};
+    call_each_arg<reg, ffi1_table&, Types...> _(table);
+    table[T_ARR] = thread;
+    global_dict_add_ffi1(name, table);
+  }
+
+  inline static void thread(inter_t& inter, stack& stack) {
+    POP(x);
+    PUSH(thread_impl(x));
+  }
+
+  inline static array_p thread_impl(array_p x) {
+    assert(x->t == T_ARR);
+    array_p        y   = x->alloc_as();
+    array_p const* src = x->data<arr_t>();
+    DO_MUT_ARRAY(y, arr_t, i, dst) {
+      dst = src[i]->t == T_ARR ? thread_impl(src[i]) : _apply1<Fn, Types...>(src[i]);
+      CHECK(dst, "{} is not supported", src[i]->t);
+    }
+    return y;
+  }
+};
+
+#define REG_FN11(name, y_t, fn)                        \
+  ttX struct name##_k {                                \
+    using Y = y_t;                                     \
+    ALWAYS_INLINE Y::t apply(X::t x) { return fn(x); } \
+  };                                                   \
+  fn11_registrar<name##_k, c8_t, i64_t, f64_t> name##_registrar(#name);
+
+#pragma endregion ffi1_support
+
 #pragma region ffi2_support
 
 INLINE void global_dict_add_ffi2(str n, const ffi2_table& ffi) {
