@@ -12,6 +12,19 @@ Only Linux is supported.
 
 ## Language Overview
 
+### Forth Comparison
+
+Niko is very similar to Forth: 
+stack manipulation core eval loop, 
+dictionary structure and many 
+syntax elements come from it. 
+
+Niko differences from Forth are:
+- all values are vectors
+- words are represented as vectors too (lisp like)
+- Niko doesn't try to self-host
+- low-level concepts such as return stack are not exposed
+
 ## Documentation
 
 - [User Manual](docs/manual.md)
