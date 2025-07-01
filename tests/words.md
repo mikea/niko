@@ -435,6 +435,47 @@ ERROR: expected single value
 [ 6. 7. ]
 ```
 
+comprehensive type tests - all 4 scalar combinations:
+
+```nkt
+> 5 7 + .
+12
+> 5 7. + .
+12.
+> 5. 7 + .
+12.
+> 5. 7. + .
+12.
+```
+
+vector-scalar combinations:
+
+```nkt
+> [ 1 2 3 ] 10 + .
+[ 11 12 13 ]
+> 10 [ 1 2 3 ] + .
+[ 11 12 13 ]
+> [ 1 2 3 ] 10. + .
+[ 11. 12. 13. ]
+> 10. [ 1 2 3 ] + .
+[ 11. 12. 13. ]
+```
+
+vector-vector operations:
+
+```nkt
+> [ 1 2 3 ] [ 4 5 6 ] + .
+[ 5 7 9 ]
+> [ 1. 2. 3. ] [ 4 5 6 ] + .
+[ 5. 7. 9. ]
+> [ 1 2 3 ] [ 4. 5. 6. ] + .
+[ 5. 7. 9. ]
+> [ 10 ] [ 1 2 3 ] + .
+[ 11 12 13 ]
+> [ 1 2 3 ] [ 10 ] + .
+[ 11 12 13 ]
+```
+
 type conversion:
 
 ```nkt
