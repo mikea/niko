@@ -102,50 +102,6 @@ REG_FN11(f64, f64_t, f64_impl);
 
 #pragma endregion conversions
 
-#pragma region binops
-
-ttXYZ using binop_kernel_t =
-    void(*)(const X* restrict x, size_t x_n, const Y* restrict y, size_t y_n, Z* restrict out, size_t out_n);
-
-ttXYZ void w_binop(stack& stack, binop_kernel_t<typename X::t, typename Y::t, typename Z::t> kernel) {
-  POP(y);
-  POP(x);
-  CHECK(y->n == x->n || y->n == 1 || x->n == 1, "array lengths are incompatible: {} vs {}", x->n, y->n);
-  array_p z = array::alloc<Z>(max(x->n, y->n));
-  z->a      = x->a & y->a;
-  kernel(x->data<X>(), x->n, y->data<Y>(), y->n, z->mut_data<Z>(), z->n);
-  PUSH(z);
-}
-
-#define GEN_BINOP_KERNEL(name, xt, yt, zt, op)                                                             \
-  void name(const xt* restrict x, size_t xn, const yt* restrict y, size_t yn, zt* restrict z, size_t zn) { \
-    if (zn == xn && zn == yn) DO(i, zn) z[i] = op(x[i], y[i]);                                             \
-    else if (xn == 1 && zn == yn) DO(i, zn) z[i] = op(x[0], y[i]);                                         \
-    else if (yn == 1 && zn == xn) DO(i, zn) z[i] = op(x[i], y[0]);                                         \
-    else DO(i, zn) z[i] = op(x[i % xn], y[i % yn]);                                                        \
-  }
-
-#define GEN_BINOP_SPECIALIZATION(name, xt, yt, zt, op)                 \
-  GEN_BINOP_KERNEL(name##_kernel_##xt##_##yt, xt::t, yt::t, zt::t, op) \
-  DECL_HANDLER(name##_##xt##_##yt);                                    \
-  DEF_HANDLER(name##_##xt##_##yt) { return w_binop<xt, yt, zt>(stack, name##_kernel_##xt##_##yt); }
-
-#define GEN_BINOP(word, name, op)                          \
-  GEN_BINOP_SPECIALIZATION(name, i64_t, i64_t, i64_t, op)  \
-  GEN_BINOP_SPECIALIZATION(name, i64_t, f64_t, f64_t, op)  \
-  GEN_BINOP_SPECIALIZATION(name, f64_t, i64_t, f64_t, op)  \
-  GEN_BINOP_SPECIALIZATION(name, f64_t, f64_t, f64_t, op)  \
-  ffi2_table       name##_table{};                         \
-  CONSTRUCTOR void __register_w_##name() {                 \
-    name##_table[T_I64][T_I64] = name##_i64_t_i64_t::call; \
-    name##_table[T_F64][T_I64] = name##_f64_t_i64_t::call; \
-    name##_table[T_I64][T_F64] = name##_i64_t_f64_t::call; \
-    name##_table[T_F64][T_F64] = name##_f64_t_f64_t::call; \
-    global_dict_add_ffi2(word, name##_table);              \
-  }
-
-#pragma endregion binops
-
 #pragma region array_create
 
 DEF_WORD("index", index) {
