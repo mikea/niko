@@ -186,3 +186,27 @@ ffi2_registrar<w_minus, pair<i64_t, i64_t>, pair<i64_t, f64_t>, pair<f64_t, i64_
     minus_registrar("-");
 
 #pragma endregion minus
+
+#pragma region max
+
+ttXY struct w_max {
+  using Z = typename std::conditional<std::is_same<X, f64_t>::value || std::is_same<Y, f64_t>::value, f64_t, i64_t>::type;
+  static void       call(inter_t& inter, stack& stack) { kernel_binop<w_max, X, Y>(inter, stack); }
+  static inline typename Z::t apply(typename X::t x, typename Y::t y) { return x > y ? x : y; }
+};
+ffi2_registrar<w_max, pair<i64_t, i64_t>, pair<i64_t, f64_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>>
+    max_registrar("|");
+
+#pragma endregion max
+
+#pragma region min
+
+ttXY struct w_min {
+  using Z = typename std::conditional<std::is_same<X, f64_t>::value || std::is_same<Y, f64_t>::value, f64_t, i64_t>::type;
+  static void       call(inter_t& inter, stack& stack) { kernel_binop<w_min, X, Y>(inter, stack); }
+  static inline typename Z::t apply(typename X::t x, typename Y::t y) { return x > y ? y : x; }
+};
+ffi2_registrar<w_min, pair<i64_t, i64_t>, pair<i64_t, f64_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>>
+    min_registrar("&");
+
+#pragma endregion min

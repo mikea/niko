@@ -738,11 +738,141 @@ lists
 [ 0 0 0 0 0 1 1 0 0 0 ]
 ```
 
+comprehensive type tests - all 4 scalar combinations:
+
+```nkt
+> 3 7 | .
+7
+> 3 7. | .
+7.
+> 3. 7 | .
+7.
+> 3. 7. | .
+7.
+```
+
+vector-scalar combinations:
+
+```nkt
+> [ 1 5 3 ] 4 | .
+[ 4 5 4 ]
+> 4 [ 1 5 3 ] | .
+[ 4 5 4 ]
+> [ 1 5 3 ] 4. | .
+[ 4. 5. 4. ]
+> 4. [ 1 5 3 ] | .
+[ 4. 5. 4. ]
+```
+
+vector-vector operations:
+
+```nkt
+> [ 1 5 3 ] [ 2 4 6 ] | .
+[ 2 5 6 ]
+> [ 1. 5. 3. ] [ 2 4 6 ] | .
+[ 2. 5. 6. ]
+> [ 1 5 3 ] [ 2. 4. 6. ] | .
+[ 2. 5. 6. ]
+> [ 10 ] [ 1 5 3 ] | .
+[ 10 10 10 ]
+> [ 1 5 3 ] [ 4 ] | .
+[ 4 5 4 ]
+```
+
+type conversion:
+
+```nkt
+> 3 7. | .
+7.
+> 3. 7 | .
+7.
+```
+
+error handling:
+
+```nkt
+> [ 1 2 3 ] [ 4 5 ] |
+ERROR: array lengths are incompatible: 3 vs 2
+> \s \c
+0: [ 4 5 ]
+1: [ 1 2 3 ]
+> "abc" 2 |
+ERROR: '|' does not support c8, i64
+> \s \c
+0: 2
+1: "abc"
+```
+
 ### min
 
 ```nkt
 > 10 index 5 & .
 [ 0 1 2 3 4 5 5 5 5 5 ]
+```
+
+comprehensive type tests - all 4 scalar combinations:
+
+```nkt
+> 3 7 & .
+3
+> 3 7. & .
+3.
+> 3. 7 & .
+3.
+> 3. 7. & .
+3.
+```
+
+vector-scalar combinations:
+
+```nkt
+> [ 1 5 3 ] 4 & .
+[ 1 4 3 ]
+> 4 [ 1 5 3 ] & .
+[ 1 4 3 ]
+> [ 1 5 3 ] 4. & .
+[ 1. 4. 3. ]
+> 4. [ 1 5 3 ] & .
+[ 1. 4. 3. ]
+```
+
+vector-vector operations:
+
+```nkt
+> [ 1 5 3 ] [ 2 4 6 ] & .
+[ 1 4 3 ]
+> [ 1. 5. 3. ] [ 2 4 6 ] & .
+[ 1. 4. 3. ]
+> [ 1 5 3 ] [ 2. 4. 6. ] & .
+[ 1. 4. 3. ]
+> [ 10 ] [ 1 5 3 ] & .
+[ 1 5 3 ]
+> [ 1 5 3 ] [ 4 ] & .
+[ 1 4 3 ]
+```
+
+type conversion:
+
+```nkt
+> 3 7. & .
+3.
+> 3. 7 & .
+3.
+```
+
+error handling:
+
+```nkt
+> [ 1 2 3 ] [ 4 5 ] &
+ERROR: array lengths are incompatible: 3 vs 2
+> \s \c
+0: [ 4 5 ]
+1: [ 1 2 3 ]
+> "abc" 2 &
+ERROR: '&' does not support c8, i64
+> \s \c
+0: 2
+1: "abc"
 ```
 
 ### div

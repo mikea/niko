@@ -144,12 +144,6 @@ ttXYZ void w_binop(stack& stack, binop_kernel_t<typename X::t, typename Y::t, ty
     global_dict_add_ffi2(word, name##_table);              \
   }
 
-#define MAX_OP(a, b) (a) > (b) ? (a) : (b)
-GEN_BINOP("|", max, MAX_OP)
-
-#define MIN_OP(a, b) (a) > (b) ? (b) : (a)
-GEN_BINOP("&", min, MIN_OP)
-
 #pragma endregion binops
 
 #pragma region array_create
