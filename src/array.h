@@ -85,8 +85,7 @@ struct call_each_type2 {
   }
 };
 
-#define TYPE_ROW(v_c8, v_i64, v_f64, v_arr, v_ffi, v_dict_entry) \
-  { v_c8, v_i64, v_f64, v_arr, v_ffi, v_dict_entry }
+#define TYPE_ROW(v_c8, v_i64, v_f64, v_arr, v_ffi, v_dict_entry) {v_c8, v_i64, v_f64, v_arr, v_ffi, v_dict_entry}
 
 #define TYPE_ROW_FOREACH(f) TYPE_ROW(f(c8_t), f(i64_t), f(f64_t), f(arr_t), f(ffi_t), f(dict_entry_t))
 

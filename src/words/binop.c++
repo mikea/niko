@@ -162,3 +162,15 @@ ffi2_registrar<w_plus, pair<i64_t, i64_t>, pair<i64_t, f64_t>, pair<f64_t, i64_t
     plus_registrar("+");
 
 #pragma endregion plus
+
+#pragma region mul
+
+ttXY struct w_mul {
+  using Z = typename std::conditional<std::is_same<X, f64_t>::value || std::is_same<Y, f64_t>::value, f64_t, i64_t>::type;
+  static void       call(inter_t& inter, stack& stack) { kernel_binop<w_mul, X, Y>(inter, stack); }
+  static inline typename Z::t apply(typename X::t x, typename Y::t y) { return x * y; }
+};
+ffi2_registrar<w_mul, pair<i64_t, i64_t>, pair<i64_t, f64_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>>
+    mul_registrar("*");
+
+#pragma endregion mul

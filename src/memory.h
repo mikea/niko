@@ -3,7 +3,7 @@
 #define ALIGNED(n) ATTR(aligned(n))
 
 #define __ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
-#define ALIGN(x, a)           __ALIGN_MASK(x, (typeof(x))(a)-1)
+#define ALIGN(x, a)           __ALIGN_MASK(x, (typeof(x))(a) - 1)
 
 #define CONSTRUCTOR ATTR(constructor)
 

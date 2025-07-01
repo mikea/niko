@@ -144,9 +144,6 @@ ttXYZ void w_binop(stack& stack, binop_kernel_t<typename X::t, typename Y::t, ty
     global_dict_add_ffi2(word, name##_table);              \
   }
 
-#define MUL_OP(a, b) (a) * (b)
-GEN_BINOP("*", mul, MUL_OP)
-
 #define MINUS_OP(a, b) (a) - (b)
 GEN_BINOP("-", minus, MINUS_OP)
 
