@@ -9,6 +9,29 @@ ttXY using numeric_result_t = typename std::conditional<
   i64_t
 >::type;
 
+// Macro for simple numeric binops that use numeric_result_t type promotion
+#define NUMERIC_BINOP(name, symbol, expr) \
+  ttXY struct w_##name { \
+    using Z = numeric_result_t<X, Y>; \
+    static void call(inter_t& inter, stack& stack) { kernel_binop<w_##name, X, Y>(inter, stack); } \
+    static inline typename Z::t apply(typename X::t x, typename Y::t y) { return expr; } \
+  }; \
+  ffi2_registrar<w_##name, pair<i64_t, i64_t>, pair<i64_t, f64_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>> \
+      name##_registrar(symbol);
+
+// Macro for comparison binops that always return i64 and support c8_t inputs
+#define COMPARISON_BINOP(name, symbol, expr) \
+  ttXY struct w_##name { \
+    using Z = i64_t; \
+    static void call(inter_t& inter, stack& stack) { kernel_binop<w_##name, X, Y>(inter, stack); } \
+    static inline i64 apply(typename X::t x, typename Y::t y) { return expr; } \
+  }; \
+  ffi2_registrar<w_##name, \
+                 pair<c8_t, c8_t>, pair<c8_t, i64_t>, pair<c8_t, f64_t>, \
+                 pair<i64_t, c8_t>, pair<i64_t, i64_t>, pair<i64_t, f64_t>, \
+                 pair<f64_t, c8_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>> \
+      name##_registrar(symbol);
+
 template <template <typename, typename> class Kernel, typename X, typename Y>
 array_p kernel_binop(array_p x, array_p y) {
   CHECK(y->n == x->n || y->n == 1 || x->n == 1, "array lengths are incompatible: {} vs {}", x->n, y->n);
@@ -138,83 +161,42 @@ ffi2_registrar<w_eq,
 
 #pragma endregion equal
 
-#pragma region less
+#pragma region comparisons
 
-ttXY struct w_less {
-  using Z = i64_t;
-  static void       call(inter_t& inter, stack& stack) { kernel_binop<w_less, X, Y>(inter, stack); }
-  static inline i64 apply(X::t x, Y::t y) { return x < y; }
-};
-ffi2_registrar<w_less,
-               pair<c8_t, c8_t>,
-               pair<c8_t, i64_t>,
-               pair<c8_t, f64_t>,
-               pair<i64_t, c8_t>,
-               pair<i64_t, i64_t>,
-               pair<i64_t, f64_t>,
-               pair<f64_t, c8_t>,
-               pair<f64_t, i64_t>,
-               pair<f64_t, f64_t>>
-    less_registrar("<");
+COMPARISON_BINOP(less, "<", x < y)
+COMPARISON_BINOP(greater, ">", x > y)
+COMPARISON_BINOP(less_equal, "<=", x <= y)
+COMPARISON_BINOP(greater_equal, ">=", x >= y)
+COMPARISON_BINOP(not_equal, "!=", x != y)
 
-#pragma endregion less
+#pragma endregion comparisons
 
 #pragma region plus
 
-ttXY struct w_plus {
-  using Z = numeric_result_t<X, Y>;
-  static void       call(inter_t& inter, stack& stack) { kernel_binop<w_plus, X, Y>(inter, stack); }
-  static inline typename Z::t apply(typename X::t x, typename Y::t y) { return x + y; }
-};
-ffi2_registrar<w_plus, pair<i64_t, i64_t>, pair<i64_t, f64_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>>
-    plus_registrar("+");
+NUMERIC_BINOP(plus, "+", x + y)
 
 #pragma endregion plus
 
 #pragma region mul
 
-ttXY struct w_mul {
-  using Z = numeric_result_t<X, Y>;
-  static void       call(inter_t& inter, stack& stack) { kernel_binop<w_mul, X, Y>(inter, stack); }
-  static inline typename Z::t apply(typename X::t x, typename Y::t y) { return x * y; }
-};
-ffi2_registrar<w_mul, pair<i64_t, i64_t>, pair<i64_t, f64_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>>
-    mul_registrar("*");
+NUMERIC_BINOP(mul, "*", x * y)
 
 #pragma endregion mul
 
 #pragma region minus
 
-ttXY struct w_minus {
-  using Z = numeric_result_t<X, Y>;
-  static void       call(inter_t& inter, stack& stack) { kernel_binop<w_minus, X, Y>(inter, stack); }
-  static inline typename Z::t apply(typename X::t x, typename Y::t y) { return x - y; }
-};
-ffi2_registrar<w_minus, pair<i64_t, i64_t>, pair<i64_t, f64_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>>
-    minus_registrar("-");
+NUMERIC_BINOP(minus, "-", x - y)
 
 #pragma endregion minus
 
 #pragma region max
 
-ttXY struct w_max {
-  using Z = numeric_result_t<X, Y>;
-  static void       call(inter_t& inter, stack& stack) { kernel_binop<w_max, X, Y>(inter, stack); }
-  static inline typename Z::t apply(typename X::t x, typename Y::t y) { return x > y ? x : y; }
-};
-ffi2_registrar<w_max, pair<i64_t, i64_t>, pair<i64_t, f64_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>>
-    max_registrar("|");
+NUMERIC_BINOP(max, "|", x > y ? x : y)
 
 #pragma endregion max
 
 #pragma region min
 
-ttXY struct w_min {
-  using Z = numeric_result_t<X, Y>;
-  static void       call(inter_t& inter, stack& stack) { kernel_binop<w_min, X, Y>(inter, stack); }
-  static inline typename Z::t apply(typename X::t x, typename Y::t y) { return x > y ? y : x; }
-};
-ffi2_registrar<w_min, pair<i64_t, i64_t>, pair<i64_t, f64_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>>
-    min_registrar("&");
+NUMERIC_BINOP(min, "&", x > y ? y : x)
 
 #pragma endregion min
