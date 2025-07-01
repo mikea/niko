@@ -581,6 +581,71 @@ ERROR: '*' does not support c8, i64
 [ -1 0 1 2 3 4 5 6 7 8 ]
 ```
 
+comprehensive type tests - all 4 scalar combinations:
+
+```nkt
+> 10 3 - .
+7
+> 10 3. - .
+7.
+> 10. 3 - .
+7.
+> 10. 3. - .
+7.
+```
+
+vector-scalar combinations:
+
+```nkt
+> [ 10 20 30 ] 5 - .
+[ 5 15 25 ]
+> 100 [ 10 20 30 ] - .
+[ 90 80 70 ]
+> [ 10 20 30 ] 5. - .
+[ 5. 15. 25. ]
+> 100. [ 10 20 30 ] - .
+[ 90. 80. 70. ]
+```
+
+vector-vector operations:
+
+```nkt
+> [ 10 20 30 ] [ 1 2 3 ] - .
+[ 9 18 27 ]
+> [ 10. 20. 30. ] [ 1 2 3 ] - .
+[ 9. 18. 27. ]
+> [ 10 20 30 ] [ 1. 2. 3. ] - .
+[ 9. 18. 27. ]
+> [ 100 ] [ 10 20 30 ] - .
+[ 90 80 70 ]
+> [ 10 20 30 ] [ 5 ] - .
+[ 5 15 25 ]
+```
+
+type conversion:
+
+```nkt
+> 5 2. - .
+3.
+> 5. 2 - .
+3.
+```
+
+error handling:
+
+```nkt
+> [ 1 2 3 ] [ 4 5 ] -
+ERROR: array lengths are incompatible: 3 vs 2
+> \s \c
+0: [ 4 5 ]
+1: [ 1 2 3 ]
+> "abc" 2 -
+ERROR: '-' does not support c8, i64
+> \s \c
+0: 2
+1: "abc"
+```
+
 ### /
 
 ```nkt
