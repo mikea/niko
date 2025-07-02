@@ -405,3 +405,169 @@ The unified array model eliminates the scalar/vector distinction found in many l
 - No need for separate scalar and vector versions of functions  
 - Enables powerful array programming patterns
 - Simplifies the mental model - everything follows the same rules
+
+## Higher-Order Words (Adverbs)
+
+Niko provides powerful higher-order words (called "adverbs" in array programming) that take other words as arguments. These enable functional programming patterns and array processing without explicit loops.
+
+### Word Quotation
+
+To pass a word as an argument to a higher-order function, append a single quote (`'`) to the word name:
+
+```nkt
+> [ 1 2 3 4 ] +' ,fold .    ( sum using fold )
+10
+> [ 1 2 3 ] neg' ,apply .   ( negate each element )
+[ -1 -2 -3 ]
+```
+
+### Core Higher-Order Words
+
+#### `,fold` - Reduce an Array
+
+Applies a binary operation between elements, accumulating a result:
+
+```nkt
+> [ 1 2 3 4 ] +' ,fold .    ( 1 + 2 + 3 + 4 )
+10
+> [ 5 3 8 2 ] max' ,fold .  ( maximum value )
+8
+> [ 10 20 30 40 ] +' ,fold .
+100
+```
+
+**How it works**: Takes the first element as initial value, then applies the operation between the accumulator and each subsequent element.
+
+#### `,scan` - Running Fold
+
+Like `,fold` but keeps all intermediate results:
+
+```nkt
+> [ 1 2 3 4 ] +' ,scan .    ( running sum )
+[ 1 3 6 10 ]
+> [ 5 3 8 2 ] max' ,scan .  ( running maximum )
+[ 5 5 8 8 ]
+> [ 1 2 3 4 ] *' ,scan .    ( running product )
+[ 1 2 6 24 ]
+```
+
+**How it works**: Same as `,fold` but collects each intermediate accumulator value into an array.
+
+#### `,apply` - Map Over Array
+
+Applies an operation to each element:
+
+```nkt
+> [ 1 2 3 ] neg' ,apply .   ( negate each )
+[ -1 -2 -3 ]
+> [ 1 4 9 ] sqrt' ,apply .  ( square root each )
+[ 1. 2. 3. ]
+> : double 2 * ;
+> [ 1 2 3 ] double' ,apply .  ( double each element )  
+[ 2 4 6 ]
+```
+
+**How it works**: Pushes each element onto the stack as an atom, executes the operation, then collects all results with `cat`. Note that operations that produce multiple values will have all values collected.
+
+#### `,pairwise` - Apply Between Adjacent Pairs
+
+Applies a binary operation between consecutive elements:
+
+```nkt
+> [ 1 3 7 10 ] swap-' ,pairwise .   ( differences )
+[ 1 2 4 3 ]
+> : swap/ swap / ;
+> [ 1 2 4 8 ] swap/' ,pairwise .   ( ratios )
+[ 1 2. 2. 2. ]
+> [ 5 10 20 ] *' ,pairwise .
+[ 5 50 200 ]
+```
+
+**How it works**: Keeps the first element unchanged, then applies the operation between each adjacent pair.
+
+#### `,power` - Iterate a Function
+
+Applies an operation n times to a value:
+
+```nkt
+> : double dup + ;
+> 1 8 double' ,power .       ( double 8 times: 1→2→4→...→256 )
+256
+> : inc 1 + ;
+> 0 5 inc' ,power .          ( increment 5 times: 0→1→2→3→4→5 )
+5
+> 5 4 1 +' ,power .         ( add 1 four times )
+9
+```
+
+**How it works**: Starting with the initial value on stack, applies the operation n times.
+
+#### `,collect` - Collect Results
+
+Runs an operation n times and collects the top n stack items:
+
+```nkt
+> : next dup 1 + ;
+> 1 5 next' ,collect .        ( generate 1,2,3,4,5 )
+[ 1 2 3 4 5 ]
+> 1 3 dup' ,collect .         ( duplicate 3 times )
+[ 1 1 1 ]
+```
+
+**How it works**: Executes the operation n times, drops the top item, then concatenates the top n items from the stack.
+
+#### `,trace` - Trace Execution
+
+Like `,power` but keeps all intermediate results:
+
+```nkt
+> : double dup + ;
+> 1 5 double' ,trace .       ( powers of 2 )
+[ 2 4 8 16 32 ]
+> : inc 1 + ;
+> 1 4 inc' ,trace .          ( sequence 2,3,4,5 )
+[ 2 3 4 5 ]
+```
+
+**How it works**: Duplicates the top value before each operation (except the first), collecting all states.
+
+### Practical Examples
+
+#### Statistics
+```nkt
+> [ 3 1 4 1 5 9 ] dup +' ,fold swap len / .  ( mean )
+3.83333333333333
+> [ 1 2 3 4 5 ] dup +' ,fold swap len / .    ( mean )
+3.
+```
+
+#### Array Manipulation
+```nkt
+> [ [ 1 2 ] [ 3 4 ] [ 5 6 ] ] +' ,fold .
+[ 9 12 ]
+> [ 1 2 3 ] dup + .
+[ 2 4 6 ]
+```
+
+#### Cumulative Operations
+```nkt
+> 10 index 1 + *' ,scan .    ( factorials )
+[ 1 2 6 24 120 720 5040 40320 362880 3628800 ]
+> [ 100 -20 30 -50 ] +' ,scan .  ( running balance )
+[ 100 80 110 60 ]
+```
+
+### Understanding Quoted Words
+
+The quote syntax (`'`) creates a reference to a word without executing it. This reference can then be passed to higher-order words:
+
+```nkt
+> +' .                      ( print the quoted word )
++'
+> [ 1 2 ] [ 3 4 ] + .      ( normal addition )
+[ 4 6 ]
+> 1 2 + .                   ( normal scalar addition )
+3
+```
+
+Higher-order words are fundamental to Niko's array programming paradigm, allowing complex operations to be expressed concisely without explicit loops or recursion.
