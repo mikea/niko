@@ -435,6 +435,36 @@ String pass-through:
 ""
 ```
 
+### Character Code Conversion
+
+Using arithmetic to get character codes:
+```nkt
+> "abc" 0 + .
+[ 97 98 99 ]
+> "A" 0 + .
+[ 65 ]
+> "Z" 0 + .
+[ 90 ]
+```
+
+Character arithmetic:
+```nkt
+> "ABC" 32 + .
+[ 97 98 99 ]
+> "ABC" 32 + c8 .
+"abc"
+> "9" 0 + 48 - .
+[ 9 ]
+```
+
+String operations:
+```nkt
+> "ABC" "   " + .
+"abc"
+> "hello" 1 * .
+[ 104 101 108 108 111 ]
+```
+
 ### Conversion Error Handling
 
 Valid parsing cases:
@@ -634,10 +664,8 @@ ERROR: array lengths are incompatible: 10 vs 2
 0: [ 1 1 ]
 1: [ 0 1 2 3 4 5 6 7 8 9 ]
 > "abc" 2 +
-ERROR: '+' does not support c8, i64
 > \s \c
-0: 2
-1: "abc"
+0: [ 99 100 101 ]
 ```
 
 ### *
@@ -708,10 +736,8 @@ ERROR: array lengths are incompatible: 3 vs 2
 0: [ 4 5 ]
 1: [ 1 2 3 ]
 > "abc" 2 *
-ERROR: '*' does not support c8, i64
 > \s \c
-0: 2
-1: "abc"
+0: [ 194 196 198 ]
 ```
 
 ### -
@@ -780,10 +806,8 @@ ERROR: array lengths are incompatible: 3 vs 2
 0: [ 4 5 ]
 1: [ 1 2 3 ]
 > "abc" 2 -
-ERROR: '-' does not support c8, i64
 > \s \c
-0: 2
-1: "abc"
+0: [ 95 96 97 ]
 ```
 
 ### /
@@ -1074,10 +1098,8 @@ ERROR: array lengths are incompatible: 3 vs 2
 0: [ 4 5 ]
 1: [ 1 2 3 ]
 > "abc" 2 |
-ERROR: '|' does not support c8, i64
 > \s \c
-0: 2
-1: "abc"
+0: [ 97 98 99 ]
 ```
 
 ### min
@@ -1146,10 +1168,8 @@ ERROR: array lengths are incompatible: 3 vs 2
 0: [ 4 5 ]
 1: [ 1 2 3 ]
 > "abc" 2 &
-ERROR: '&' does not support c8, i64
 > \s \c
-0: 2
-1: "abc"
+0: [ 2 2 2 ]
 ```
 
 ### div

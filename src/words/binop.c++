@@ -2,11 +2,17 @@
 #include "words.h"
 
 // Utility for computing output type for numeric binops
-// Promotes to f64 if either input is f64, otherwise uses i64
+// Promotes to f64 if either input is f64
+// Keeps c8 if both inputs are c8
+// Otherwise uses i64
 ttXY using numeric_result_t = typename std::conditional<
   std::is_same<X, f64_t>::value || std::is_same<Y, f64_t>::value, 
   f64_t, 
-  i64_t
+  typename std::conditional<
+    std::is_same<X, c8_t>::value && std::is_same<Y, c8_t>::value,
+    c8_t,
+    i64_t
+  >::type
 >::type;
 
 // Macro for simple numeric binops that use numeric_result_t type promotion
@@ -16,7 +22,10 @@ ttXY using numeric_result_t = typename std::conditional<
     static void call(inter_t& inter, stack& stack) { kernel_binop<w_##name, X, Y>(inter, stack); } \
     static inline typename Z::t apply(typename X::t x, typename Y::t y) { return expr; } \
   }; \
-  ffi2_registrar<w_##name, pair<i64_t, i64_t>, pair<i64_t, f64_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>> \
+  ffi2_registrar<w_##name, \
+                 pair<c8_t, c8_t>, pair<c8_t, i64_t>, pair<c8_t, f64_t>, \
+                 pair<i64_t, c8_t>, pair<i64_t, i64_t>, pair<i64_t, f64_t>, \
+                 pair<f64_t, c8_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>> \
       name##_registrar(symbol);
 
 // Macro for comparison binops that always return i64 and support c8_t inputs
