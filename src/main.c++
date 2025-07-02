@@ -109,7 +109,7 @@ int test(inter_t& inter, const char* fname, bool v, bool f) {
 void h(FILE* f, char* argv_0) {
   fprintf(f, VERSION_STRING "\n");
   fprintf(f, "\nUSAGE:\n");
-  fprintf(f, "    %s [FLAGS] [OPTIONS]\n", argv_0);
+  fprintf(f, "    %s [FLAGS] [OPTIONS] [FILE]\n", argv_0);
   fprintf(f, "\nFLAGS:\n");
   fprintf(f, "    -z               Do not load the prelude\n");
   fprintf(f, "    -v               Verbose test execution\n");
@@ -118,7 +118,9 @@ void h(FILE* f, char* argv_0) {
   fprintf(f, "\nOPTIONS:\n");
   fprintf(f, "    -e <expr>        Evaluate niko expression\n");
   fprintf(f, "    -t <test.md>     Run markdown test\n");
-  fprintf(f, "\nEnters the repl if no options are specified (using rlwrap is recommended).\n");
+  fprintf(f, "\nARGS:\n");
+  fprintf(f, "    <FILE>           Execute niko source file\n");
+  fprintf(f, "\nEnters the repl if no options or files are specified (using rlwrap is recommended).\n");
   fprintf(f, "\n");
 }
 
@@ -154,6 +156,19 @@ int main(int argc, char* argv[]) {
   try {
     if (t) return test(inter, t, v, f);
     else if (e) inter.line(e);
+    else if (optind < argc) {
+      // Handle positional argument as filename
+      const char* filename = argv[optind];
+      std::ifstream file(filename);
+      if (!file.is_open()) {
+        ERROR("ERROR: Cannot open file '{}'", filename);
+        return 1;
+      }
+      string line;
+      while (std::getline(file, line)) {
+        inter.line(line.c_str());
+      }
+    }
     else repl(inter);
     return 0;
   } catch (std::exception& e) {

@@ -2,30 +2,121 @@
 
 ## Running
 
-Niko can be started in several modes: repl, test or eval.
+Niko can be started in several modes: file execution, REPL, expression evaluation, or test running.
 If you run `niko -h` then you will see help with quick overview:
 
 ```text
-niko ecc731b Release (2024-05-25T18:35:35Z) http://github.com/mikea/niko
+niko d082e4f-dirty Debug (2025-07-02T03:11:48Z) http://github.com/mikea/niko
 
 USAGE:
-    bin/niko [FLAGS] [OPTIONS]
+    bin/niko [FLAGS] [OPTIONS] [FILE]
 
 FLAGS:
     -z               Do not load the prelude
     -v               Verbose test execution
+    -f               Fail fast
     -h               Print help information
 
 OPTIONS:
     -e <expr>        Evaluate niko expression
     -t <test.md>     Run markdown test
 
-Enters the repl if no options are specified (using rlwrap is recommended).
+ARGS:
+    <FILE>           Execute niko source file
+
+Enters the repl if no options or files are specified (using rlwrap is recommended).
 ```
 
-### REPL
+### File Execution
 
-### Evaluation
+The simplest way to run a Niko program is to pass the filename as an argument:
+
+```bash
+niko program.nk
+```
+
+This will execute the contents of `program.nk` and exit. For example:
+
+```nk
+( program.nk - Calculate sum of squares )
+5 index     ( Generate [0 1 2 3 4] )
+dup *       ( Square each element )
+sum         ( Sum all squares )
+.           ( Print result )
+```
+
+Running `niko program.nk` outputs: `30`
+
+### REPL (Read-Eval-Print Loop)
+
+When started without arguments, Niko enters interactive mode:
+
+```bash
+niko
+```
+
+In REPL mode:
+- The stack contents are displayed before each prompt
+- You can enter expressions interactively
+- Use `\c` to clear the stack
+- Use `\s` to show all stack items with indices
+- Use `\i` for system information
+- Press Ctrl+D or Ctrl+C to exit
+
+Example REPL session:
+```
+niko d082e4f-dirty Debug (2025-07-02T03:11:48Z) http://github.com/mikea/niko
+ > 2 3 +
+5  > dup *
+5 25  > .
+25
+ > 
+```
+
+Using `rlwrap` is recommended for command history and line editing:
+```bash
+rlwrap niko
+```
+
+### Expression Evaluation
+
+Use `-e` to evaluate a single expression from the command line:
+
+```bash
+niko -e "2 3 + ."
+```
+
+This is useful for:
+- Quick calculations
+- Shell scripting
+- Testing small code snippets
+
+Examples:
+```bash
+# Simple arithmetic
+niko -e "10 3 / ."
+
+# String manipulation
+niko -e '"Hello" " World" + .'
+
+# Using multiple statements
+niko -e "5 index dup * ."
+```
+
+### Pipe Input
+
+Niko can read programs from standard input, making it composable with Unix tools:
+
+```bash
+echo "2 3 + ." | niko
+cat program.nk | niko
+niko < program.nk
+```
+
+This is particularly useful for:
+- Generating Niko code dynamically
+- Processing output from other programs
+- Creating filter programs
 
 ### Tests
 
@@ -64,7 +155,33 @@ and looks like repl:
 
 See [example_test.md](example_test.md) for more
 deliberate test example.
-s
+
+### Command-Line Flags
+
+#### `-z` - No Prelude
+Starts Niko without loading the standard prelude. Useful for:
+- Testing in a minimal environment
+- Debugging prelude issues
+- Creating custom prelude replacements
+
+```bash
+niko -z -e "1 2 + ."  # Works - basic operations are built-in
+niko -z -e "PI ."     # Error - PI is defined in prelude
+```
+
+#### `-v` - Verbose Test Execution
+Shows each test line as it executes. Helpful for debugging failing tests:
+
+```bash
+niko -v -t test.md
+```
+
+#### `-f` - Fail Fast
+Stops test execution on the first failure instead of running all tests:
+
+```bash
+niko -f -t tests/*.md
+```
 
 ## Syntax
 
@@ -76,50 +193,215 @@ Words are evaluated left to right.
 
 Comments are encolsed by `()`: `( this is niko comment )`.
 
-### Arrays
+## Data Types
 
-Array is the only value in the language. Everything is represented as an array.
+Niko is based on a unified array model where **everything is an array**. There are no scalar values in Niko - even single numbers and characters are represented as arrays of length 1.
 
-Following element types are supported:
+### Core Array Types
 
-- char
-- i64
-- f64
+The language supports six fundamental array element types:
 
-#### Characters
+| Type | Internal Name | Description | C++ Type |
+|------|---------------|-------------|----------|
+| `c8` | T_C8 | 8-bit characters | `char` |
+| `i64` | T_I64 | 64-bit signed integers | `int64_t` |
+| `f64` | T_F64 | 64-bit floating point | `double` |
+| `arr` | T_ARR | Nested arrays | `array_p` |
+| `ffi` | T_FFI | Foreign function interface | `function pointer` |
+| `dict` | T_DICT_ENTRY | Dictionary entries | `uint64_t` |
 
-Characters are 8-bit.
-Arrays of characters are called strings and are entered using quotes:
+The first four types (`c8`, `i64`, `f64`, `arr`) are user-visible and form the basis of all Niko programming. The last two (`ffi`, `dict`) are internal implementation types.
+
+### Array Properties
+
+Every array in Niko has two important properties:
+
+#### 1. Atom Flag (`a`)
+Arrays can be **atoms** or **vectors**:
+- **Atom**: A single-element array that prints without brackets (e.g., `42`, `3.14`, `"a"`)
+- **Vector**: A multi-element array that prints with brackets (e.g., `[ 1 2 3 ]`)
 
 ```nkt
-> "abc" .
-"abc"
+> 42 .        ( atom - prints without brackets )
+42
+> [ 42 ] .    ( vector - prints with brackets )
+[ 42 ]
 ```
 
-#### Integers
+#### 2. Quote Flag (`q`)
+Used internally for compilation and metaprogramming - indicates whether an array represents quoted code.
 
-Integers are signed, 64-bit wide and do not
-contain dot symbol: 
+### Type Details
+
+#### Characters (`c8`)
+
+8-bit characters form the basis of string handling. Single characters and strings are both character arrays:
 
 ```nkt
-> 0 1024 -42 . . .
--42
-1024
-0
+> "a" .
+"a"
+> "hello" .
+"hello"
+> "hello" len .
+5
 ```
 
-#### Floats
+#### Integers (`i64`)
 
-Floats are 64-bit wide. Float literal must contain `.` or `e` symbols:
-`0.`, `1e-16`, `-3.1415`.
+Signed 64-bit integers. Literals must not contain decimal points:
 
-#### Array Literals
+```nkt
+> 42 .
+42
+> -1000000000000 .
+-1000000000000
+> 0xFF .           ( hexadecimal not supported in literals )
+ERROR: unknown word '0xFF'
+```
 
-To create an array literal use `[` `]` words to enter them (remember the spaces):
+#### Floats (`f64`)
 
+64-bit double-precision floating point numbers. Literals must contain `.` or `e`:
+
+```nkt
+> 3.14159 .
+3.14159
+> 1e-10 .
+1e-10
+> 42. .            ( note the dot - makes it a float )
+42.
+```
+
+#### Nested Arrays (`arr`)
+
+Arrays can contain other arrays, enabling multidimensional data structures:
+
+```nkt
+> [ [ 1 2 ] [ 3 4 ] ] .
+[ [ 1 2 ] [ 3 4 ] ]
+> [ "hello" [ 1 2 3 ] 42. ] .
+[ "hello" [ 1 2 3 ] 42. ]
+```
+
+### Type Conversion
+
+#### Implicit Conversions
+
+Niko performs several implicit type conversions during operations:
+
+##### Numeric Type Promotion
+In binary operations between different numeric types, the result type is automatically promoted:
+
+```nkt
+> 5 3.14 + .       ( i64 + f64 → f64 )
+8.14
+> 2.5 4 * .        ( f64 * i64 → f64 )
+10.
+> 10 3 / .         ( i64 / i64 → f64 for division )
+3.33333333333333
+```
+
+##### Character in Numeric Operations
+Characters (`c8`) participate in numeric operations with special promotion rules:
+
+```nkt
+> "A" 0 + .        ( c8 + i64 → i64 )
+[ 65 ]
+> "abc" "ABC" - .  ( c8 - c8 → c8 )
+"   "
+> "ABC" 32 + .     ( c8 + i64 → i64 )
+[ 97 98 99 ]
+> "abc" 32 - .     ( c8 - i64 → i64 - uppercase )
+[ 65 66 67 ]
+```
+
+When both operands are characters, the result remains a character. When mixed with integers or floats, the result is promoted to the numeric type.
+
+##### Array Broadcasting
+Single-element arrays (atoms) are automatically broadcast in operations with larger arrays:
+
+```nkt
+> [ 1 2 3 ] 10 + . ( broadcast scalar to array length )
+[ 11 12 13 ]
+> 5 [ 1 2 3 ] * .  ( scalar * array )
+[ 5 10 15 ]
+```
+
+#### Explicit Conversions
+
+Type conversion functions allow explicit control over data types:
+
+##### Basic Type Conversions
+
+```nkt
+> 42 f64 .         ( integer to float )
+42.
+> 3.14 i64 .       ( float to integer - truncates )
+3
+> 65 c8 .          ( integer to character )
+'A'
+```
+
+##### String/Number Parsing
+
+The `i64` and `f64` functions can parse string representations:
+
+```nkt
+> "42" i64 .       ( parse string to integer )
+42
+> "3.14" f64 .     ( parse string to float )
+3.14
+> "invalid" i64 .  ( invalid format causes error )
+ERROR: invalid number format: 'invalid'
+```
+
+##### Number to String Conversion
+
+The `str` function converts numbers to their string representation:
+
+```nkt
+> 42 str .         ( number to string )
+"42"
+> 3.14 str .       ( float to string )
+"3.140000"
+> [ 1 2 3 ] str .  ( array of numbers to array of strings )
+[ "1" "2" "3" ]
+```
+
+### Array Creation
+
+Arrays can be created in several ways:
+
+#### Literals
 ```nkt
 > [ 1 2 3 ] .
 [ 1 2 3 ]
-> [ [ 1. 2. 3. ] [ 4. 5. 6. ] ] .
-[ [ 1. 2. 3. ] [ 4. 5. 6. ] ]
 ```
+
+#### Generation Functions
+```nkt
+> 5 zeros .        ( array of 5 zeros )
+[ 0 0 0 0 0 ]
+> 3 ones .         ( array of 3 ones )
+[ 1 1 1 ]
+> 4 index .        ( array [0,1,2,3] )
+[ 0 1 2 3 ]
+```
+
+#### Stack Concatenation
+```nkt
+> 1 2 3  3 cat .   ( collect 3 items from stack )
+[ 1 2 3 ]
+```
+
+### Memory Management
+
+Arrays use reference counting for automatic memory management. SIMD-aligned allocation is used for large arrays to optimize vector operations. Arrays are immutable by default - operations create new arrays rather than modifying existing ones.
+
+### Type System Philosophy
+
+The unified array model eliminates the scalar/vector distinction found in many languages:
+- Operations work uniformly on single elements and arrays
+- No need for separate scalar and vector versions of functions  
+- Enables powerful array programming patterns
+- Simplifies the mental model - everything follows the same rules
