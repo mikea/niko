@@ -1,5 +1,9 @@
 alias w := watch
 
+deps:
+    sudo apt update
+    sudo apt install --no-install-recommends --no-upgrade -y gcc-14 just re2c valgrind ninja-build libjemalloc-dev xxd cmake ninja-build clang-format
+
 watch +WATCH_TARGET='test':
     watchexec -rc -w . --ignore *.results -- just {{WATCH_TARGET}}
 
