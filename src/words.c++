@@ -94,11 +94,108 @@ REG_FN11(not, i64_t, not_impl);
 ttX char c8_impl(X x) { return (char)x; }
 REG_FN11(c8, c8_t, c8_impl);
 
-ttX char i64_impl(X x) { return (char)x; }
-REG_FN11(i64, i64_t, i64_impl);
+// str function to convert numbers to strings
+DEF_WORD("str", str) {
+  POP(x);
+  
+  // Handle single numeric values
+  if (x->a && (x->t == T_I64 || x->t == T_F64)) {
+    string result;
+    if (x->t == T_I64) {
+      result = std::to_string(x->data<i64_t>()[0]);
+    } else {
+      result = std::to_string(x->data<f64_t>()[0]);
+    }
+    PUSH(array::create<c8_t>(result.size(), result.c_str()));
+    return;
+  }
+  
+  // Handle arrays of numbers - return array of strings
+  if (x->t == T_I64 || x->t == T_F64) {
+    array_p y = array::alloc<arr_t>(x->n);
+    for (size_t i = 0; i < x->n; i++) {
+      string result;
+      if (x->t == T_I64) {
+        result = std::to_string(x->data<i64_t>()[i]);
+      } else {
+        result = std::to_string(x->data<f64_t>()[i]);
+      }
+      y->mut_data<arr_t>()[i] = array::create<c8_t>(result.size(), result.c_str());
+    }
+    PUSH(y);
+    return;
+  }
+  
+  // For other types, just return as-is (c8 arrays are already strings)
+  if (x->t == T_C8) {
+    PUSH(x);
+    return;
+  }
+  
+  panicf("cannot convert {} to string", type_name(x->t));
+}
 
-ttX char f64_impl(X x) { return (char)x; }
-REG_FN11(f64, f64_t, f64_impl);
+// i64 conversion with string parsing support
+DEF_WORD("i64", i64) {
+  POP(x);
+  
+  // Handle string parsing for c8 arrays
+  if (x->t == T_C8) {
+    string str(x->data<c8_t>(), x->n);
+    try {
+      i64 result = std::stoll(str);
+      PUSH(array::atom<i64_t>(result));
+      return;
+    } catch (const std::exception&) {
+      panicf("invalid number format: '{}'", str);
+    }
+  }
+  
+  // Handle other numeric types
+  array_p y = x->alloc_as<i64_t>();
+  switch (x->t) {
+    case T_I64:
+      DO_MUT_ARRAY(y, i64_t, i, dst) { dst = x->data<i64_t>()[i]; }
+      break;
+    case T_F64:
+      DO_MUT_ARRAY(y, i64_t, i, dst) { dst = (i64)x->data<f64_t>()[i]; }
+      break;
+    default:
+      panicf("cannot convert {} to i64", type_name(x->t));
+  }
+  PUSH(y);
+}
+
+// f64 conversion with string parsing support  
+DEF_WORD("f64", f64) {
+  POP(x);
+  
+  // Handle string parsing for c8 arrays
+  if (x->t == T_C8) {
+    string str(x->data<c8_t>(), x->n);
+    try {
+      f64 result = std::stod(str);
+      PUSH(array::atom<f64_t>(result));
+      return;
+    } catch (const std::exception&) {
+      panicf("invalid number format: '{}'", str);
+    }
+  }
+  
+  // Handle other numeric types
+  array_p y = x->alloc_as<f64_t>();
+  switch (x->t) {
+    case T_I64:
+      DO_MUT_ARRAY(y, f64_t, i, dst) { dst = (f64)x->data<i64_t>()[i]; }
+      break;
+    case T_F64:
+      DO_MUT_ARRAY(y, f64_t, i, dst) { dst = x->data<f64_t>()[i]; }
+      break;
+    default:
+      panicf("cannot convert {} to f64", type_name(x->t));
+  }
+  PUSH(y);
+}
 
 #pragma endregion conversions
 

@@ -83,8 +83,9 @@ Words that starts from '\' are indended to be used during development
 |Word|Signature|Description|
 |---|---|---|
 |`c8`|`(x -> y)`|converts array to c8 type|
-|`i64`|`(x -> y)`|converts array to i64 type|
-|`f64`|`(x -> y)`|converts array to f64 type|
+|`i64`|`(x -> y)`|converts array to i64 type; parses string numbers (e.g., `"42"` → `42`), errors on invalid format|
+|`f64`|`(x -> y)`|converts array to f64 type; parses string numbers (e.g., `"3.14"` → `3.14`), errors on invalid format|
+|`str`|`(x -> y)`|converts numbers to string representation (e.g., `42` → `"42"`, `[1 2]` → `["1" "2"]`)|
 
 ### Mathematical Functions
 

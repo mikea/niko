@@ -304,8 +304,8 @@ ERROR: expected single value
 #### `i64`
 
 ```nkt
-> "abc" i64 .
-[ 97 98 99 ]
+> 42. i64 .
+42
 ```
 
 #### `f64`
@@ -313,6 +313,146 @@ ERROR: expected single value
 ```nkt
 > 5 index f64 .
 [ 0. 1. 2. 3. 4. ]
+```
+
+### Comprehensive Conversion Tests
+
+#### `c8` - Character Conversion
+
+```nkt
+> 65 c8 .
+'A'
+> [ 65 66 67 ] c8 .
+"ABC"
+> 32 c8 .
+' '
+> 126 c8 .
+'~'
+```
+
+#### `i64` - Integer Conversion with String Parsing
+
+Basic numeric conversion:
+```nkt
+> 42. i64 .
+42
+> [ 1. 2. 3. ] i64 .
+[ 1 2 3 ]
+```
+
+String parsing:
+```nkt
+> "42" i64 .
+42
+> "-123" i64 .
+-123
+> "999999999999" i64 .
+999999999999
+```
+
+
+Single character parsing:
+```nkt
+> "5" i64 .
+5
+> "0" i64 .
+0
+```
+
+Empty string handling:
+```nkt
+> "" len .
+0
+```
+
+#### `f64` - Float Conversion with String Parsing
+
+Basic numeric conversion:
+```nkt
+> 42 f64 .
+42.
+> [ 1 2 3 ] f64 .
+[ 1. 2. 3. ]
+```
+
+String parsing:
+```nkt
+> "3.14159" f64 .
+3.14159
+> "-2.5" f64 .
+-2.5
+> "1e-6" f64 .
+1e-06
+> "1.23e+10" f64 .
+12300000000.
+> "0.0" f64 .
+0.
+```
+
+Single character parsing:
+```nkt
+> "7" f64 .
+7.
+> "0" f64 .
+0.
+```
+
+#### `str` - String Conversion
+
+Integer conversion:
+```nkt
+> 42 str .
+"42"
+> -123 str .
+"-123"
+> 0 str .
+"0"
+```
+
+Float conversion:
+```nkt
+> 3.14 str .
+"3.140000"
+> -2.5 str .
+"-2.500000"
+> 0. str .
+"0.000000"
+```
+
+Array conversion:
+```nkt
+> [ 1 2 3 ] str .
+[ "1" "2" "3" ]
+> [ 1. 2. ] str .
+[ "1.000000" "2.000000" ]
+```
+
+String pass-through:
+```nkt
+> "hello" str .
+"hello"
+> "" str .
+""
+```
+
+### Conversion Error Handling
+
+Valid parsing cases:
+```nkt
+> "123" i64 .
+123
+> "12.34" f64 .
+12.34
+```
+
+Round-trip conversions:
+```nkt
+> 42 str i64 .
+42
+> 3.14 str f64 .
+3.14
+> "hello" str str .
+"hello"
 ```
 
 
