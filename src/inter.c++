@@ -83,39 +83,37 @@ void inter_t::entry(array_p w) {
 
 void inter_t::entry(t_dict_entry e_idx) { entry(lookup_entry(e_idx)); }
 
+void inter_t::dispatch_ffi(dict_entry* e) {
+  array* a = e->v;
+  ffi    f = ffi_lookup(a, stack);
+
+  switch (a->n) {
+    case 1:      CHECK(f, "'{}' not implemented", e->k); break;
+    case T_MAX:  CHECK(f, "'{}' does not support {}", e->k, stack.peek(0).t); break;
+    case T_MAX2: CHECK(f, "'{}' does not support {}, {}", e->k, stack.peek(1).t, stack.peek(0).t); break;
+    default:     panicf("unexpected ffi length: {}", a->n);
+  }
+
+  return f(*this, stack);
+}
+
 void inter_t::entry(dict_entry* e) {
+  // Word fusing optimization
+  if (e->k[0] == ',' && !stack.empty() && stack.peek(0).t == T_DICT_ENTRY) {
+    POP(qe);
+    auto w     = lookup_entry(*qe->data<dict_entry_t>());
+    auto fused = find_entry(string(w->k) + string(e->k));
+    if (fused && (fused->v->t != T_FFI || ffi_lookup(fused->v, stack))) return entry(fused);
+    PUSH(qe);
+  }
+
   if (e->cons || e->var) {
     PUSH(e->v);
     return;
   }
   array* a = e->v;
   switch (a->t) {
-    case T_FFI: {
-      ffi  f;
-      auto d = a->data<ffi_t>();
-
-      switch (a->n) {
-        case 1: {
-          f = *d;
-          CHECK(f, "'{}' not implemented", e->k);
-          return f(*this, stack);
-        }
-        case T_MAX: {
-          auto& x = stack.peek(0);
-          f       = d[x.t];
-          CHECK(f, "'{}' does not support {}", e->k, x.t);
-          return f(*this, stack);
-        }
-        case T_MAX* T_MAX: {
-          auto& y = stack.peek(0);
-          auto& x = stack.peek(1);
-          f       = ((ffi(*)[T_MAX])d)[x.t][y.t];
-          CHECK(f, "'{}' does not support {}, {}", e->k, x.t, y.t);
-          return f(*this, stack);
-        }
-        default: panicf("unexpected ffi length: {}", a->n);
-      }
-    }
+    case T_FFI: return dispatch_ffi(e);
     case T_ARR: {
       DO_ARRAY(a, arr_t, i, e) {
         switch (e->t) {

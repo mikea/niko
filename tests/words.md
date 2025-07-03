@@ -1207,6 +1207,159 @@ ERROR: array lengths are incompatible: 3 vs 2
 276
 ```
 
+### Fused Fold Operations
+
+Native fused implementations for math binary operators provide optimized performance:
+
+#### Basic Operations
+
+```nkt
+> [ 1 2 3 4 5 ] +,fold .
+15
+> [ 2 3 4 ] *,fold .
+24
+> [ 5 2 8 1 9 ] |,fold .
+9
+> [ 5 2 8 1 9 ] &,fold .
+1
+> [ 10 3 7 ] -,fold .
+0
+```
+
+#### Empty Arrays
+
+Empty arrays return empty arrays:
+
+```nkt
+> 42 [ ] +,fold .
+[ ]
+> 99 [ ] *,fold .
+[ ]
+> 77 [ ] |,fold .
+[ ]
+> 55 [ ] &,fold .
+[ ]
+> 33 [ ] -,fold .
+[ ]
+```
+
+#### Single Element Arrays
+
+Single element arrays return the element:
+
+```nkt
+> [ 42 ] +,fold .
+42
+> [ 99 ] *,fold .
+99
+> [ 77 ] |,fold .
+77
+> [ 55 ] &,fold .
+55
+> [ 33 ] -,fold .
+33
+```
+
+#### Float Arrays
+
+```nkt
+> [ 1.5 2.5 3.5 ] +,fold .
+7.5
+> [ 2. 3. 4. ] *,fold .
+24.
+> [ 5.1 2.2 8.8 1.1 9.9 ] |,fold .
+9.9
+> [ 5.1 2.2 8.8 1.1 9.9 ] &,fold .
+1.1
+```
+
+#### Character Arrays
+
+Character arrays (c8) return character results:
+
+```nkt
+> "abc" +,fold .
+'&'
+> "AB" *,fold 0 + .
+-62
+> "hello" |,fold .
+'o'
+> "hello" &,fold .
+'e'
+```
+
+#### Array of Arrays
+
+Fused operations do not support arrays:
+
+```nkt
+> [ [ 1 2 ] [ 3 4 ] [ 5 6 ] ] +,fold .
+ERROR: '+,fold' does not support arr
+> [ [ 1 2 ] [ 3 4 ] ] *,fold .
+ERROR: '*,fold' does not support arr
+> [ [ 5 2 ] [ 8 1 ] [ 3 9 ] ] |,fold .
+ERROR: '|,fold' does not support arr
+> [ [ 5 2 ] [ 8 1 ] [ 3 9 ] ] &,fold .
+ERROR: '&,fold' does not support arr
+```
+
+But unfused operations work with arrays:
+
+```nkt
+> [ [ 1 2 ] [ 3 4 ] [ 5 6 ] ] +' ,fold .
+[ 9 12 ]
+> [ [ 1 2 ] [ 3 4 ] ] *' ,fold .
+[ 3 8 ]
+> [ [ 5 2 ] [ 8 1 ] [ 3 9 ] ] |' ,fold .
+[ 8 9 ]
+> [ [ 5 2 ] [ 8 1 ] [ 3 9 ] ] &' ,fold .
+[ 3 1 ]
+```
+
+#### Equivalence with Generic Fold
+
+Fused operations produce identical results to generic fold:
+
+```nkt
+> [ 1 2 3 4 5 ] +' ,fold . [ 1 2 3 4 5 ] +,fold .
+15
+15
+> [ 5 2 8 1 9 ] |' ,fold . [ 5 2 8 1 9 ] |,fold .
+9
+9
+```
+
+#### Large Arrays
+
+Fused operations handle large arrays efficiently:
+
+```nkt
+> 1000 index +,fold .
+499500
+> 10 index 1 + *,fold .
+3628800
+```
+
+#### Negative Numbers
+
+```nkt
+> [ -5 -2 -8 -1 -9 ] |,fold .
+-1
+> [ -5 -2 -8 -1 -9 ] &,fold .
+-9
+> [ 10 -3 -7 ] -,fold .
+20
+```
+
+#### Mixed Signs
+
+```nkt
+> [ -5 2 -8 1 9 ] +,fold .
+-1
+> [ -2 3 -4 ] *,fold .
+24
+```
+
 ### ,scan
 
 ```nkt

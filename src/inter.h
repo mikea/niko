@@ -91,6 +91,26 @@ void global_dict_add_new(dict_entry&& e);
 using ffi1_table = std::array<ffi, T_MAX>;
 using ffi2_table = std::array<ffi1_table, T_MAX>;
 
+INLINE ffi ffi1_lookup(const ffi* d, stack& stack) {
+  if (stack.empty()) return nullptr;
+  return d[stack.peek(0).t];
+}
+
+INLINE ffi ffi2_lookup(const ffi* d, stack& stack) {
+  if (stack.len() < 2) return nullptr;
+  return ((ffi(*)[T_MAX])d)[stack.peek(1).t][stack.peek(0).t];
+}
+
+INLINE ffi ffi_lookup(array* a, stack& stack) {
+  auto d = a->data<ffi_t>();
+  switch (a->n) {
+    case 1:      return *d;
+    case T_MAX:  return ffi1_lookup(d, stack);
+    case T_MAX2: return ffi2_lookup(d, stack);
+    default:     return nullptr;
+  }
+}
+
 // interpreter
 
 using dict_t = vector<dict_entry>;
@@ -126,6 +146,7 @@ struct inter_t {
   dict_entry*  find_entry(str n);
   t_dict_entry find_entry_idx(const str n);
   dict_entry*  lookup_entry(t_dict_entry e);
+  void         dispatch_ffi(dict_entry* e);
 
   static inter_t& current();
 };

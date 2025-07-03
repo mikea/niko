@@ -26,7 +26,13 @@ ttXY using numeric_result_t = typename std::conditional<
                  pair<c8_t, c8_t>, pair<c8_t, i64_t>, pair<c8_t, f64_t>, \
                  pair<i64_t, c8_t>, pair<i64_t, i64_t>, pair<i64_t, f64_t>, \
                  pair<f64_t, c8_t>, pair<f64_t, i64_t>, pair<f64_t, f64_t>> \
-      name##_registrar(symbol);
+      name##_registrar(symbol); \
+  \
+  ttX struct w_##name##_fold { \
+    static void call(inter_t& inter, stack& stack) { kernel_fold<w_##name, X>(inter, stack); } \
+  }; \
+  ffi1_registrar<w_##name##_fold, c8_t, i64_t, f64_t> \
+      name##_fold_registrar(symbol ",fold");
 
 // Macro for comparison binops that always return i64 and support c8_t inputs
 #define COMPARISON_BINOP(name, symbol, expr) \
@@ -63,6 +69,22 @@ void kernel_binop(inter_t& inter, stack& stack) {
   POP(x);
   auto z = kernel_binop<Kernel, X, Y>(x, y);
   PUSH(z);
+}
+
+template <template <typename, typename> class Kernel, typename X>
+void kernel_fold(inter_t& inter, stack& stack) {
+  POP(x);
+  if (x->n == 0) {
+    PUSH(x);
+    return;
+  }
+  
+  using Z = typename Kernel<X, X>::Z;
+  
+  auto xd = x->data<X>();
+  typename Z::t z = xd[0];
+  DO1(i, x->n) z = Kernel<X, X>::apply(z, xd[i]);
+  PUSH(array::atom<Z>(z));
 }
 
 #pragma region divide
@@ -209,3 +231,4 @@ NUMERIC_BINOP(max, "|", x > y ? x : y)
 NUMERIC_BINOP(min, "&", x > y ? y : x)
 
 #pragma endregion min
+

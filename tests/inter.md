@@ -266,3 +266,73 @@ ERROR: literal can be used only in compilation mode
 > 1999912+
 ERROR: unknown word '1999912+'
 ```
+
+## Word Fusing Optimization
+
+Word fusing allows defining specialized implementations for combinations of quoted words and adverbs (comma words). When executing an adverb with a quoted word on the stack, the interpreter first checks for a fused word with the name "word,adverb".
+
+### Basic Fusing
+
+```nkt
+> : test_dup dup ;
+> : test_dup,fold drop 999 ;
+> [ 1 2 3 ] test_dup' ,fold .
+999
+```
+
+
+The fused word `test_dup,fold` is executed instead of the normal `test_dup' ,fold` sequence.
+
+### Multiple Fused Words
+
+```nkt
+> : test_neg neg ;
+> : test_sqrt sqrt ;  
+> : test_plus + ;
+> : test_neg,apply drop 777 ;
+> : test_sqrt,apply drop 888 ;
+> : test_plus,fold drop 555 ;
+> [ 1 2 3 ] test_neg' ,apply .
+777
+> [ 1 4 9 ] test_sqrt' ,apply .
+888
+> [ 1 2 3 ] test_plus' ,fold .
+555
+```
+
+### Fallback to Normal Execution
+
+When no fused word is defined, normal execution proceeds:
+
+```nkt
+> [ 1 2 3 ] abs' ,apply .
+[ 1 2 3 ]
+> [ 1 2 3 ] dup +' ,fold .
+6
+```
+
+### Complex Fused Operations
+
+Fused words can contain any valid Niko code:
+
+```nkt
+> : test_double 2 * ;
+> : test_double,apply drop 111 ;
+> [ 1 2 3 ] test_double' ,apply .
+111
+> : test_sum,fold drop 222 ;
+> [ 1 2 3 4 ] test_sum' ,fold .
+222
+```
+
+### Fusing with Different Adverbs
+
+```nkt
+> : test_inc 1 + ;
+> : test_inc,power drop 333 ;
+> : test_inc,trace drop 444 ;
+> 5 3 test_inc' ,power .
+333
+> 1 3 test_inc' ,trace .
+444
+```

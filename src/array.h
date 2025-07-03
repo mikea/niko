@@ -13,6 +13,7 @@ static_assert(sizeof(array_p) == sizeof(array*));
 // type
 typedef enum { T_C8, T_I64, T_F64, T_ARR, T_FFI, T_DICT_ENTRY } type_t;
 #define T_MAX           (T_DICT_ENTRY + 1)
+#define T_MAX2          (T_MAX * T_MAX)
 #define TYPE_FOREACH(f) APPLY(f, c8_t, i64_t, f64_t, arr_t, ffi_t, dict_entry_t)
 
 struct c8_t {
