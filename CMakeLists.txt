@@ -8,7 +8,7 @@ add_definitions(-D_GNU_SOURCE)
 set (CMAKE_CXX_STANDARD 23)
 
 add_compile_options(
-  -mavx2
+  -march=native
   -Wall
   -Werror=implicit-fallthrough -Werror=switch -Werror=return-type
   # todo
