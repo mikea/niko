@@ -1,3 +1,4 @@
+set fallback
 alias w := watch
 
 deps:
@@ -13,6 +14,9 @@ build BUILD_TYPE="Debug":
     CMAKE_EXPORT_COMPILE_COMMANDS=1 cmake -B build/{{BUILD_TYPE}} -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} -G Ninja
     cmake --build build/{{BUILD_TYPE}}
     cp build/{{BUILD_TYPE}}/niko bin/niko
+    @if [ "{{BUILD_TYPE}}" = "Debug" ]; then \
+        ln -sf build/{{BUILD_TYPE}}/compile_commands.json compile_commands.json; \
+    fi
 
 release: (build "Release") _test
 
@@ -70,14 +74,24 @@ _test:
     bin/niko -t docs/manual.md
     bin/niko -t docs/reference.md
     bin/niko -t docs/example_test.md
+    bin/niko -t docs/euler.md
     bin/niko -t docs/examples/rubik-2x2.md
     bin/niko -t docs/examples/h2o.md
 
 [private]
 _benchmarks:
-    while IFS= read -r line; do echo "> $line"; \
-        perf stat -- build/Release/niko -e "$line" 2>&1 ; \
-        hyperfine --warmup 10 "build/Release/niko -e \"$line\"" ; \
+    while IFS= read -r line; do \
+        echo "" ; \
+        echo "========================================" ; \
+        echo "BENCHMARK: $line" ; \
+        echo "========================================" ; \
+        TEMP_FILE=$(mktemp --suffix=.nk) ; \
+        echo "$line" > "$TEMP_FILE" ; \
+        hyperfine --warmup 10 "build/Release/niko $TEMP_FILE" ; \
+        echo "Cachegrind:" ; \
+        valgrind --tool=cachegrind --cache-sim=yes --branch-sim=yes --cachegrind-out-file=/tmp/cachegrind.out build/Release/niko $TEMP_FILE 2>&1 | tail -n 25 | grep -E "==.*==" ; \
+        rm "$TEMP_FILE" ; \
+        rm -f /tmp/cachegrind.out ; \
         done < benchmarks
 
 [private]
