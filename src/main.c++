@@ -158,18 +158,15 @@ int main(int argc, char* argv[]) {
     else if (e) inter.line(e);
     else if (optind < argc) {
       // Handle positional argument as filename
-      const char* filename = argv[optind];
+      const char*   filename = argv[optind];
       std::ifstream file(filename);
       if (!file.is_open()) {
         ERROR("ERROR: Cannot open file '{}'", filename);
         return 1;
       }
       string line;
-      while (std::getline(file, line)) {
-        inter.line(line.c_str());
-      }
-    }
-    else repl(inter);
+      while (std::getline(file, line)) inter.line(line.c_str());
+    } else repl(inter);
     return 0;
   } catch (std::exception& e) {
     ERROR("ERROR: {}", e.what());
