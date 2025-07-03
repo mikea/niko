@@ -154,6 +154,21 @@ Words that starts from '\' are indended to be used during development
 |`,trace`|`(x s op' -> y)`|applies `op` multiple times to `x` and organizes intermediate results into `s` shape|
 |`,pairwise`|`(x op' -> y)`| applies `op` to consequent pais of `x` leaving first element unchanged|
 
+### Word Fusing
+
+Higher-order words support automatic optimization through **word fusing**. When executing `word' ,adverb`, Niko checks for a specialized word named `word,adverb` and executes it if found.
+
+**Examples:**
+- `dup' ,fold` → looks for `dup,fold`
+- `neg' ,apply` → looks for `neg,apply`  
+- `+' ,scan` → looks for `+,scan`
+
+**Benefits:**
+- Zero overhead when unused
+- Transparent fallback to normal execution
+- Enables specialized optimizations
+- Maintains compositional semantics
+
 ## Input/Output
 
 |Word|Signature|Description|

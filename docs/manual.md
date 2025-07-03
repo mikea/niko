@@ -37,7 +37,7 @@ niko program.nk
 
 This will execute the contents of `program.nk` and exit. For example:
 
-```nk
+```
 ( program.nk - Calculate sum of squares )
 5 index     ( Generate [0 1 2 3 4] )
 dup *       ( Square each element )
@@ -571,3 +571,44 @@ The quote syntax (`'`) creates a reference to a word without executing it. This 
 ```
 
 Higher-order words are fundamental to Niko's array programming paradigm, allowing complex operations to be expressed concisely without explicit loops or recursion.
+
+### Word Fusing Optimization
+
+Niko supports **word fusing** as a performance optimization for higher-order words. When executing an adverb (word starting with comma) with a quoted word on the stack, the interpreter first checks for a specialized fused implementation.
+
+#### How It Works
+
+When you execute `word' ,adverb`, Niko automatically looks for a word named `word,adverb`. If found, it executes the fused version instead of the generic adverb implementation.
+
+```niko
+: dup,fold dup * sum ;  ( Optimized: square and sum )
+: neg,apply neg' ,apply ;  ( Fallback: use normal implementation )
+
+[ 1 2 3 ] dup' ,fold    ( Executes dup,fold → squares then sums )
+[ 1 2 3 ] neg' ,apply   ( Executes neg,apply → normal negation )
+```
+
+#### Benefits
+
+- **Performance**: Specialized implementations can be much faster than generic higher-order words
+- **Clarity**: Common patterns can have more descriptive implementations
+- **Zero overhead**: No performance penalty when fused words aren't defined
+- **Transparent**: Falls back automatically to normal execution
+
+#### Common Patterns
+
+```niko
+( Mathematical optimizations )
+: dup,fold dup * sum ;           ( sum of squares )
+: sqrt,apply sqrt' ,apply ;      ( vectorized square root )
+
+( Aggregation shortcuts )  
+: +,fold sum ;                   ( use built-in sum )
+: *,scan *' ,scan ;              ( running product )
+
+( Custom combinations )
+: double,apply 2 *' ,apply ;     ( double all elements )
+: abs,fold abs' ,apply sum ;     ( sum of absolute values )
+```
+
+The fusing system enables building libraries of optimized operations while maintaining the composability of higher-order words.
