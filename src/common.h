@@ -140,6 +140,9 @@ static_assert(sizeof(f64) == sizeof(i64));
 #define _DO(var, n, l) for (size_t var = 0, l = n; var < l; var++)
 #define DO(var, n)     _DO(var, n, UNIQUE(__limit))
 
+#define _DO1(var, n, l) for (size_t var = 1, l = n; var < l; var++)
+#define DO1(var, n)     _DO1(var, n, UNIQUE(__limit))
+
 #define _DOR(var, n, i) for (size_t i = n, var = n - 1; i > 0; i--, var--)
 #define DOR(var, n)     _DOR(var, n, UNIQUE(__i))
 
