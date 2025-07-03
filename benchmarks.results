@@ -2,296 +2,296 @@
 ========================================
 BENCHMARK: 10000000 zeros
 ========================================
-Benchmark 1: build/Release/niko /tmp/tmp.nzBhINZNsu.nk
-  Time (mean ± σ):     130.1 ms ±   2.1 ms    [User: 92.6 ms, System: 37.3 ms]
-  Range (min … max):   127.4 ms … 135.8 ms    22 runs
+Benchmark 1: build/Release/niko /tmp/tmp.PdCgTxCaDA.nk
+  Time (mean ± σ):     143.9 ms ±  16.5 ms    [User: 102.1 ms, System: 41.6 ms]
+  Range (min … max):   129.2 ms … 165.4 ms    18 runs
  
 Cachegrind:
-==4188== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
-==4188== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
-==4188== Command: build/Release/niko /tmp/tmp.nzBhINZNsu.nk
-==4188== 
-==4188== 
-==4188== I refs:        82,489,894
-==4188== I1  misses:         4,677
-==4188== LLi misses:         3,632
-==4188== I1  miss rate:       0.01%
-==4188== LLi miss rate:       0.00%
-==4188== 
-==4188== D refs:        30,904,715  (20,651,502 rd   + 10,253,213 wr)
-==4188== D1  misses:     1,274,094  (    17,656 rd   +  1,256,438 wr)
-==4188== LLd misses:     1,264,664  (     9,416 rd   +  1,255,248 wr)
-==4188== D1  miss rate:        4.1% (       0.1%     +       12.3%  )
-==4188== LLd miss rate:        4.1% (       0.0%     +       12.2%  )
-==4188== 
-==4188== LL refs:        1,278,771  (    22,333 rd   +  1,256,438 wr)
-==4188== LL misses:      1,268,296  (    13,048 rd   +  1,255,248 wr)
-==4188== LL miss rate:         1.1% (       0.0%     +       12.2%  )
-==4188== 
-==4188== Branches:      10,393,655  (10,383,850 cond +      9,805 ind)
-==4188== Mispredicts:       20,585  (    18,759 cond +      1,826 ind)
-==4188== Mispred rate:         0.2% (       0.2%     +       18.6%   )
+==89029== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
+==89029== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==89029== Command: build/Release/niko /tmp/tmp.PdCgTxCaDA.nk
+==89029== 
+==89029== 
+==89029== I refs:        82,492,430
+==89029== I1  misses:         4,782
+==89029== LLi misses:         3,569
+==89029== I1  miss rate:       0.01%
+==89029== LLi miss rate:       0.00%
+==89029== 
+==89029== D refs:        30,905,291  (20,651,981 rd   + 10,253,310 wr)
+==89029== D1  misses:     1,274,165  (    17,701 rd   +  1,256,464 wr)
+==89029== LLd misses:     1,264,667  (     9,417 rd   +  1,255,250 wr)
+==89029== D1  miss rate:        4.1% (       0.1%     +       12.3%  )
+==89029== LLd miss rate:        4.1% (       0.0%     +       12.2%  )
+==89029== 
+==89029== LL refs:        1,278,947  (    22,483 rd   +  1,256,464 wr)
+==89029== LL misses:      1,268,236  (    12,986 rd   +  1,255,250 wr)
+==89029== LL miss rate:         1.1% (       0.0%     +       12.2%  )
+==89029== 
+==89029== Branches:      10,394,147  (10,384,352 cond +      9,795 ind)
+==89029== Mispredicts:       20,760  (    18,936 cond +      1,824 ind)
+==89029== Mispred rate:         0.2% (       0.2%     +       18.6%   )
 
 ========================================
 BENCHMARK: 10000000 ones
 ========================================
-Benchmark 1: build/Release/niko /tmp/tmp.jjAMY8JhXi.nk
-  Time (mean ± σ):     131.4 ms ±   1.3 ms    [User: 96.8 ms, System: 34.4 ms]
-  Range (min … max):   128.0 ms … 134.7 ms    22 runs
+Benchmark 1: build/Release/niko /tmp/tmp.Av6xGmo1Hc.nk
+  Time (mean ± σ):     132.6 ms ±   2.2 ms    [User: 91.2 ms, System: 41.1 ms]
+  Range (min … max):   130.4 ms … 139.7 ms    22 runs
  
 Cachegrind:
-==4312== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
-==4312== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
-==4312== Command: build/Release/niko /tmp/tmp.jjAMY8JhXi.nk
-==4312== 
-==4312== 
-==4312== I refs:        82,490,005
-==4312== I1  misses:         4,677
-==4312== LLi misses:         3,632
-==4312== I1  miss rate:       0.01%
-==4312== LLi miss rate:       0.00%
-==4312== 
-==4312== D refs:        30,904,757  (20,651,536 rd   + 10,253,221 wr)
-==4312== D1  misses:     1,274,094  (    17,656 rd   +  1,256,438 wr)
-==4312== LLd misses:     1,264,664  (     9,416 rd   +  1,255,248 wr)
-==4312== D1  miss rate:        4.1% (       0.1%     +       12.3%  )
-==4312== LLd miss rate:        4.1% (       0.0%     +       12.2%  )
-==4312== 
-==4312== LL refs:        1,278,771  (    22,333 rd   +  1,256,438 wr)
-==4312== LL misses:      1,268,296  (    13,048 rd   +  1,255,248 wr)
-==4312== LL miss rate:         1.1% (       0.0%     +       12.2%  )
-==4312== 
-==4312== Branches:      10,393,675  (10,383,866 cond +      9,809 ind)
-==4312== Mispredicts:       20,589  (    18,763 cond +      1,826 ind)
-==4312== Mispred rate:         0.2% (       0.2%     +       18.6%   )
+==89153== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
+==89153== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==89153== Command: build/Release/niko /tmp/tmp.Av6xGmo1Hc.nk
+==89153== 
+==89153== 
+==89153== I refs:        82,492,541
+==89153== I1  misses:         4,782
+==89153== LLi misses:         3,569
+==89153== I1  miss rate:       0.01%
+==89153== LLi miss rate:       0.00%
+==89153== 
+==89153== D refs:        30,905,333  (20,652,015 rd   + 10,253,318 wr)
+==89153== D1  misses:     1,274,165  (    17,701 rd   +  1,256,464 wr)
+==89153== LLd misses:     1,264,667  (     9,417 rd   +  1,255,250 wr)
+==89153== D1  miss rate:        4.1% (       0.1%     +       12.3%  )
+==89153== LLd miss rate:        4.1% (       0.0%     +       12.2%  )
+==89153== 
+==89153== LL refs:        1,278,947  (    22,483 rd   +  1,256,464 wr)
+==89153== LL misses:      1,268,236  (    12,986 rd   +  1,255,250 wr)
+==89153== LL miss rate:         1.1% (       0.0%     +       12.2%  )
+==89153== 
+==89153== Branches:      10,394,167  (10,384,368 cond +      9,799 ind)
+==89153== Mispredicts:       20,763  (    18,939 cond +      1,824 ind)
+==89153== Mispred rate:         0.2% (       0.2%     +       18.6%   )
 
 ========================================
 BENCHMARK: 10000000 index
 ========================================
-Benchmark 1: build/Release/niko /tmp/tmp.llXIXodkPo.nk
-  Time (mean ± σ):      50.2 ms ±   0.7 ms    [User: 11.3 ms, System: 38.8 ms]
-  Range (min … max):    47.8 ms …  51.9 ms    59 runs
+Benchmark 1: build/Release/niko /tmp/tmp.u52PFzVtvA.nk
+  Time (mean ± σ):      50.8 ms ±   1.5 ms    [User: 11.0 ms, System: 39.6 ms]
+  Range (min … max):    48.1 ms …  56.4 ms    59 runs
  
 Cachegrind:
-==4510== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
-==4510== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
-==4510== Command: build/Release/niko /tmp/tmp.llXIXodkPo.nk
-==4510== 
-==4510== 
-==4510== I refs:        32,489,954
-==4510== I1  misses:         4,628
-==4510== LLi misses:         3,613
-==4510== I1  miss rate:       0.01%
-==4510== LLi miss rate:       0.01%
-==4510== 
-==4510== D refs:         5,904,541  (  651,439 rd   + 5,253,102 wr)
-==4510== D1  misses:     1,274,118  (   17,681 rd   + 1,256,437 wr)
-==4510== LLd misses:     1,264,664  (    9,416 rd   + 1,255,248 wr)
-==4510== D1  miss rate:       21.6% (      2.7%     +      23.9%  )
-==4510== LLd miss rate:       21.4% (      1.4%     +      23.9%  )
-==4510== 
-==4510== LL refs:        1,278,746  (   22,309 rd   + 1,256,437 wr)
-==4510== LL misses:      1,268,277  (   13,029 rd   + 1,255,248 wr)
-==4510== LL miss rate:         3.3% (      0.0%     +      23.9%  )
-==4510== 
-==4510== Branches:       5,393,773  (5,383,968 cond +     9,805 ind)
-==4510== Mispredicts:       20,561  (   18,740 cond +     1,821 ind)
-==4510== Mispred rate:         0.4% (      0.3%     +      18.6%   )
+==89351== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
+==89351== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==89351== Command: build/Release/niko /tmp/tmp.u52PFzVtvA.nk
+==89351== 
+==89351== 
+==89351== I refs:        32,492,469
+==89351== I1  misses:         4,724
+==89351== LLi misses:         3,542
+==89351== I1  miss rate:       0.01%
+==89351== LLi miss rate:       0.01%
+==89351== 
+==89351== D refs:         5,905,103  (  651,910 rd   + 5,253,193 wr)
+==89351== D1  misses:     1,274,186  (   17,724 rd   + 1,256,462 wr)
+==89351== LLd misses:     1,264,665  (    9,416 rd   + 1,255,249 wr)
+==89351== D1  miss rate:       21.6% (      2.7%     +      23.9%  )
+==89351== LLd miss rate:       21.4% (      1.4%     +      23.9%  )
+==89351== 
+==89351== LL refs:        1,278,910  (   22,448 rd   + 1,256,462 wr)
+==89351== LL misses:      1,268,207  (   12,958 rd   + 1,255,249 wr)
+==89351== LL miss rate:         3.3% (      0.0%     +      23.9%  )
+==89351== 
+==89351== Branches:       5,394,264  (5,384,469 cond +     9,795 ind)
+==89351== Mispredicts:       20,739  (   18,920 cond +     1,819 ind)
+==89351== Mispred rate:         0.4% (      0.4%     +      18.6%   )
 
 ========================================
 BENCHMARK: 10000000 ones 10000000 ones +
 ========================================
-Benchmark 1: build/Release/niko /tmp/tmp.AntyQCtwKk.nk
-  Time (mean ± σ):     315.5 ms ±   3.1 ms    [User: 199.0 ms, System: 115.8 ms]
-  Range (min … max):   312.0 ms … 320.9 ms    10 runs
+Benchmark 1: build/Release/niko /tmp/tmp.PXUgrEO8v1.nk
+  Time (mean ± σ):     323.3 ms ±   3.6 ms    [User: 209.1 ms, System: 113.7 ms]
+  Range (min … max):   318.3 ms … 328.7 ms    10 runs
  
 Cachegrind:
-==4610== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
-==4610== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
-==4610== Command: build/Release/niko /tmp/tmp.AntyQCtwKk.nk
-==4610== 
-==4610== 
-==4610== I refs:        192,511,239
-==4610== I1  misses:          4,984
-==4610== LLi misses:          3,885
-==4610== I1  miss rate:        0.00%
-==4610== LLi miss rate:        0.00%
-==4610== 
-==4610== D refs:         75,912,973  (50,656,652 rd   + 25,256,321 wr)
-==4610== D1  misses:      6,274,644  ( 2,518,101 rd   +  3,756,543 wr)
-==4610== LLd misses:      6,265,205  ( 2,509,856 rd   +  3,755,349 wr)
-==4610== D1  miss rate:         8.3% (       5.0%     +       14.9%  )
-==4610== LLd miss rate:         8.3% (       5.0%     +       14.9%  )
-==4610== 
-==4610== LL refs:         6,279,628  ( 2,523,085 rd   +  3,756,543 wr)
-==4610== LL misses:       6,269,090  ( 2,513,741 rd   +  3,755,349 wr)
-==4610== LL miss rate:          2.3% (       1.0%     +       14.9%  )
-==4610== 
-==4610== Branches:       25,396,549  (25,386,570 cond +      9,979 ind)
-==4610== Mispredicts:        20,884  (    19,031 cond +      1,853 ind)
-==4610== Mispred rate:          0.1% (       0.1%     +       18.6%   )
+==89451== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
+==89451== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==89451== Command: build/Release/niko /tmp/tmp.PXUgrEO8v1.nk
+==89451== 
+==89451== 
+==89451== I refs:        192,513,868
+==89451== I1  misses:          5,033
+==89451== LLi misses:          3,773
+==89451== I1  miss rate:        0.00%
+==89451== LLi miss rate:        0.00%
+==89451== 
+==89451== D refs:         75,913,595  (50,657,159 rd   + 25,256,436 wr)
+==89451== D1  misses:      6,274,725  ( 2,518,157 rd   +  3,756,568 wr)
+==89451== LLd misses:      6,265,211  ( 2,509,860 rd   +  3,755,351 wr)
+==89451== D1  miss rate:         8.3% (       5.0%     +       14.9%  )
+==89451== LLd miss rate:         8.3% (       5.0%     +       14.9%  )
+==89451== 
+==89451== LL refs:         6,279,758  ( 2,523,190 rd   +  3,756,568 wr)
+==89451== LL misses:       6,268,984  ( 2,513,633 rd   +  3,755,351 wr)
+==89451== LL miss rate:          2.3% (       1.0%     +       14.9%  )
+==89451== 
+==89451== Branches:       25,397,053  (25,387,084 cond +      9,969 ind)
+==89451== Mispredicts:        21,065  (    19,214 cond +      1,851 ind)
+==89451== Mispred rate:          0.1% (       0.1%     +       18.6%   )
 
 ========================================
 BENCHMARK: 10000000 ones dup +
 ========================================
-Benchmark 1: build/Release/niko /tmp/tmp.jyfRP9fkmO.nk
-  Time (mean ± σ):     180.2 ms ±   1.3 ms    [User: 110.3 ms, System: 69.6 ms]
-  Range (min … max):   176.9 ms … 182.5 ms    16 runs
+Benchmark 1: build/Release/niko /tmp/tmp.xVilRZuNFx.nk
+  Time (mean ± σ):     227.5 ms ±   1.2 ms    [User: 138.1 ms, System: 89.0 ms]
+  Range (min … max):   226.2 ms … 230.1 ms    13 runs
  
 Cachegrind:
-==4722== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
-==4722== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
-==4722== Command: build/Release/niko /tmp/tmp.jyfRP9fkmO.nk
-==4722== 
-==4722== 
-==4722== I refs:        112,500,617
-==4722== I1  misses:          4,854
-==4722== LLi misses:          3,769
-==4722== I1  miss rate:        0.00%
-==4722== LLi miss rate:        0.00%
-==4722== 
-==4722== D refs:         45,908,740  (30,654,086 rd   + 15,254,654 wr)
-==4722== D1  misses:      3,774,416  ( 1,267,929 rd   +  2,506,487 wr)
-==4722== LLd misses:      3,764,979  ( 1,259,685 rd   +  2,505,294 wr)
-==4722== D1  miss rate:         8.2% (       4.1%     +       16.4%  )
-==4722== LLd miss rate:         8.2% (       4.1%     +       16.4%  )
-==4722== 
-==4722== LL refs:         3,779,270  ( 1,272,783 rd   +  2,506,487 wr)
-==4722== LL misses:       3,768,748  ( 1,263,454 rd   +  2,505,294 wr)
-==4722== LL miss rate:          2.4% (       0.9%     +       16.4%  )
-==4722== 
-==4722== Branches:       15,395,239  (15,385,333 cond +      9,906 ind)
-==4722== Mispredicts:        20,792  (    18,958 cond +      1,834 ind)
-==4722== Mispred rate:          0.1% (       0.1%     +       18.5%   )
+==89557== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
+==89557== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==89557== Command: build/Release/niko /tmp/tmp.xVilRZuNFx.nk
+==89557== 
+==89557== 
+==89557== I refs:        112,503,225
+==89557== I1  misses:          4,916
+==89557== LLi misses:          3,669
+==89557== I1  miss rate:        0.00%
+==89557== LLi miss rate:        0.00%
+==89557== 
+==89557== D refs:         45,909,348  (30,654,585 rd   + 15,254,763 wr)
+==89557== D1  misses:      3,774,492  ( 1,267,981 rd   +  2,506,511 wr)
+==89557== LLd misses:      3,764,980  ( 1,259,685 rd   +  2,505,295 wr)
+==89557== D1  miss rate:         8.2% (       4.1%     +       16.4%  )
+==89557== LLd miss rate:         8.2% (       4.1%     +       16.4%  )
+==89557== 
+==89557== LL refs:         3,779,408  ( 1,272,897 rd   +  2,506,511 wr)
+==89557== LL misses:       3,768,649  ( 1,263,354 rd   +  2,505,295 wr)
+==89557== LL miss rate:          2.4% (       0.9%     +       16.4%  )
+==89557== 
+==89557== Branches:       15,395,742  (15,385,846 cond +      9,896 ind)
+==89557== Mispredicts:        20,970  (    19,138 cond +      1,832 ind)
+==89557== Mispred rate:          0.1% (       0.1%     +       18.5%   )
 
 ========================================
 BENCHMARK: 10000000 ones 1 +
 ========================================
-Benchmark 1: build/Release/niko /tmp/tmp.8Ruzx02YWp.nk
-  Time (mean ± σ):     175.6 ms ±   2.0 ms    [User: 103.4 ms, System: 71.8 ms]
-  Range (min … max):   172.3 ms … 179.6 ms    16 runs
+Benchmark 1: build/Release/niko /tmp/tmp.E7UqdKhqKj.nk
+  Time (mean ± σ):     227.9 ms ±   0.9 ms    [User: 137.3 ms, System: 90.2 ms]
+  Range (min … max):   226.2 ms … 229.1 ms    13 runs
  
 Cachegrind:
-==4834== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
-==4834== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
-==4834== Command: build/Release/niko /tmp/tmp.8Ruzx02YWp.nk
-==4834== 
-==4834== 
-==4834== I refs:        107,499,556
-==4834== I1  misses:          4,887
-==4834== LLi misses:          3,798
-==4834== I1  miss rate:        0.00%
-==4834== LLi miss rate:        0.00%
-==4834== 
-==4834== D refs:         40,908,479  (25,653,830 rd   + 15,254,649 wr)
-==4834== D1  misses:      3,774,387  ( 1,267,899 rd   +  2,506,488 wr)
-==4834== LLd misses:      3,764,949  ( 1,259,655 rd   +  2,505,294 wr)
-==4834== D1  miss rate:         9.2% (       4.9%     +       16.4%  )
-==4834== LLd miss rate:         9.2% (       4.9%     +       16.4%  )
-==4834== 
-==4834== LL refs:         3,779,274  ( 1,272,786 rd   +  2,506,488 wr)
-==4834== LL misses:       3,768,747  ( 1,263,453 rd   +  2,505,294 wr)
-==4834== LL miss rate:          2.5% (       0.9%     +       16.4%  )
-==4834== 
-==4834== Branches:       15,394,914  (15,385,024 cond +      9,890 ind)
-==4834== Mispredicts:        20,769  (    18,928 cond +      1,841 ind)
-==4834== Mispred rate:          0.1% (       0.1%     +       18.6%   )
+==89674== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
+==89674== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==89674== Command: build/Release/niko /tmp/tmp.E7UqdKhqKj.nk
+==89674== 
+==89674== 
+==89674== I refs:        107,502,147
+==89674== I1  misses:          4,953
+==89674== LLi misses:          3,702
+==89674== I1  miss rate:        0.00%
+==89674== LLi miss rate:        0.00%
+==89674== 
+==89674== D refs:         40,909,075  (25,654,323 rd   + 15,254,752 wr)
+==89674== D1  misses:      3,774,467  ( 1,267,955 rd   +  2,506,512 wr)
+==89674== LLd misses:      3,764,954  ( 1,259,659 rd   +  2,505,295 wr)
+==89674== D1  miss rate:         9.2% (       4.9%     +       16.4%  )
+==89674== LLd miss rate:         9.2% (       4.9%     +       16.4%  )
+==89674== 
+==89674== LL refs:         3,779,420  ( 1,272,908 rd   +  2,506,512 wr)
+==89674== LL misses:       3,768,656  ( 1,263,361 rd   +  2,505,295 wr)
+==89674== LL miss rate:          2.5% (       0.9%     +       16.4%  )
+==89674== 
+==89674== Branches:       15,395,418  (15,385,538 cond +      9,880 ind)
+==89674== Mispredicts:        20,949  (    19,110 cond +      1,839 ind)
+==89674== Mispred rate:          0.1% (       0.1%     +       18.6%   )
 
 ========================================
 BENCHMARK: 10000000 ones 1. +
 ========================================
-Benchmark 1: build/Release/niko /tmp/tmp.ralCOSZknA.nk
-  Time (mean ± σ):     178.0 ms ±   2.9 ms    [User: 108.2 ms, System: 69.4 ms]
-  Range (min … max):   172.7 ms … 184.1 ms    16 runs
+Benchmark 1: build/Release/niko /tmp/tmp.9jVVdjgzW7.nk
+  Time (mean ± σ):     233.2 ms ±   2.2 ms    [User: 145.1 ms, System: 87.7 ms]
+  Range (min … max):   231.2 ms … 239.0 ms    12 runs
  
 Cachegrind:
-==4946== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
-==4946== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
-==4946== Command: build/Release/niko /tmp/tmp.ralCOSZknA.nk
-==4946== 
-==4946== 
-==4946== I refs:        142,499,875
-==4946== I1  misses:          4,964
-==4946== LLi misses:          3,871
-==4946== I1  miss rate:        0.00%
-==4946== LLi miss rate:        0.00%
-==4946== 
-==4946== D refs:         60,908,576  (40,653,891 rd   + 20,254,685 wr)
-==4946== D1  misses:      3,774,390  ( 1,267,902 rd   +  2,506,488 wr)
-==4946== LLd misses:      3,764,952  ( 1,259,658 rd   +  2,505,294 wr)
-==4946== D1  miss rate:         6.2% (       3.1%     +       12.4%  )
-==4946== LLd miss rate:         6.2% (       3.1%     +       12.4%  )
-==4946== 
-==4946== LL refs:         3,779,354  ( 1,272,866 rd   +  2,506,488 wr)
-==4946== LL misses:       3,768,823  ( 1,263,529 rd   +  2,505,294 wr)
-==4946== LL miss rate:          1.9% (       0.7%     +       12.4%  )
-==4946== 
-==4946== Branches:       20,394,965  (20,385,073 cond +      9,892 ind)
-==4946== Mispredicts:        20,793  (    18,950 cond +      1,843 ind)
-==4946== Mispred rate:          0.1% (       0.1%     +       18.6%   )
+==89778== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
+==89778== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==89778== Command: build/Release/niko /tmp/tmp.9jVVdjgzW7.nk
+==89778== 
+==89778== 
+==89778== I refs:        142,502,466
+==89778== I1  misses:          5,022
+==89778== LLi misses:          3,772
+==89778== I1  miss rate:        0.00%
+==89778== LLi miss rate:        0.00%
+==89778== 
+==89778== D refs:         60,909,172  (40,654,384 rd   + 20,254,788 wr)
+==89778== D1  misses:      3,774,470  ( 1,267,958 rd   +  2,506,512 wr)
+==89778== LLd misses:      3,764,957  ( 1,259,662 rd   +  2,505,295 wr)
+==89778== D1  miss rate:         6.2% (       3.1%     +       12.4%  )
+==89778== LLd miss rate:         6.2% (       3.1%     +       12.4%  )
+==89778== 
+==89778== LL refs:         3,779,492  ( 1,272,980 rd   +  2,506,512 wr)
+==89778== LL misses:       3,768,729  ( 1,263,434 rd   +  2,505,295 wr)
+==89778== LL miss rate:          1.9% (       0.7%     +       12.4%  )
+==89778== 
+==89778== Branches:       20,395,469  (20,385,587 cond +      9,882 ind)
+==89778== Mispredicts:        20,972  (    19,131 cond +      1,841 ind)
+==89778== Mispred rate:          0.1% (       0.1%     +       18.6%   )
 
 ========================================
 BENCHMARK: : plus + ; 1000000 index plus' ,fold
 ========================================
-Benchmark 1: build/Release/niko /tmp/tmp.sltoK0e8z1.nk
-  Time (mean ± σ):     137.1 ms ±  10.0 ms    [User: 133.8 ms, System: 3.2 ms]
-  Range (min … max):   127.3 ms … 169.7 ms    23 runs
+Benchmark 1: build/Release/niko /tmp/tmp.0IiHbm3Pgr.nk
+  Time (mean ± σ):     189.0 ms ±   9.9 ms    [User: 181.4 ms, System: 7.3 ms]
+  Range (min … max):   177.2 ms … 204.9 ms    15 runs
  
 Cachegrind:
-==5072== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
-==5072== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
-==5072== Command: build/Release/niko /tmp/tmp.sltoK0e8z1.nk
-==5072== 
-==5072== 
-==5072== I refs:        846,739,970
-==5072== I1  misses:          4,916
-==5072== LLi misses:          3,573
-==5072== I1  miss rate:        0.00%
-==5072== LLi miss rate:        0.00%
-==5072== 
-==5072== D refs:        421,009,615  (282,025,630 rd   + 138,983,985 wr)
-==5072== D1  misses:        276,500  (    144,970 rd   +     131,530 wr)
-==5072== LLd misses:        138,791  (      8,642 rd   +     130,149 wr)
-==5072== D1  miss rate:         0.1% (        0.1%     +         0.1%  )
-==5072== LLd miss rate:         0.0% (        0.0%     +         0.1%  )
-==5072== 
-==5072== LL refs:           281,416  (    149,886 rd   +     131,530 wr)
-==5072== LL misses:         142,364  (     12,215 rd   +     130,149 wr)
-==5072== LL miss rate:          0.0% (        0.0%     +         0.1%  )
-==5072== 
-==5072== Branches:      105,022,725  ( 91,012,419 cond +  14,010,306 ind)
-==5072== Mispredicts:        32,535  (     30,584 cond +       1,951 ind)
-==5072== Mispred rate:          0.0% (        0.0%     +         0.0%   )
+==89888== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
+==89888== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==89888== Command: build/Release/niko /tmp/tmp.0IiHbm3Pgr.nk
+==89888== 
+==89888== 
+==89888== I refs:        878,742,309
+==89888== I1  misses:          5,023
+==89888== LLi misses:          3,508
+==89888== I1  miss rate:        0.00%
+==89888== LLi miss rate:        0.00%
+==89888== 
+==89888== D refs:        441,010,105  (293,026,056 rd   + 147,984,049 wr)
+==89888== D1  misses:        276,564  (    145,014 rd   +     131,550 wr)
+==89888== LLd misses:        138,791  (      8,642 rd   +     130,149 wr)
+==89888== D1  miss rate:         0.1% (        0.0%     +         0.1%  )
+==89888== LLd miss rate:         0.0% (        0.0%     +         0.1%  )
+==89888== 
+==89888== LL refs:           281,587  (    150,037 rd   +     131,550 wr)
+==89888== LL misses:         142,299  (     12,150 rd   +     130,149 wr)
+==89888== LL miss rate:          0.0% (        0.0%     +         0.1%  )
+==89888== 
+==89888== Branches:      106,023,208  ( 92,012,913 cond +  14,010,295 ind)
+==89888== Mispredicts:     2,028,801  (  2,026,854 cond +       1,947 ind)
+==89888== Mispred rate:          1.9% (        2.2%     +         0.0%   )
 
 ========================================
 BENCHMARK: 10000000 index +' ,fold
 ========================================
-Benchmark 1: build/Release/niko /tmp/tmp.A8QnXlsT6h.nk
-  Time (mean ± σ):      54.1 ms ±   1.7 ms    [User: 19.2 ms, System: 34.6 ms]
-  Range (min … max):    50.7 ms …  59.1 ms    54 runs
+Benchmark 1: build/Release/niko /tmp/tmp.25jPtsAF2e.nk
+  Time (mean ± σ):      74.9 ms ±   2.2 ms    [User: 25.2 ms, System: 49.5 ms]
+  Range (min … max):    70.6 ms …  79.5 ms    37 runs
  
 Cachegrind:
-==5260== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
-==5260== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
-==5260== Command: build/Release/niko /tmp/tmp.A8QnXlsT6h.nk
-==5260== 
-==5260== 
-==5260== I refs:        82,493,525
-==5260== I1  misses:         4,702
-==5260== LLi misses:         3,698
-==5260== I1  miss rate:       0.01%
-==5260== LLi miss rate:       0.00%
-==5260== 
-==5260== D refs:        25,905,607  (10,652,227 rd   + 15,253,380 wr)
-==5260== D1  misses:     2,524,295  ( 1,267,826 rd   +  1,256,469 wr)
-==5260== LLd misses:     2,514,847  ( 1,259,569 rd   +  1,255,278 wr)
-==5260== D1  miss rate:        9.7% (      11.9%     +        8.2%  )
-==5260== LLd miss rate:        9.7% (      11.8%     +        8.2%  )
-==5260== 
-==5260== LL refs:        2,528,997  ( 1,272,528 rd   +  1,256,469 wr)
-==5260== LL misses:      2,518,545  ( 1,263,267 rd   +  1,255,278 wr)
-==5260== LL miss rate:         2.3% (       1.4%     +        8.2%  )
-==5260== 
-==5260== Branches:      15,394,554  (15,384,696 cond +      9,858 ind)
-==5260== Mispredicts:       20,658  (    18,826 cond +      1,832 ind)
-==5260== Mispred rate:         0.1% (       0.1%     +       18.6%   )
+==90042== Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.
+==90042== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==90042== Command: build/Release/niko /tmp/tmp.25jPtsAF2e.nk
+==90042== 
+==90042== 
+==90042== I refs:        82,496,176
+==90042== I1  misses:         4,776
+==90042== LLi misses:         3,604
+==90042== I1  miss rate:       0.01%
+==90042== LLi miss rate:       0.00%
+==90042== 
+==90042== D refs:        25,906,264  (10,652,756 rd   + 15,253,508 wr)
+==90042== D1  misses:     2,524,370  ( 1,267,876 rd   +  1,256,494 wr)
+==90042== LLd misses:     2,514,853  ( 1,259,573 rd   +  1,255,280 wr)
+==90042== D1  miss rate:        9.7% (      11.9%     +        8.2%  )
+==90042== LLd miss rate:        9.7% (      11.8%     +        8.2%  )
+==90042== 
+==90042== LL refs:        2,529,146  ( 1,272,652 rd   +  1,256,494 wr)
+==90042== LL misses:      2,518,457  ( 1,263,177 rd   +  1,255,280 wr)
+==90042== LL miss rate:         2.3% (       1.4%     +        8.2%  )
+==90042== 
+==90042== Branches:      15,395,043  (15,385,192 cond +      9,851 ind)
+==90042== Mispredicts:       20,842  (    19,011 cond +      1,831 ind)
+==90042== Mispred rate:         0.1% (       0.1%     +       18.6%   )

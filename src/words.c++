@@ -260,7 +260,8 @@ ttXY struct w_take {
     POP_SIZE(y);
     POP(x);
     array_p z = array::alloc<X>(y);
-    DO(i, y) { z->mut_data<X>()[i] = x->data<X>()[i % x->n]; }
+    if (x->n == 1) DO(i, y) z->mut_data<X>()[i] = x->data<X>()[0];
+    else DO(i, y) z->mut_data<X>()[i] = x->data<X>()[i % x->n];
     PUSH(z);
   }
 };
