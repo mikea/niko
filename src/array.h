@@ -1,6 +1,11 @@
 #pragma once
 
 #include <string.h>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <memory>
+#include <string_view>
 
 #include "common.h"
 #include "memory.h"

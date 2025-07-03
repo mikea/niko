@@ -4,13 +4,14 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <algorithm>
-#include <format>
+#include <cstddef>
 #include <iostream>
 #include <ostream>
+#include <utility>
+#include <vector>
 
 using std::cerr;
 using std::cout;
@@ -21,7 +22,9 @@ using std::print;
 using std::println;
 using std::string;
 using std::vector;
+using std::nullptr_t;
 using str = std::string_view;
+
 
 #define size_t_max std::numeric_limits<size_t>::max()
 

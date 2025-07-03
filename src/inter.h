@@ -1,9 +1,16 @@
 #pragma once
 
+#include <array>
+#include <iostream>
+#include <ostream>
+#include <string>
+#include <string_view>
+#include <vector>
+#include <cstddef>
+#include <cstdint>
+
 #include "array.h"
 #include "print.h"
-
-#include <iostream>
 
 // token
 enum token_type {
@@ -31,7 +38,6 @@ struct token_t {
 token_t next_token(const char** s);
 
 // stack
-#include <vector>
 
 class stack {
   vector<array_p> data;

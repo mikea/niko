@@ -1,6 +1,8 @@
 #pragma once
 
+#include <format>
 #include <string_view>
+
 #include "array.h"
 
 template <>

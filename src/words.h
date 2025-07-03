@@ -1,5 +1,13 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <tuple>
+#include <type_traits>
+
 #include "array.h"
 #include "inter.h"
 #include "print.h"

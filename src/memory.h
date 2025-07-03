@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cstddef>
+
+#include "common.h"
+
 #define ALIGNED(n) ATTR(aligned(n))
 
 #define __ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))

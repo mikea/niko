@@ -58,7 +58,7 @@ array_p kernel_binop(array_p x, array_p y) {
   CHECK(y->n == x->n || y->n == 1 || x->n == 1, "array lengths are incompatible: {} vs {}", x->n, y->n);
   using Z   = Kernel<X, Y>::Z;
   array_p z = array::alloc<Z>(max(x->n, y->n));
-  z->a      = x->a & y->a;
+  z->a      = x->a && y->a;
   auto xd   = x->data<X>();
   auto yd   = y->data<Y>();
   auto zd   = z->mut_data<Z>();
