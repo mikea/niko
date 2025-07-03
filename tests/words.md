@@ -1367,6 +1367,25 @@ Fused operations handle large arrays efficiently:
 [ 0 1 3 6 10 15 21 28 36 45 55 66 78 91 105 120 136 153 171 190 210 231 253 276 ]
 ```
 
+### fused ,scan operations
+
+```nkt
+> [ 1 2 3 4 5 ] +,scan .
+[ 1 3 6 10 15 ]
+> [ 2 3 4 ] *,scan .
+[ 2 6 24 ]
+> [ 5 2 8 1 9 ] &,scan .
+[ 5 2 2 1 1 ]
+> [ 5 2 8 1 9 ] |,scan .
+[ 5 5 8 8 9 ]
+> [ 10 3 7 ] -,scan .
+[ 10 7 0 ]
+> 5 index +,scan .
+[ 0 1 3 6 10 ]
+> [ 1 1 1 1 1 1 1 1 1 1 ] +,scan .
+[ 1 2 3 4 5 6 7 8 9 10 ]
+```
+
 ### apply
 
 ```nkt
