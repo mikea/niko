@@ -3,7 +3,7 @@ alias w := watch
 
 deps:
     sudo apt update
-    sudo apt install --no-install-recommends --no-upgrade -y gcc-14 just re2c valgrind ninja-build libjemalloc-dev xxd cmake ninja-build clang-format
+    sudo apt install --no-install-recommends --no-upgrade -y gcc-14 just re2c valgrind ninja-build libjemalloc-dev xxd cmake ninja-build clang-format catch2
 
 watch +WATCH_TARGET='test':
     watchexec -rc -w . --ignore *.results -- just {{WATCH_TARGET}}
@@ -18,12 +18,12 @@ build BUILD_TYPE="Debug":
         ln -sf build/{{BUILD_TYPE}}/compile_commands.json compile_commands.json; \
     fi
 
-release: (build "Release") _test
+release: (build "Release") (_test "Release")
 
 run: test
     bin/niko
 
-test: build _test
+test: build (_test "Debug")
 
 clean:
     rm -rf bin build callgrind.out.* perf.data perf.data.old vgcore.*
@@ -66,7 +66,8 @@ stat EXPR="10000000 zeros": release
 #     gcc {{RELEASE_CFLAGS}} -fopt-info-vec-missed -c -o build/words.o build/words.c
 
 [private]
-_test:
+_test BUILD_TYPE="Debug":
+    build/{{BUILD_TYPE}}/unit_tests
     bin/niko -z -t tests/inter.md
     bin/niko -z -t tests/words.md
     bin/niko -t tests/prelude.md
