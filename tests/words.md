@@ -829,6 +829,49 @@ ERROR: array lengths are incompatible: 3 vs 2
 0.5
 ```
 
+### div
+
+Integer division (returns integer quotient for integer inputs):
+
+```nkt
+> 7 3 div .
+2
+> 10 3 div .
+3
+> 15 4 div .
+3
+> 20 6 div .
+3
+```
+
+Mixed type division (truncated):
+
+```nkt
+> 7 3. div .
+2.
+> 7. 3 div .
+2.
+> 7. 3. div .
+2.
+> 7.8 3.2 div .
+2.
+> 9.7 2.1 div .
+4.
+> -7.8 3.2 div .
+-2.
+```
+
+Vector operations:
+
+```nkt
+> [ 7 10 15 20 ] 3 div .
+[ 2 3 5 6 ]
+> [ 7 10 15 20 ] [ 2 3 4 5 ] div .
+[ 3 3 3 4 ]
+> 21 [ 2 3 4 5 ] div .
+[ 10 7 5 4 ]
+```
+
 ### `=`
 
 ```nkt
@@ -1196,6 +1239,12 @@ ERROR: array lengths are incompatible: 3 vs 2
 1.
 > 10.5 3 mod .
 1.5
+> 7.8 2.3 mod .
+0.9
+> 9.7 2.1 mod .
+1.3
+> -7.8 2.3 mod .
+-0.9
 ```
 
 ## higher order words
@@ -1482,4 +1531,189 @@ ERROR: stack underflow
 "b
 b
 "
+```
+
+## ,while adverb tests
+
+Basic countdown:
+```nkt
+> : countdown dup . 1 - ; 5 countdown' ,while .
+5
+4
+3
+2
+1
+0
+```
+
+GCD algorithm (simplified):
+```nkt
+> : gcd-step over over mod rot drop ; 12 8 gcd-step' ,while drop .
+4
+```
+
+Simple countdown starting from 3:
+```nkt
+> : decr dup . 1 - ; 3 decr' ,while .
+3
+2
+1
+0
+```
+
+Collatz conjecture steps:
+```nkt
+> : collatz-step dup . dup 2 mod 0 = 3 * 1 + 2 / | 1 - ; 7 collatz-step' ,while .
+7
+6.
+5.
+4.
+3.
+2.
+1.
+0.
+```
+
+## `,mapply` tests
+
+Basic functionality with simple operations:
+```nkt
+> : 2* 2 * ; [ 1 2 3 4 ] [ 1 0 1 0 ] 2*' ,mapply .
+[ 2 2 6 4 ]
+```
+
+All-false mask (should keep original):
+```nkt
+> [ 10 20 30 ] [ 0 0 0 ] neg' ,mapply .
+[ 10 20 30 ]
+```
+
+All-true mask (should apply to all):
+```nkt
+> : square dup * ; [ 2 3 4 ] [ 1 1 1 ] square' ,mapply .
+[ 4 9 16 ]
+```
+
+Mixed mask with different operation:
+```nkt
+> : 2/ 2 / ; [ 10 20 30 40 ] [ 1 0 0 1 ] 2/' ,mapply .
+[ 5. 20 30 20. ]
+```
+
+Single element arrays:
+```nkt
+> : triple 3 * ; [ 5 ] [ 1 ] triple' ,mapply .
+[ 15 ]
+> : triple 3 * ; [ 5 ] [ 0 ] triple' ,mapply .
+[ 5 ]
+```
+
+Complex operations:
+```nkt
+> : add-ten 10 + ; [ 1 2 3 4 5 ] [ 0 1 0 1 0 ] add-ten' ,mapply .
+[ 1 12 3 14 5 ]
+```
+
+Works with floating point:
+```nkt
+> : sqrt-op sqrt ; [ 4. 9. 16. ] [ 1 0 1 ] sqrt-op' ,mapply .
+[ 2. 9. 4. ]
+```
+
+Empty arrays:
+```nkt
+> : id ; [ ] [ ] id' ,mapply .
+[ ]
+```
+
+Operations that change types:
+```nkt
+> : to-float f64 ; [ 1 2 3 ] [ 1 0 1 ] to-float' ,mapply .
+[ 1. 2 3. ]
+```
+
+Complex stack operations:
+```nkt
+> : dup-add dup + ; [ 5 10 15 ] [ 1 0 1 ] dup-add' ,mapply .
+[ 10 10 30 ]
+```
+
+Verify mask must be i64 array and same length:
+```nkt
+> : 2* 2 * ; [ 1 2 3 ] [ 1 1 ] 2*' ,mapply .
+ERROR: mask and array must have same length: 2 vs 3
+```
+
+Large arrays work correctly:
+```nkt
+> : 1+ 1 + ; [ 1 2 3 4 5 6 7 8 ] [ 1 0 1 0 1 0 1 0 ] 1+' ,mapply .
+[ 2 2 4 4 6 6 8 8 ]
+```
+
+Alternating pattern:
+```nkt
+> : neg-one -1 * ; [ 1 2 3 4 5 6 ] [ 1 0 1 0 1 0 ] neg-one' ,mapply .
+[ -1 2 -3 4 -5 6 ]
+```
+
+## Boolean testing words
+
+### any
+```nkt
+> [ 0 0 1 ] any .
+1
+> [ 0 0 0 ] any .
+0
+> [ 1 2 3 ] any .
+1
+> [ ] any .
+0
+> 5 any .
+1
+> 0 any .
+0
+```
+
+### none  
+```nkt
+> [ 0 0 0 ] none .
+1
+> [ 0 0 1 ] none .
+0
+> [ 1 2 3 ] none .
+0
+> [ ] none .
+1
+> 0 none .
+1
+> 5 none .
+0
+```
+
+### all
+```nkt
+> [ 1 2 3 ] all .
+1
+> [ 1 0 3 ] all .
+0
+> [ 0 0 0 ] all .
+0
+> [ ] all .
+1
+> 5 all .
+1
+> 0 all .
+0
+```
+
+Floating point arrays:
+```nkt
+> [ 0. 1. 2. ] any .
+1
+> [ 0. 0. 0. ] any .
+0
+> [ 1. 2. 3. ] all .
+1
+> [ 1. 0. 3. ] all .
+0
 ```

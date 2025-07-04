@@ -87,6 +87,21 @@ DEF_WORD("2over", _2over) {
 ttX X not_impl(X x) { return !x; }
 REG_FN11(not, i64_t, not_impl);
 
+DEF_WORD("any", any) {
+  POP(x);
+  PUSH(array::atom<i64_t>(x->any() ? 1 : 0));
+}
+
+DEF_WORD("none", none) {
+  POP(x);
+  PUSH(array::atom<i64_t>(x->none() ? 1 : 0));
+}
+
+DEF_WORD("all", all) {
+  POP(x);
+  PUSH(array::atom<i64_t>(x->all() ? 1 : 0));
+}
+
 #pragma endregion bool
 
 #pragma region conversions
