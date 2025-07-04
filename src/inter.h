@@ -1,13 +1,13 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <ostream>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <cstddef>
-#include <cstdint>
 
 #include "array.h"
 #include "print.h"

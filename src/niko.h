@@ -10,9 +10,9 @@
 
 // Include generated timestamp header if available
 #ifdef __has_include
-  #if __has_include("timestamp.h")
-    #include "timestamp.h"
-  #endif
+#if __has_include("timestamp.h")
+#include "timestamp.h"
+#endif
 #endif
 
 #ifndef COMPILE_TIME
