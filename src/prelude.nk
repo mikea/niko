@@ -24,7 +24,7 @@
   gcd-step' ,while drop ;
 
 : lcm ( a b -- lcm )
-  2dup gcd / * i64 ;
+  2dup gcd dup rot swap div rot swap * ;
 
 2.7182818284590452354 const E
 1.4426950408889634074 const LOG2E
