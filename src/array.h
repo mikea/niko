@@ -102,6 +102,16 @@ INLINE size_t type_sizeof(type_t t, size_t n) { return n * type_sizeof_table[t];
 static const str type_name_table[T_MAX] = TYPE_ROW("c8", "i64", "f64", "arr", "ffi", "dict");
 INLINE const str type_name(type_t t) { return type_name_table[t]; }
 
+#define __DO_ARRAY_IMPL(a, i, u, p) \
+  DO(i, a->n)                       \
+  for (bool u = true; u; u = false) \
+    for (p; u; u = false)
+
+#define _DO_ARRAY_IMPL(a, i, p, u, p_decl) __DO_ARRAY_IMPL(a, i, u, p_decl)
+
+#define DO_MUT_ARRAY(a, typ, i, p) _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), auto& p = a->mut_data<typ>()[i])
+#define DO_ARRAY(a, t, i, p)       _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), auto p = a->data<t>()[i])
+
 struct array {
  private:
   static array_p create(type_t t, size_t n, const void* x);
@@ -196,16 +206,50 @@ struct array {
     else return atom(t, data_i(i));
   }
   inline array_p tail() const { return create(t, n - 1, data_i(1)); }
+
+  inline bool any() const {
+    switch (t) {
+      case T_I64: {
+        DO_ARRAY(this, i64_t, i, e) if (e != 0) return true;
+        return false;
+      }
+      case T_F64: {
+        DO_ARRAY(this, f64_t, i, e) if (e != 0.0) return true;
+        return false;
+      }
+      case T_C8: {
+        DO_ARRAY(this, c8_t, i, e) if (e != 0) return true;
+        return false;
+      }
+      case T_ARR: {
+        DO_ARRAY(this, arr_t, i, e) if (e->any()) return true;
+        return false;
+      }
+      default: return true;
+    }
+  }
+
+  inline bool none() const { return !any(); }
+
+  inline bool all() const {
+    switch (t) {
+      case T_I64: {
+        DO_ARRAY(this, i64_t, i, e) if (e == 0) return false;
+        return true;
+      }
+      case T_F64: {
+        DO_ARRAY(this, f64_t, i, e) if (e == 0.0) return false;
+        return true;
+      }
+      case T_C8: {
+        DO_ARRAY(this, c8_t, i, e) if (e == 0) return false;
+        return true;
+      }
+      case T_ARR: {
+        DO_ARRAY(this, arr_t, i, e) if (!e->all()) return false;
+        return true;
+      }
+      default: return true;
+    }
+  }
 };
-
-using array_p = rc<array>;
-
-#define __DO_ARRAY_IMPL(a, i, u, p) \
-  DO(i, a->n)                       \
-  for (bool u = true; u; u = false) \
-    for (p; u; u = false)
-
-#define _DO_ARRAY_IMPL(a, i, p, u, p_decl) __DO_ARRAY_IMPL(a, i, u, p_decl)
-
-#define DO_MUT_ARRAY(a, typ, i, p) _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), auto& p = a->mut_data<typ>()[i])
-#define DO_ARRAY(a, t, i, p)       _DO_ARRAY_IMPL(a, i, p, UNIQUE(__), auto p = a->data<t>()[i])
