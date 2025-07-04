@@ -420,8 +420,15 @@ DEF_WORD("\\i", slash_info) {
 
 DEF_WORD("\\c", slash_clear) { inter.reset(); }
 DEF_WORD("\\mem", slash_mem) { malloc_stats_print(NULL, NULL, NULL); }
+
 DEF_WORD("\\s", slash_stack) {
   DO(i, stack.len()) { (*inter.out) << std::format("{}: {}\n", i, stack[i]); }
+}
+
+DEF_WORD("\\d", slash_def) {
+  POP_DICT_ENTRY(idx);
+  dict_entry& e = inter.dict[idx];
+  (*inter.out) << std::format("{}\n", e);
 }
 
 #pragma endregion slash_words

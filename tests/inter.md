@@ -217,6 +217,52 @@ error handling
 ERROR: literal can be used only in compilation mode
 ```
 
+## System Commands
+
+### `\d` (definition lookup)
+
+Test builtin function definitions:
+
+```nkt
+> +' \d
++: ffi:[ <c8,c8> <c8,i64> <c8,f64> <i64,c8> <i64,i64> <i64,f64> <f64,c8> <f64,i64> <f64,f64> ]
+> .' \d
+.: <ffi>
+> dup' \d
+dup: <ffi>
+```
+
+Test user-defined words:
+
+```nkt
+> : square dup * ;
+> square' \d
+: square dup *  ;
+```
+
+Test constants:
+
+```nkt
+> 42 const answer
+> answer' \d
+42 const answer
+```
+
+Test variables:
+
+```nkt
+> 100 var count
+> count' \d
+var count
+```
+
+Test error handling:
+
+```nkt
+> 42 \d
+ERROR: dict entry expected
+```
+
 ## Interpreter
 
 ### `!`
