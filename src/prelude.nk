@@ -6,9 +6,25 @@
 
 : swap- swap - ;
 
+( Traditional Forth-style utilities )
+: 1+ 1 + ;
+: 1- 1 - ;
+: 2* 2 * ;
+: 2/ 2 / ;
+: 2mod 2 mod ;
+: 0= 0 = ;
+: 0<> 0 != ;
+
 : sum +' ,fold ;
 : sums +' ,scan ;
 : deltas swap-' ,pairwise ;
+
+: gcd-step over over mod rot drop ;
+: gcd ( a b -- gcd )
+  gcd-step' ,while drop ;
+
+: lcm ( a b -- lcm )
+  2dup gcd / * i64 ;
 
 2.7182818284590452354 const E
 1.4426950408889634074 const LOG2E

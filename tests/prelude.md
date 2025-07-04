@@ -93,6 +93,38 @@
 [ 1 2 3 2 -8 ]
 ```
 
+# mathematical functions
+
+## gcd
+
+```nkt
+> 12 8 gcd .
+4
+> 15 10 gcd .
+5
+> 17 13 gcd .
+1
+> 48 18 gcd .
+6
+> 100 40 gcd .
+20
+```
+
+## lcm
+
+```nkt
+> 12 8 lcm .
+24
+> 15 10 lcm .
+30
+> 4 6 lcm .
+12
+> 21 14 lcm .
+42
+> 9 12 lcm .
+36
+```
+
 # constants
 
 ```nkt
@@ -110,4 +142,42 @@
 1.
 > 2/PI PI * .
 2.
+```
+
+## Forth-style utilities
+
+### Basic arithmetic
+```nkt
+> 5 1+ .
+6
+> 10 1- .
+9
+> 7 2* .
+14
+> 20 2/ .
+10.
+> [ 1 2 3 ] 1+' ,apply .
+[ 2 3 4 ]
+> [ 5 4 3 ] 1-' ,apply .
+[ 4 3 2 ]
+```
+
+### Modulo and comparison
+```nkt
+> 5 2mod .
+1
+> 4 2mod .
+0
+> 0 0= .
+1
+> 5 0= .
+0
+> 0 0<> .
+0
+> 5 0<> .
+1
+> [ 0 1 0 2 0 ] 0=' ,apply .
+[ 1 0 1 0 1 ]
+> [ 2 3 4 5 6 ] 2mod' ,apply .
+[ 0 1 0 1 0 ]
 ```
