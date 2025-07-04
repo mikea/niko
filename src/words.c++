@@ -465,6 +465,21 @@ DEF_WORD(",apply", apply) {
   PUSH(cat(stack, x->n));
 }
 
+DEF_WORD(",mapply", mapply) {
+  POP_DICT_ENTRY(y);
+  POP(m);
+  POP(x);
+  CHECK(m->t == T_I64, "mask: i64 expected");
+  CHECK(m->n >= x->n, "mask is not big enough: {} vs {}", m->n, x->n);
+
+  auto md = m->data<i64_t>();
+  DO(i, x->n) {
+    PUSH(x->atom_i(i));
+    if (md[i]) inter.entry(y);
+  }
+  PUSH(cat(stack, x->n));
+}
+
 DEF_WORD(",pairwise", pairwise) {
   POP_DICT_ENTRY(y);
   POP(x);
@@ -499,6 +514,14 @@ DEF_WORD(",trace", trace) {
     inter.entry(y);
   }
   PUSH(cat(stack, x));
+}
+
+DEF_WORD(",while", while_loop) {
+  POP_DICT_ENTRY(body);
+  for (;;) {
+    if (stack.len() == 0 || stack[0]->none()) break;
+    inter.entry(body);
+  }
 }
 
 #pragma endregion adverbs

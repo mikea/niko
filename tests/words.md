@@ -1641,7 +1641,7 @@ Complex stack operations:
 Verify mask must be i64 array and same length:
 ```nkt
 > : 2* 2 * ; [ 1 2 3 ] [ 1 1 ] 2*' ,mapply .
-ERROR: mask and array must have same length: 2 vs 3
+ERROR: mask is not big enough: 2 vs 3
 ```
 
 Large arrays work correctly:

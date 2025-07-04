@@ -14,10 +14,10 @@ This file contains solutions to Project Euler problems implemented in the Niko p
   1 - index 1 +
   
   ( Find multiples of 3: n % 3 == 0 )
-  dup 3 mod 0 =
+  dup 3 mod 0=
   
   ( Find multiples of 5: n % 5 == 0 )
-  over 5 mod 0 =
+  over 5 mod 0=
   
   ( Combine: multiples of 3 OR 5 )
   |
@@ -74,7 +74,7 @@ And the full solution (numbers below 1000):
   *
   
   ( Filter even numbers: n % 2 == 0 )
-  dup 2 mod 0 =
+  dup 2mod 0=
   *
   
   ( Sum the even numbers )
@@ -175,6 +175,23 @@ Test with 3-digit numbers:
 
 **Solution**:
 
-The least common multiple (LCM) of numbers 1 to n can be found by checking divisibility. For small values like 20, we can use a direct approach.
+The smallest number divisible by all numbers from 1 to n is the least common multiple (LCM) of those numbers. We can compute this by reducing the LCM across the range.
 
-Problem 5 (Smallest multiple) is complex to implement efficiently in Niko's array programming model without explicit loops or recursion. A general solution would require implementing GCD/LCM algorithms using iterative array operations.
+```nk
+: euler5 ( n -- lcm )
+  index 1 + lcm' ,fold ;
+```
+
+Let's test with the example (LCM of 1 to 10):
+
+```nkt
+> 10 euler5 .
+2520
+```
+
+And the full solution (LCM of 1 to 20):
+
+```nkt
+> 20 euler5 .
+232792560
+```

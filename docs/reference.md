@@ -127,12 +127,27 @@ Words that starts from '\' are indended to be used during development
 |`-`|`(x y -> z)`| subtraction|
 |`*`|`(x y -> z)`| multiplication|
 |`/`|`(x y -> z)`| division|
-|`div`|`(x y -> z)`|division quotient|
-|`mod`|`(x y -> z)`|divisin remainder|
+|`div`|`(x y -> z)`|integer division (quotient)|
+|`mod`|`(x y -> z)`|division remainder|
 |`&`, `min`|`(x y -> z)`|min|
 |`|`,`max` |`(x y -> z)`|max|
 |`=`|`(x y -> b)`| equal comparison|
 |`<`|`(x y -> b)`| less comparison|
+
+## Forth-style Utilities
+
+|Word|Signature|Description|
+|---|---|---|
+|`1+`|`(x -> y)`| add 1 (increment)|
+|`1-`|`(x -> y)`| subtract 1 (decrement)|
+|`2*`|`(x -> y)`| multiply by 2 (double)|
+|`2/`|`(x -> y)`| divide by 2 (halve)|
+|`2mod`|`(x -> y)`| modulo 2 (even/odd test)|
+|`0=`|`(x -> b)`| test if equal to zero|
+|`0<>`|`(x -> b)`| test if not equal to zero|
+|`any`|`(x -> b)`| true if any element is non-zero|
+|`none`|`(x -> b)`| true if no elements are non-zero|
+|`all`|`(x -> b)`| true if all elements are non-zero|
 
 ## Aggregation
 
@@ -149,10 +164,12 @@ Words that starts from '\' are indended to be used during development
 |`,fold`|`(x op' -> y)`| ,fold cells of rank `0` using `op`|
 |`,scan`|`(x op' -> y)`| ,fold cells of rank `0` using `op` organizing all intermediate results in `x`'s shape|
 |`,apply`|`(x r op' -> y)`| applies `op` to cells of rank `0` organizing results into `x`'s shape|
+|`,mapply`|`(x mask op' -> y)`| applies `op` to elements of `x` where `mask` is true, keeps others unchanged|
 |`,power`|`(x n op' -> y)`|applies `op` `n` times to `x`|
 |`,collect`|`(n op' -> y)`|run `op` `n` times then drop top and cat top `n` stack items|
 |`,trace`|`(x s op' -> y)`|applies `op` multiple times to `x` and organizes intermediate results into `s` shape|
 |`,pairwise`|`(x op' -> y)`| applies `op` to consequent pais of `x` leaving first element unchanged|
+|`,while`|`(op' -> )`|executes `op` repeatedly while the top of stack is truthy|
 
 ### Word Fusing
 

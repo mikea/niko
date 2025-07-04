@@ -40,7 +40,7 @@ This will execute the contents of `program.nk` and exit. For example:
 ```
 ( program.nk - Calculate sum of squares )
 5 index     ( Generate [0 1 2 3 4] )
-dup *       ( Square each element )
+square      ( Square each element )
 sum         ( Sum all squares )
 .           ( Print result )
 ```
@@ -490,10 +490,10 @@ Applies a binary operation between consecutive elements:
 Applies an operation n times to a value:
 
 ```nkt
-> : double dup + ;
+> : double 2* ;
 > 1 8 double' ,power .       ( double 8 times: 1→2→4→...→256 )
 256
-> : inc 1 + ;
+> : inc 1+ ;
 > 0 5 inc' ,power .          ( increment 5 times: 0→1→2→3→4→5 )
 5
 > 5 4 1 +' ,power .         ( add 1 four times )
@@ -507,7 +507,7 @@ Applies an operation n times to a value:
 Runs an operation n times and collects the top n stack items:
 
 ```nkt
-> : next dup 1 + ;
+> : next dup 1+ ;
 > 1 5 next' ,collect .        ( generate 1,2,3,4,5 )
 [ 1 2 3 4 5 ]
 > 1 3 dup' ,collect .         ( duplicate 3 times )
@@ -521,15 +521,47 @@ Runs an operation n times and collects the top n stack items:
 Like `,power` but keeps all intermediate results:
 
 ```nkt
-> : double dup + ;
+> : double 2* ;
 > 1 5 double' ,trace .       ( powers of 2 )
 [ 2 4 8 16 32 ]
-> : inc 1 + ;
+> : inc 1+ ;
 > 1 4 inc' ,trace .          ( sequence 2,3,4,5 )
 [ 2 3 4 5 ]
 ```
 
 **How it works**: Duplicates the top value before each operation (except the first), collecting all states.
+
+#### `,while` - Conditional Loop
+
+Executes a word repeatedly while the top of stack is truthy:
+
+```nkt
+> : countdown dup . 1- ;
+> 5 countdown' ,while .
+5
+4
+3
+2
+1
+0
+> : gcd-step over over mod rot drop ;
+> : gcd gcd-step' ,while drop ;
+> 48 18 gcd .
+6
+```
+
+**How it works**: After each execution of the word, checks if the top of stack is truthy. Arrays are truthy based on their content:
+- Atomic integers: truthy if not zero
+- Atomic floats: truthy if not 0.0
+- Atomic characters: truthy if not zero
+- All vectors (non-atomic): always truthy
+
+**Common patterns**:
+```nkt
+> : decr 1- ;
+> 10 decr' ,while .
+0
+```
 
 ### Practical Examples
 
@@ -599,7 +631,7 @@ When you execute `word' ,adverb`, Niko automatically looks for a word named `wor
 
 ```niko
 ( Mathematical optimizations )
-: dup,fold dup * sum ;           ( sum of squares )
+: dup,fold square sum ;           ( sum of squares )
 : sqrt,apply sqrt' ,apply ;      ( vectorized square root )
 
 ( Aggregation shortcuts )  
@@ -607,7 +639,7 @@ When you execute `word' ,adverb`, Niko automatically looks for a word named `wor
 : *,scan *' ,scan ;              ( running product )
 
 ( Custom combinations )
-: double,apply 2 *' ,apply ;     ( double all elements )
+: double,apply 2*' ,apply ;     ( double all elements )
 : abs,fold abs' ,apply sum ;     ( sum of absolute values )
 ```
 
