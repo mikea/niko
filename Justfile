@@ -6,7 +6,7 @@ deps:
     sudo apt install --no-install-recommends --no-upgrade -y gcc-14 just re2c valgrind ninja-build libjemalloc-dev xxd cmake ninja-build clang-format catch2
 
 watch +WATCH_TARGET='test':
-    watchexec -rc -w . --ignore *.results -- just {{WATCH_TARGET}}
+    watchexec --print-events -rc -w . --ignore *.results -- just {{WATCH_TARGET}}
 
 build BUILD_TYPE="Debug":
     mkdir -p bin build/{{BUILD_TYPE}}

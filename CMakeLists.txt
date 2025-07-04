@@ -81,6 +81,7 @@ if(Catch2_FOUND)
   # Unit tests
   add_executable(unit_tests
     tests/test_lexer.cpp
+    tests/test_array.cpp
     src/inter.c++ src/array.c++ src/words.c++ src/print.c++
     src/words/binop.c++ src/words/math.c++
     ${CMAKE_CURRENT_BINARY_DIR}/lexer.c++
